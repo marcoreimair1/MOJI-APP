@@ -590,8 +590,7 @@ blendete alles gemeinsam aus. Jetzt läuft es in dieser Reihenfolge ab:
 | ab | was geschieht |
 |---|---|
 | 0 s | Das Männchen des Vorspanns verschwimmt und wird kleiner (`uebergabeMark`), darüber blendet der Gruß auf |
-| 0,05 s | Im Grund gehen drei große, weiche Lichtkegel in der Markenfarbe auf und ziehen langsam (`.hallo-grund::after`) |
-| 0,1 s | Hinter dem Bild geht ein Licht in der Markenfarbe auf (`.hallo-licht`) und atmet danach mit |
+| 0,1 s | Hinter dem Bild geht ein leiser Schimmer in der Markenfarbe auf (`.hallo-licht`) und atmet danach mit |
 | 0,12 s | Das Profilbild kommt aus der Unschärfe, von leicht unten und etwas kleiner, **ohne Überschwingen** |
 | 0,5 s | Der Name setzt sich Zeichen für Zeichen zusammen, jedes 34 ms nach dem vorigen, aus der Unschärfe |
 | 0,75 s | Ein Lichtstreif läuft einmal um das Bild (`.hallo-komet`) |
@@ -613,8 +612,10 @@ Das ersetzte `viewIn` auf `section.view.on`, und als die Klasse bei der Landung 
 seit Längerem `body.kalrein` am Ende des Funnels. Darum gilt: **keine Klasse gibt `#v-cal`
 eine Animation** — `kalenderRein()` läuft über Web Animations, und nur, wenn nicht geflogen wird.
 
-Ein Lichtstaub aus kleinen violetten Punkten war einen Tag lang drin und flog wieder raus: er
-passte nicht zur ruhigen Fläche der App. Die großen Lichtkegel im Grund ersetzen ihn. Das Profilbild in der Leiste und seine violette
+**Der Grund ist die Fläche der Hauptseite, sonst nichts.** Zwei Zwischenstände flogen wieder
+raus: ein Lichtstaub aus kleinen violetten Punkten (passte nicht zur Fläche) und drei große
+violette Lichtkegel darüber (zu kräftig, *„schaut etwas billig aus"*). Der Schimmer hinter dem
+Bild steht auf `--licht-a` .22 dunkel und .13 hell, vorher .5 und .34. Das Profilbild in der Leiste und seine violette
 Zahl sind so lange leer (`body.halloflug`); gelandet, kommt das echte Bild unter dem fliegenden
 hervor, federt einmal nach, und die Zahl springt auf.
 

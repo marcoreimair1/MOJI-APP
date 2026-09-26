@@ -612,10 +612,12 @@ roh('Die Zeichen steigen einzeln aus der Unschaerfe',
     && /\.hallo\{--hz-start:\.5s;/.test(HTML));
 roh('Der Schweif endet dort, wo der Kopf ist',
     /\.kg\{--l:22;--k:40;[\s\S]{0,200}\.k3\{--l:62;--k:0;[\s\S]{0,200}\.k2\{--l:34;--k:28;[\s\S]{0,200}\.kl\{--l:5;--k:57;/.test(HTML));
-roh('Im Grund ziehen die Lichtkegel',
-    /\.hallo-grund::after\{[\s\S]{0,500}animation:kegelAuf [\s\S]{0,40}kegelZiehen/.test(HTML));
-roh('Die Lichtkegel kennen beide Fassungen',
-    (HTML.match(/--kegel-a:/g) || []).length === 3 && (HTML.match(/--kegel2-rgb:/g) || []).length === 3);
+/* Am 27.09.2026 wieder raus: die Lichtkegel waren zu kraeftig. Der Grund
+   traegt nur die Farbwolken der Hauptseite. */
+roh('Der Grund traegt nur die Farbwolken der Hauptseite',
+    !/\.hallo-grund::after/.test(HTML) && !/--kegel-a:/.test(HTML) && !/kegelZiehen/.test(HTML));
+roh('Das Licht hinter dem Bild bleibt leise',
+    /--licht-a:\.22;/.test(HTML) && (HTML.match(/--licht-a:\.13;/g) || []).length === 2);
 roh('Das Licht kennt beide Fassungen',
     (HTML.match(/--licht-a:/g) || []).length === 3, (HTML.match(/--licht-a:/g) || []).length);
 roh('Beim Abflug blitzt kein Haken auf, wo keiner stand',

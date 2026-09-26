@@ -176,9 +176,7 @@
 
   --butter:#C643FE;
   --butter-rgb:198,67,254;
-  --licht-a:.5;           /* Licht hinter dem Profilbild im Gruss */
-  --kegel-a:.36;          /* die Lichtkegel in seinem Grund */
-  --kegel2-rgb:112,76,255;
+  --licht-a:.22;          /* Licht hinter dem Profilbild im Gruss — leise */
   --butter-2:#D169FF;   /* heller Verlaufsrand — gedaempft, der Knopf stach heraus */
   --butter-dim:rgba(198,67,254,.20);
   --on-primary:#FFFFFF;
@@ -285,9 +283,7 @@
 
   --butter:#A716E8;
   --butter-rgb:167,22,232;
-  --licht-a:.34;
-  --kegel-a:.3;
-  --kegel2-rgb:140,164,255;
+  --licht-a:.13;
   --butter-2:#C643FE;
   --butter-dim:rgba(167,22,232,.13);
   --on-primary:#FFFFFF;
@@ -365,9 +361,7 @@
 
   --butter:#A716E8;
   --butter-rgb:167,22,232;
-  --licht-a:.34;
-  --kegel-a:.3;
-  --kegel2-rgb:140,164,255;
+  --licht-a:.13;
   --butter-2:#C643FE;
   --butter-dim:rgba(167,22,232,.13);
   --on-primary:#FFFFFF;
@@ -2710,20 +2704,9 @@ body.locked #tabbar{
    Buehne selbst, ginge das Profilbild beim Ausblenden mit — es soll aber
    bleiben und fliegen. */
 .hallo-grund{position:absolute;inset:0;z-index:0;overflow:hidden}
-/* Die Lichtkegel: drei grosse, weiche Lichter in der Markenfarbe, die
-   beim Aufblenden aufgehen und dann langsam ziehen. Sie ersetzen seit
-   26.09.2026 den Lichtstaub — die kleinen violetten Punkte passten nicht
-   zur ruhigen Flaeche der App, grosse Lichter schon. */
-.hallo-grund::after{content:'';position:absolute;inset:-25%;pointer-events:none;
-  background:
-    radial-gradient(34% 28% at 32% 30%, rgba(var(--butter-rgb),var(--kegel-a)), transparent 72%),
-    radial-gradient(32% 26% at 72% 58%, rgba(var(--kegel2-rgb),var(--kegel-a)), transparent 72%),
-    radial-gradient(28% 24% at 38% 78%, rgba(var(--butter-rgb),calc(var(--kegel-a) * .65)), transparent 72%);
-  animation:kegelAuf 1.8s .05s var(--ease-blend) both, kegelZiehen 11s ease-in-out infinite alternate}
-@keyframes kegelAuf{from{opacity:0}}
-@keyframes kegelZiehen{
-  0%{transform:none}
-  100%{transform:translate(5%,-4%) rotate(8deg) scale(1.1)}
+/* Der Grund traegt nur die Farbwolken der Hauptseite. Vom 26. auf den
+   27.09.2026 zogen darueber drei violette Lichtkegel — zu kraeftig, es
+   sah billig aus. Die Flaeche soll derselbe Ort sein wie die App. */
 }
 /* Ohne Leiste darunter (beim Abmelden, oder wenn sie nicht zu sehen ist)
    loest sich alles gemeinsam auf, wie bisher. */
@@ -2740,7 +2723,7 @@ body.locked #tabbar{
    translate statt transform — transform gehoert dem Flug. */
 @keyframes halloSchweben{to{translate:0 -5px}}
 /* Das Licht dahinter: geht auf, dann atmet es mit. */
-.hallo-licht{position:absolute;left:50%;top:50%;width:250%;aspect-ratio:1;pointer-events:none;
+.hallo-licht{position:absolute;left:50%;top:50%;width:170%;aspect-ratio:1;pointer-events:none;
   translate:-50% -50%;border-radius:50%;
   background:radial-gradient(circle,rgba(var(--butter-rgb),var(--licht-a)) 0,rgba(var(--butter-rgb),calc(var(--licht-a)*.45)) 30%,transparent 62%);
   animation:lichtAuf 1.7s .1s var(--ease-out) both, lichtAtmen 3.4s 1.8s ease-in-out infinite alternate}
@@ -2748,7 +2731,7 @@ body.locked #tabbar{
 @keyframes lichtAtmen{to{transform:scale(1.1);opacity:.78}}
 .hallo-bild{position:relative;width:100%;aspect-ratio:1;border-radius:30%;
   overflow:hidden;background:#fff;border:1px solid rgba(var(--s-auf),.22);
-  box-shadow:0 34px 70px -26px rgba(var(--s-schatten),.8),0 0 60px -18px rgba(var(--butter-rgb),.5);
+  box-shadow:0 34px 70px -26px rgba(var(--s-schatten),.8),0 0 60px -18px rgba(var(--butter-rgb),.3);
   animation:halloBild 1.25s .12s var(--ease-out) both}
 /* Aus der Unschaerfe, von leicht unten und etwas kleiner — und ohne
    Ueberschwingen: es federt nicht, es wird scharf. */
@@ -2881,7 +2864,7 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 
 @media (prefers-reduced-motion:reduce){
   .hallo-rahmen, .hallo-licht, .hallo-bild::after, .hallo-komet, .hallo-komet rect,
-  .hallo-in b .hz, .hallo-s, .hallo-grund::after, .hallo-welle{animation:none}
+  .hallo-in b .hz, .hallo-s, .hallo-welle{animation:none}
   .hallo-welle{display:none!important}
   .hallo-bild{animation:halloAb .4s ease-out both}
   .hallo-komet{display:none}
@@ -6589,7 +6572,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0150';
+const APP_STAND = '2026-09-27-0215';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
