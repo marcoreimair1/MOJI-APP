@@ -440,7 +440,9 @@ ok('Die Buehne selbst traegt sie nicht mehr', !el('hallo').classList.contains('a
 ok('Das Licht liegt hinter dem Bild', !!document.querySelector('#hallo .hallo-rahmen > .hallo-licht'));
 ok('Der Lichtstreif hat Kopf und Schweif',
    document.querySelectorAll('#hallo .hallo-komet rect').length === 4);
-ok('Der Staub hat seine Leinwand', !!el('hstaub'));
+/* Der Lichtstaub ist am 26.09.2026 wieder rausgeflogen — die violetten
+   Punkte passten nicht zur Flaeche. Dafuer ziehen grosse Lichter im Grund. */
+ok('Kein Lichtstaub mehr', !el('hstaub') && typeof window.halloStaub === 'undefined');
 /* Ohne Leiste darunter kein Flug — dann blendet alles gemeinsam aus. */
 ok('Ohne sichtbare Leiste gibt es kein Ziel', halloZiel() === null);
 grussEnde();
@@ -605,8 +607,10 @@ roh('Die Zeichen steigen einzeln aus der Unschaerfe',
     /\.hallo-in b \.hz\{[\s\S]{0,120}animation:halloZeichen [\d.]+s calc\(\.5s \+ var\(--i\) \* 34ms\)/.test(HTML));
 roh('Der Schweif endet dort, wo der Kopf ist',
     /\.kg\{--l:22;--k:40;[\s\S]{0,200}\.k3\{--l:62;--k:0;[\s\S]{0,200}\.k2\{--l:34;--k:28;[\s\S]{0,200}\.kl\{--l:5;--k:57;/.test(HTML));
-roh('Die Staubfarbe wird vorher aufgeloest',
-    /getPropertyValue\('--butter-rgb'\)/.test(HTML));
+roh('Im Grund ziehen die Lichtkegel',
+    /\.hallo-grund::after\{[\s\S]{0,500}animation:kegelAuf [\s\S]{0,40}kegelZiehen/.test(HTML));
+roh('Die Lichtkegel kennen beide Fassungen',
+    (HTML.match(/--kegel-a:/g) || []).length === 3 && (HTML.match(/--kegel2-rgb:/g) || []).length === 3);
 roh('Das Licht kennt beide Fassungen',
     (HTML.match(/--licht-a:/g) || []).length === 3, (HTML.match(/--licht-a:/g) || []).length);
 roh('Das Bild fliegt in die Leiste', /function halloFlug\(ziel\)\{/.test(HTML));
@@ -615,8 +619,16 @@ roh('Solange es fliegt, ist sein Platz leer',
     /body\.halloflug \.tabbar \.avatar, body\.halloflug #av-zaehler\{opacity:0;transition:none\}/.test(HTML));
 roh('Die Farbflaeche wandert beim Abflug weiter',
     /\.hallo\.fliegt \.hallo-grund\{ animation:var\(--aura-anim\), halloGrundWeg/.test(HTML));
-roh('Der Kalender taucht auf, nicht #app',
-    /body\.halloflug #v-cal\{animation:halloApp/.test(HTML) && !/body\.halloflug #app\{/.test(HTML));
+/* Eine Klasse, die #v-cal eine Animation gibt, ersetzt viewIn — und wenn
+   sie geht, laeuft viewIn von vorn: der Kalender sprang nach der Landung
+   14 px hinunter und glitt wieder hoch. */
+roh('Beim Flug bewegt sich der Kalender nicht',
+    !/body\.halloflug #v-cal\{/.test(HTML) && !/body\.halloflug #app\{/.test(HTML));
+roh('Und keine Klasse ersetzt mehr viewIn auf dem Kalender',
+    !/body\.[a-z]+ #v-cal\{ ?animation:/.test(HTML));
+roh('Das Hereinfahren am Funnelende laeuft ueber Web Animations',
+    /function kalenderRein\(\)\{[\s\S]{0,200}v\.animate\(/.test(HTML));
+roh('Und wartet nicht auf den Flug', /if\(!\$\('#hallo'\)\.classList\.contains\('fliegt'\)\) kalenderRein\(\);/.test(HTML));
 roh('Weniger Bewegung: kein Flug', /function halloZiel\(\)\{[\s\S]{0,400}prefers-reduced-motion: reduce/.test(HTML));
 roh('Das Maennchen verschwimmt bei der Uebergabe',
     /@keyframes uebergabeMark\{ to\{ opacity:0; transform:scale\(\.9\); filter:blur\(14px\) \} \}/.test(HTML));

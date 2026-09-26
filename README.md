@@ -590,9 +590,9 @@ blendete alles gemeinsam aus. Jetzt läuft es in dieser Reihenfolge ab:
 | ab | was geschieht |
 |---|---|
 | 0 s | Das Männchen des Vorspanns verschwimmt und wird kleiner (`uebergabeMark`), darüber blendet der Gruß auf |
+| 0,05 s | Im Grund gehen drei große, weiche Lichtkegel in der Markenfarbe auf und ziehen langsam (`.hallo-grund::after`) |
 | 0,1 s | Hinter dem Bild geht ein Licht in der Markenfarbe auf (`.hallo-licht`) und atmet danach mit |
 | 0,12 s | Das Profilbild kommt aus der Unschärfe, von leicht unten und etwas kleiner, **ohne Überschwingen** |
-| 0,2 s | Lichtstaub steigt langsam am Bild vorbei: 20 Punkte auf `#hstaub`, weißer Kern in violettem Hof |
 | 0,5 s | Der Name setzt sich Zeichen für Zeichen zusammen, jedes 34 ms nach dem vorigen, aus der Unschärfe |
 | 0,75 s | Ein Lichtstreif läuft einmal um das Bild (`.hallo-komet`) |
 | 1,05 s | Ein Glanz wandert über das Bild, der Satz darunter zieht sich zusammen wie ein Blick, der scharf stellt |
@@ -606,9 +606,15 @@ Landung. Web Animations bekommt 49 fertig gerechnete Bilder und läuft linear; s
 Bahn eine Kurve, statt zwischen wenigen Stützpunkten zu knicken. Nebenbei nimmt das Bild die
 Ecken des kleinen an (30 % → 17 von 48 px) und neigt sich in der Mitte um fünf Grad.
 
-Währenddessen blenden Farbfläche, Text, Licht und Staub aus, und `#v-cal` stellt sich aus der
-Unschärfe scharf — nur die Ansicht, nicht `#app`: ein Filter auf `#app` machte ihn für eine
-Sekunde zum Bezugsrahmen für alles Feste darin. Das Profilbild in der Leiste und seine violette
+Währenddessen blenden Farbfläche, Text und Licht aus. **Der Kalender darunter bewegt sich
+nicht.** Eine erste Fassung ließ ihn über `body.halloflug #v-cal` aus der Unschärfe auftauchen.
+Das ersetzte `viewIn` auf `section.view.on`, und als die Klasse bei der Landung ging, lief
+`viewIn` von vorn: der Kalender sprang 14 px hinunter und glitt wieder hoch. Dasselbe tat
+seit Längerem `body.kalrein` am Ende des Funnels. Darum gilt: **keine Klasse gibt `#v-cal`
+eine Animation** — `kalenderRein()` läuft über Web Animations, und nur, wenn nicht geflogen wird.
+
+Ein Lichtstaub aus kleinen violetten Punkten war einen Tag lang drin und flog wieder raus: er
+passte nicht zur ruhigen Fläche der App. Die großen Lichtkegel im Grund ersetzen ihn. Das Profilbild in der Leiste und seine violette
 Zahl sind so lange leer (`body.halloflug`); gelandet, kommt das echte Bild unter dem fliegenden
 hervor, federt einmal nach, und die Zahl springt auf.
 
