@@ -19,6 +19,14 @@
    theme-color steht damit von Anfang an richtig: die Statusleiste
    uebernimmt sie nur beim Laden, nicht wenn man sie spaeter aendert.  */
 (function(){try{
+  /* Vom Homebildschirm gestartet? Dann laeuft die Seite unter die
+     Statusleiste, und manches verhaelt sich anders als in Safari —
+     siehe .als-app bei der Kopfleiste. navigator.standalone ist der
+     alte iOS-Weg, display-mode der heutige; beide, damit keiner
+     durchrutscht. Hier oben, damit schon der erste Anstrich stimmt. */
+  var app = window.navigator.standalone === true
+         || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (app) document.documentElement.classList.add('als-app');
   var d = localStorage.getItem('moji.erscheinung') === 'dark';
   document.documentElement.dataset.theme = d ? 'dark' : 'light';
   var m = document.querySelector('meta[name=theme-color]');
@@ -769,6 +777,18 @@ body.nurhandy #splash,body.nurhandy #app,body.nurhandy .bg,body.nurhandy .grain{
   background:rgba(var(--s-tief),.78);
   border-bottom:1px solid var(--line-2)}
 .topbar-in{max-width:1080px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:14px}
+/* In der vom Homebildschirm gestarteten App kein Milchglas. Dort war
+   der Kopf verschwommen und der Schriftzug kaum zu lesen — in Safari
+   nicht. Erst lag es nahe, dass der Filter am Schriftzug schuld war;
+   der ist seit dem 26. September weg, und es blieb unscharf (iOS 27).
+   Bleibt das Milchglas selbst: die Seite laeuft dort unter die
+   Statusleiste, die Leiste ist 59 px hoeher, und iOS rechnet den
+   Weichzeichner ueber diese Flaeche offenbar anders. Deckend kann
+   nichts verschwimmen. Der Preis: der Kalender scheint beim Rollen
+   nicht mehr durch — in der App, nicht im Browser. */
+html.als-app .topbar{
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+  background:rgb(var(--s-tief)) }
 .topbar{padding-top:env(safe-area-inset-top)}
 .brand{display:flex;align-items:baseline;gap:9px;text-decoration:none;color:inherit}
 .brand{align-items:flex-end;gap:12px}
@@ -3643,6 +3663,7 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
      deutlicher. Genau diese Leiste steht auf dem Telefon hinter dem
      Zeichen und dem Profilbild. */
   .topbar{background:rgba(var(--s-tief),.72)}
+  html.als-app .topbar{ background:rgb(var(--s-tief)) }
 }
 
 /* ─── Hintergrund am Handy ───
@@ -6392,7 +6413,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-26-2050';
+const APP_STAND = '2026-09-26-2135';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;

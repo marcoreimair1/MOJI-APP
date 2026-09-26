@@ -1084,6 +1084,17 @@ iPhone. Nachgeprüft ist, dass kein Filter mehr am Schriftzug liegt und beide Fa
 richtige Datei bekommen, auch beim Wechsel ohne Neuladen; eine Nachstellung mit 59 px
 Statusleiste zeigte, dass keine Schicht über dem Schriftzug liegt.
 
+**Das reichte nicht: unter iOS 27 blieb der Kopf unscharf.** Bleibt das Milchglas selbst. In der
+installierten App läuft die Seite unter die Statusleiste, die Leiste ist 59 px höher, und iOS
+rechnet den Weichzeichner über diese Fläche offenbar anders als im Browser. Seitdem ist die
+Kopfleiste **in der installierten App deckend**, ohne `backdrop-filter` — was deckend ist, kann
+nicht verschwimmen. Im Browser bleibt das Milchglas.
+
+Erkannt wird die installierte App schon im Kopfskript, vor dem ersten Anstrich: an
+`navigator.standalone` (der alte iOS-Weg) oder an `display-mode: standalone` (der heutige), und
+das `<html>` bekommt die Klasse `als-app`. Beide Wege, damit keiner durchrutscht. Der Preis: Der
+Kalender scheint beim Rollen nicht mehr durch die Leiste — in der App, nicht im Browser.
+
 ### Die Leiste unten
 
 Seit 21. September 2026 steht unten eine **Leiste mit vier Zielen**: Kalender, Export, Meine Firma

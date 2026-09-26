@@ -1156,6 +1156,17 @@ setTimeout(() => {
    /* filter:invert(1) auf der Wortmarke, mitten im Milchglas der
       Kopfleiste: in der installierten App war der Schriftzug weich,
       die Unterzeile daneben scharf. */
+   /* Auch ohne den Filter blieb der Kopf in der installierten App
+      unscharf (iOS 27). Dort also kein Milchglas. */
+   ['Die installierte App wird schon im Kopfskript erkannt',
+    roh.indexOf("document.documentElement.classList.add('als-app')") > -1
+    && roh.indexOf("document.documentElement.classList.add('als-app')") < roh.indexOf('<style')
+    && roh.includes("window.navigator.standalone === true")
+    && roh.includes("matchMedia('(display-mode: standalone)').matches")],
+   ['Dort ist die Kopfleiste deckend, ohne Milchglas',
+    roh.includes('html.als-app .topbar{\n  -webkit-backdrop-filter:none; backdrop-filter:none;\n  background:rgb(var(--s-tief)) }')],
+   ['Auch auf dem schmalen Schirm',
+    roh.includes('  html.als-app .topbar{ background:rgb(var(--s-tief)) }')],
    ['Die Wortmarke wird nicht mehr per Filter umgedreht',
     !/\.bword\{ filter:invert\(1\) \}/.test(roh)],
    ['Sondern hat eine eigene schwarze Datei',
