@@ -47,6 +47,13 @@ ok('Abgemeldet (UID === null)', UID === null, 'UID=' + UID);
 
 ME = normalize({ id:'t', vorname:'Marco', nachname:'Reimair', dob:'1990-05-04', av:3 });
 var m = document.querySelector('#menu');
+/* Die Wortmarke in der Kopfleiste folgt der Fassung mit einer eigenen
+   Datei, nicht mit einem Filter — der machte sie im Milchglas unscharf. */
+document.documentElement.dataset.theme = 'light';
+document.getElementById('brand-word').src =
+  document.documentElement.dataset.theme === 'dark' ? LOGO_WORD : LOGO_WORD_TINTE;
+ok('Auf Hell steht die schwarze Wortmarke',
+   document.getElementById('brand-word').getAttribute('src') === LOGO_WORD_TINTE);
 go('v-cal');            /* die Seite unter dem Menue, samt Leiste */
 menuAuf();
 ok('Menue ist offen', m.classList.contains('on'));
@@ -1146,6 +1153,16 @@ setTimeout(() => {
       beides — waehrend eines Zeitraums weicht die Leiste. */
    /* Schwebend wanderte sie in Safari mit der Adressleiste mit und
       huepfte dabei. Am Rand klebend faellt dasselbe nicht auf. */
+   /* filter:invert(1) auf der Wortmarke, mitten im Milchglas der
+      Kopfleiste: in der installierten App war der Schriftzug weich,
+      die Unterzeile daneben scharf. */
+   ['Die Wortmarke wird nicht mehr per Filter umgedreht',
+    !/\.bword\{ filter:invert\(1\) \}/.test(roh)],
+   ['Sondern hat eine eigene schwarze Datei',
+    roh.includes("const LOGO_WORD_TINTE = 'data:image/png;base64,")],
+   ['Die richtige wird mit der Fassung gesetzt',
+    roh.includes('bw.src = dunkel ? LOGO_WORD : LOGO_WORD_TINTE;')
+    && roh.includes("? LOGO_WORD : LOGO_WORD_TINTE;")],
    /* Sie stand zuerst in #app und lag damit in dessen Stapelkontext
       (z-index 2) — ihr eigener z-index zaehlte nur dort drin, und das
       Menue daneben legte sich darueber. */

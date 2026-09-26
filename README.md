@@ -1065,6 +1065,25 @@ Karte, darunter blieb ein Loch bis zu den Knöpfen. Jetzt nimmt die Kiste die ga
 Punktreihe. Nachgemessen auf dem Telefon: **63 px** Luft unter der Karte, **29 px** über der
 Leiste.
 
+### Die Wortmarke in der Kopfleiste
+
+**In der vom Homebildschirm gestarteten App war der Schriftzug weich**, unten fast verschwommen —
+in Safari nicht. Die Unterzeile *Mehr Zeit fürs Wesentliche* daneben stand dabei gestochen scharf.
+Das war der Hinweis: Beide sitzen in derselben Kopfleiste, aber nur der Schriftzug trug einen
+Filter. Die Wortmarke liegt als weißes Bild vor und wurde auf Hell per `filter:invert(1)`
+umgedreht — mitten in einer Leiste aus Milchglas (`backdrop-filter`). Einen Filter in einer
+Filter-Ebene rastert WebKit gern in niedriger Auflösung, und in der installierten App offenbar
+anders als im Browser.
+
+Seit 26. September 2026 gibt es **eine zweite, fertig schwarze Datei** (`LOGO_WORD_TINTE`, 3 KB),
+und `anwenden()` setzt mit der Fassung die passende. Kein Filter mehr. Der alte Kommentar an der
+Regel hatte es schon gesagt: *sauberer wäre eine zweite Datei … aber fürs Ansehen genügt das.*
+
+Im Browser ließ sich der Fehler nicht nachstellen — Chromium rastert das anders als WebKit auf dem
+iPhone. Nachgeprüft ist, dass kein Filter mehr am Schriftzug liegt und beide Fassungen die
+richtige Datei bekommen, auch beim Wechsel ohne Neuladen; eine Nachstellung mit 59 px
+Statusleiste zeigte, dass keine Schicht über dem Schriftzug liegt.
+
 ### Die Leiste unten
 
 Seit 21. September 2026 steht unten eine **Leiste mit vier Zielen**: Kalender, Export, Meine Firma
