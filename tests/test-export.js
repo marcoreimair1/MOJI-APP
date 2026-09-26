@@ -237,9 +237,9 @@ ok('In der Mitte steht ein Blatt', !!ov.el.querySelector('.exstapel .exblatt.vor
 ok('Bei einem Monat ohne Blaetter dahinter', !ov.el.querySelector('.exblatt.h1'));
 ok('Mit MOJI als Briefkopf',
    (ov.el.querySelector('.exb-kopf .exmoji img').getAttribute('src') || '').indexOf('data:image/webp') === 0);
-ok('Und einer Tabelle, die sich fuellt', ov.el.querySelectorAll('.exb-zeilen .exz b').length === 10);
-ok('Sie faengt leer an', parseFloat(ov.el.querySelector('.exz b').style.width) === 0,
-   ov.el.querySelector('.exz b').style.width);
+ok('Und einer Tabelle mit zehn Zeilen', ov.el.querySelectorAll('.exb-zeilen .exz').length === 10);
+ok('Je Zeile Datum, Zeiten und Stunden', ov.el.querySelectorAll('.exb-zeilen .exz b').length === 30);
+ok('Sie faengt leer an', !ov.el.querySelector('.exz.da'));
 ok('Die eigene Unterschrift steht darauf', ov.el.querySelector('#ex-sig').getAttribute('src') === SIG_BILD);
 ok('Noch nicht geschrieben', ov.el.querySelector('.exb-sig').style.getPropertyValue('--s') === '0.000');
 ok('Das Siegel wartet auf den Schluss', !!ov.el.querySelector('.exb-siegel svg'));
@@ -273,6 +273,18 @@ ok('Liegt die Datei vor, bewegt es sich',
    m2.querySelector('img').getAttribute('src'));
 ok('Und die Kachel weiss davon',   m2.classList.contains('lebt'));
 ov2.stop(); ov2.el.remove();
+/* Das Blatt fuehrt zum Dokument: am Ende laesst es sich antippen. */
+const ov6 = exOverlay(1);
+ok('Waehrend geschrieben wird, ist das Blatt kein Knopf', !ov6.el.classList.contains('tippbar')
+   && !ov6.el.querySelector('.exstapel').getAttribute('role'));
+window.__w6 = 0;
+ov6.wahl(() => { window.__w6++; return Promise.resolve(); });
+const st6 = ov6.el.querySelector('.exstapel');
+ok('Am Ende ist das Blatt antippbar', ov6.el.classList.contains('tippbar') && st6.getAttribute('role') === 'button');
+ok('Mit einem Zeichen zum Oeffnen', !!st6.querySelector('.exb-auf svg'));
+ok('Und einem Satz darunter', st6.querySelector('.exhinweis').textContent === 'Zum Ansehen antippen');
+st6.click();
+setTimeout(() => { window.__w6Tipp = window.__w6; ov6.stop(); ov6.el.remove(); }, 30);
 
 /* ── Am Ende: teilen oder fertig, seit 27.09.2026 ──
    Vorher wurde das PDF als blob-Adresse im selben Tab geoeffnet — nach
@@ -329,6 +341,7 @@ setTimeout(() => {
   E.push({ n:'Abbrechen des Teilen-Blatts laesst die Buehne stehen', ok: dom.window.__w4NachAbbruch === 'offen', z: dom.window.__w4NachAbbruch });
   E.push({ n:'Fertig schliesst sie', ok: dom.window.__w4NachFertig === 'zu', z: dom.window.__w4NachFertig });
   E.push({ n:'Geteilt schliesst sie auch', ok: dom.window.__w5 === 'zu', z: dom.window.__w5 });
+  E.push({ n:'Ein Tipp aufs Blatt fuehrt zum Dokument', ok: dom.window.__w6Tipp === 1, z: dom.window.__w6Tipp });
   /* Regeln, die jsdom nicht rechnet — aber dastehen muessen. */
   [['Abgegeben faerbt nur, wenn nicht gewaehlt', /\.mgrid \.chip\.fertig:not\(\.on\)\{/],
    ['Der Haken liegt in der Ecke der Kachel', /\.mgrid \.chip \.exhaken\{/],
@@ -390,7 +403,13 @@ setTimeout(() => {
     /const ZEILEN_AB = 4, ZEILEN_BIS = 80, SIG_BIS = 97;/.test(roh)],
    ['Die Unterschrift wird von links nach rechts freigelegt',
     /clip-path:inset\(0 calc\(\(1 - var\(--s, 0\)\) \* 100%\) 0 0\)/.test(roh)],
-   ['Ein Funke schreibt die Zeile', /\.exz\.schreibt b::after\{opacity:1\}/.test(roh)],
+   /* 27.09.2026: keine violetten Balken mit Funken mehr in den Zeilen. */
+   ['Keine violetten Balken mehr in der Tabelle', !/\.exz\.schreibt/.test(roh) && !/\.exz b::after/.test(roh)],
+   ['Die Zeilen tauchen aus der Unschaerfe auf',
+    /\.exz b\{[\s\S]{0,200}opacity:0;transform:translateX\(-5px\);filter:blur\(3px\)/.test(roh) && /\.exz\.da b\{opacity:1;transform:none;filter:none\}/.test(roh)],
+   ['Fertig waechst das Blatt', /\.exdone\.fertig \.exstapel\{width:min\(68vw,258px\)/.test(roh)],
+   ['Beim Druecken gibt es nach, solange der Finger liegt', /\.exdone\.tippbar \.exstapel:active\{scale:\.965\}/.test(roh)
+    && /stapel\.addEventListener\('touchstart', \(\) => \{\}, \{ passive:true \}\);/.test(roh)],
    ['Fertig stempelt sich das Siegel', /\.exdone\.fertig \.exb-siegel\{animation:exStempel/.test(roh)],
    ['Und eine Lichtwelle geht vom Blatt aus, nicht zu weit',
     /\.exdone\.fertig \.exwelle\{animation:exWelle /.test(roh) && /@keyframes exWelle\{[^}]*\}[^}]*\}[^}]*scale\(1\.28\)/.test(roh)],

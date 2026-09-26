@@ -591,8 +591,10 @@ Blatt. Vorher lag eine Fläche über der Exportkachel, ein Ring schloss sich um 
 - Das **Blatt** kommt aus der Unschärfe wie das Profilbild im Gruß (`halloBild`). Bei mehreren
   Monaten liegen ein oder zwei Blätter dahinter, leicht gedreht.
 - Oben das **lebende Männchen als Briefkopf** (`moji-leben.webp`, sonst das Standbild).
-- Die **Tabelle** füllt sich im Takt des echten Fortschritts: zehn Zeilen zwischen 4 und 80 %,
-  an der Zeile, die gerade geschrieben wird, sitzt ein Funke (`.exz.schreibt`).
+- Die **Tabelle** sieht aus wie auf dem echten Blatt: zehn Zeilen mit Datum, Zeiten und Stunden
+  in ruhigem Grau. Zwischen 4 und 80 % taucht eine nach der anderen aus der Unschärfe auf, ihre
+  drei Teile knapp nacheinander (`.exz.da`). Bis zum 27.09. füllten sich hier violette Balken
+  mit einem Funken an der Spitze — „ein bisschen zu viel".
 - Zwischen 80 und 97 % wird die **eigene Unterschrift** (`SIG_BILD`) von links nach rechts
   freigelegt (`clip-path` über `--s`), mit einem Lichtpunkt an der Feder, der über die echte
   Breite des Bilds läuft (`--sb`).
@@ -615,7 +617,11 @@ Jetzt verlässt das PDF die App nicht mehr, wo das Gerät Dateien teilen kann (i
 **PDF teilen** und **Fertig**. Das Teilen-Blatt zeigt eine Vorschau und bietet Sichern in
 Dateien, Mail, Nachrichten und Drucken. Ein Knopf statt eines Automatismus, weil iOS
 `navigator.share()` nur direkt nach einem Tipp erlaubt — nach fünf Sekunden Animation wäre das
-vorbei. Teilen oder „Fertig" schließt die Bühne; bricht man das Teilen-Blatt ab, bleibt sie stehen.
+vorbei. **Das Blatt selbst ist dann auch ein Knopf** (`.tippbar`): es wächst auf die größere
+Darstellung, trägt oben rechts ein Zeichen zum Öffnen, darunter steht *Zum Ansehen antippen*,
+es hebt sich einmal kurz und gibt beim Drücken nach, solange der Finger liegt (`scale` über
+`:active` — Safari setzt `:active` nur mit einem `touchstart`-Horcher). Ein Tipp öffnet das
+Teilen-Blatt, dessen Vorschau zum Dokument führt. Teilen oder „Fertig" schließt die Bühne; bricht man das Teilen-Blatt ab, bleibt sie stehen.
 Kann das Gerät keine Dateien teilen, bleibt es beim Öffnen mit `doc.save()` samt dem Vermerk
 darunter.
 
