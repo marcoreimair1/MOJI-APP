@@ -2823,7 +2823,10 @@ body.locked #tabbar{
 @keyframes halloGrundWeg{to{opacity:0}}
 .hallo.fliegt .hallo-in b, .hallo.fliegt .hallo-s{animation:halloTextWeg .42s ease-in forwards}
 @keyframes halloTextWeg{to{opacity:0;transform:translateY(-10px);filter:blur(6px)}}
-.hallo.fliegt .hallo-haken{opacity:1;animation:halloAus .25s ease-in forwards}
+/* Nur wo der Haken wirklich stand, blendet er beim Abflug aus. Eine
+   erste Fassung galt fuer jede Buehne — bei der Anmeldung, die keinen
+   Haken hat, blitzte er so vor dem Flug eine Viertelsekunde auf. */
+.hallo.neu.fliegt .hallo-haken, .hallo.fertig.fliegt .hallo-haken{opacity:1;animation:halloAus .25s ease-in forwards}
 .hallo.fliegt .hallo-ring, .hallo.fliegt .hallo-komet,
 .hallo.fliegt .hallo-licht, .hallo.fliegt canvas{animation:halloAus .4s ease-in forwards}
 @keyframes halloAus{to{opacity:0}}
@@ -6539,7 +6542,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0015';
+const APP_STAND = '2026-09-27-0040';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;

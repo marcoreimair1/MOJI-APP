@@ -613,6 +613,9 @@ roh('Die Lichtkegel kennen beide Fassungen',
     (HTML.match(/--kegel-a:/g) || []).length === 3 && (HTML.match(/--kegel2-rgb:/g) || []).length === 3);
 roh('Das Licht kennt beide Fassungen',
     (HTML.match(/--licht-a:/g) || []).length === 3, (HTML.match(/--licht-a:/g) || []).length);
+roh('Beim Abflug blitzt kein Haken auf, wo keiner stand',
+    !/\.hallo\.fliegt \.hallo-haken\{/.test(HTML)
+    && /\.hallo\.neu\.fliegt \.hallo-haken, \.hallo\.fertig\.fliegt \.hallo-haken\{opacity:1/.test(HTML));
 roh('Das Bild fliegt in die Leiste', /function halloFlug\(ziel\)\{/.test(HTML));
 roh('Die Bahn laeuft ueber eine eigene Zeitkurve', /const zeit = kurve\(\.5, 0, \.14, 1\);/.test(HTML));
 roh('Solange es fliegt, ist sein Platz leer',
