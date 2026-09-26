@@ -582,6 +582,23 @@ nahm `body.locked` weg — während der Gruß noch 0,62 s aufblendete. In dieser
 Kalender und Leiste durch das halb sichtbare Profilbild. Bei der Übergabe passiert beides jetzt
 erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält das fest.
 
+### Die Fahrt durch den Kartenstapel *(neu am 27. September 2026)*
+
+Tippt man im Profilmenü auf **Karten**, fährt der Stapel von der ersten bis zur aktuellen Karte
+(`ktFlug()`). Seit dem 27. September in der Handschrift des Grußes:
+
+- **Zeitkurve** `kurve(.32, .04, .1, 1)` — zügig los, lange weiche Landung. Nachgemessen bei acht
+  Karten: in den letzten 300 ms nur noch 67 px. Dauer `min(1350, 380 + weit · 80)` ms.
+- **Die Kamera zieht auf**: `--zoom` auf `.kt-bahn` lässt alle Karten während der Fahrt um bis zu
+  11 % zurücktreten und bei der Ankunft wieder heranfahren (`sin²`, also ohne Ruck an den Enden).
+  Das kostet nichts, `scale` wird ohnehin in jedem Bild aus `--nah` gerechnet.
+- **Der Titel verschwimmt** während der Fahrt (`#mkv.fahrt`) und stellt sich bei der Ankunft
+  scharf. Vorher wechselte er bei jeder Karte — zwölf Namen in einer Sekunde. Der Zähler
+  „Karte n von 12" darf mitzählen.
+- **Ankunft**: hinter der Karte geht ein Schein in ihrer Stufenfarbe auf (`.kt.ankunft::before`),
+  der Glanz läuft sofort einmal darüber, und 260 ms später stupst sie an (`.stups`).
+- Die Fahrt beginnt 160 ms nach dem Aufschlagen, wenn der Stapel fast steht.
+
 ### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
 
 Der Vorspann spricht jetzt dieselbe Sprache wie Gruß, Abschied und Registrierung:

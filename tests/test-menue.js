@@ -1237,7 +1237,7 @@ setTimeout(() => {
     /\.kt-bahn\{[\s\S]{0,400}scroll-snap-type:x mandatory;/.test(roh)
     && /\.kt\{[\s\S]{0,120}scroll-snap-align:center; scroll-snap-stop:always;/.test(roh)],
    ['Die Tiefe kommt aus --nah und geht ueber scale',
-    /scale:calc\(\.9 \+ \.1 \* var\(--nah, 1\)\);/.test(roh)
+    /scale:calc\(\(\.9 \+ \.1 \* var\(--nah, 1\)\) \* var\(--zoom, 1\)\);/.test(roh)
     && roh.includes("k.el.style.setProperty('--nah'")],
    /* Die Masse aendern sich beim Scrollen nicht. Sie bei jedem Bild
       abzufragen zwang den Browser, zwischen zwoelf Stil-Schreibungen
@@ -1494,11 +1494,23 @@ setTimeout(() => {
     roh.includes('function ktFlug(vonNr, bisNr, fertig){')
     && roh.includes('else ktFlug(1, _ktZeig, stups);')],
    ['Gerechnet, damit die Dauer an der Strecke haengt',
-    roh.includes('const dauer = Math.min(1000, 240 + weit * 70);')],
-   /* Mit 1-(1-t)^3 kroch das letzte Drittel, mit einer S-Kurve war
-      der Start traege. Quadratisch auslaufend trifft beides. */
-   ['Quadratisch auslaufend: gleich los, weich hin',
-    roh.includes('const kurve = t => t * (2 - t);')],
+    roh.includes('const dauer = Math.min(1350, 380 + weit * 80);')],
+   /* Seit 27.09.2026 in der Handschrift des Grusses: eigene Zeitkurve,
+      die Kamera zieht auf, der Titel verschwimmt, und angekommen geht
+      ein Schein auf. */
+   ['Zuegig los, lange weiche Landung', roh.includes('const zeit = kurve(.32, .04, .1, 1);')],
+   ['Die Kamera zieht auf und faehrt wieder heran',
+    roh.includes("bahn.style.setProperty('--zoom', (1 - tief * hub * hub).toFixed(4));")
+    && roh.includes('scale:calc((.9 + .1 * var(--nah, 1)) * var(--zoom, 1));')],
+   ['Bei der Ankunft steht der Zoom wieder auf 1', roh.includes("bahn.style.removeProperty('--zoom');")],
+   ['Der Titel verschwimmt waehrend der Fahrt',
+    roh.includes('#mkv.fahrt .kt-zeile b{ opacity:.28; filter:blur(5px);')],
+   ['Angekommen geht ein Schein in der Stufenfarbe auf',
+    roh.includes('.kt.ankunft::before{ animation:ktSchein') && roh.includes('radial-gradient(circle,var(--rf,#9A85E8) 0,transparent 62%)') && roh.includes('.kt::before{ content:""; position:absolute; left:50%; top:46%; width:150%;')],
+   ['Und der Glanz laeuft sofort einmal darueber',
+    roh.includes('.kt.vorn.ankunft .kt-glanz{ animation:ktGlanz 1.1s var(--ease-blend) 1 }')],
+   ['Weniger Bewegung: kein Schein, kein Sonderglanz',
+    roh.includes('.kt.ankunft::before, .kt.vorn.ankunft .kt-glanz{ animation:none }')],
    ['Aus einem Brief heraus steht die Karte sofort da',
     roh.includes('if(nr){ ktZeige(_ktZeig, false); stups(); }')],
    /* Im Hintergrund feuert requestAnimationFrame nicht — dort bliebe

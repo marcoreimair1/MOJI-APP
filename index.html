@@ -3076,7 +3076,9 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
      waehrend gewischt wird. Ein Uebergang wuerde bei jedem dieser Werte
      von vorne anfangen und dem Finger hinterherlaufen — genau das war
      das Ruckeln. Ohne ihn folgt die Groesse dem Scrollen unmittelbar. */
-  scale:calc(.9 + .1 * var(--nah, 1));
+  /* --zoom setzt ktFlug() waehrend der Fahrt: die Kamera zieht auf und
+     faehrt bei der Ankunft wieder heran. Ohne Fahrt ist es 1. */
+  scale:calc((.9 + .1 * var(--nah, 1)) * var(--zoom, 1));
   opacity:calc(.55 + .45 * var(--nah, 1));
 }
 /* Beim Wischen drehen sich die Karten leicht mit: die in der Mitte
@@ -3106,6 +3108,22 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
    ansieht. Uebrig bleiben Groesse und Deckkraft, und die kosten
    nichts. Am Ende drehen sich die Karten weich in ihre Winkel. */
 .kt-bahn.fliegt{ scroll-snap-type:none }
+/* ─── Die Fahrt, seit 27.09.2026 ─────────────────────────────────
+   Der Titel wechselte waehrend der Fahrt bei jeder Karte — zwoelf
+   Namen in einer Sekunde, das flackerte. Jetzt verschwimmt er, solange
+   gefahren wird, und stellt sich bei der Ankunft scharf. Der Zaehler
+   daneben darf mitzaehlen, das liest sich wie ein Zaehlwerk. */
+.kt-zeile b{ transition:opacity .5s var(--ease-out), filter .5s var(--ease-out) }
+#mkv.fahrt .kt-zeile b{ opacity:.28; filter:blur(5px); transition-duration:.18s }
+/* Bei der Ankunft geht hinter der Karte ein Schein in ihrer Stufenfarbe
+   auf, und der Glanz laeuft sofort einmal darueber, statt erst nach
+   einer Sekunde. Danach dreht sie sich an (.stups). */
+.kt::before{ content:""; position:absolute; left:50%; top:46%; width:150%; aspect-ratio:1;
+  translate:-50% -50%; border-radius:50%; pointer-events:none; z-index:-1; opacity:0;
+  background:radial-gradient(circle,var(--rf,#9A85E8) 0,transparent 62%) }
+.kt.ankunft::before{ animation:ktSchein 1.5s var(--ease-out) both }
+@keyframes ktSchein{ 0%{ opacity:0; transform:scale(.6) } 30%{ opacity:.65 } 100%{ opacity:0; transform:scale(1.15) } }
+.kt.vorn.ankunft .kt-glanz{ animation:ktGlanz 1.1s var(--ease-blend) 1 }
 .kt-bahn.fliegt .kt-dreh{ transform:none }
 .kt-bahn.fliegt .kt-glanz{ animation:none }
 .kt.um .kt-dreh{ transform:rotateY(180deg) }
@@ -3284,6 +3302,7 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
   .kt.stups .kt-dreh{ animation:none }
   .kt.vorn .kt-glanz{ animation:none }
   .kt-bahn{ scroll-snap-type:none }
+  .kt.ankunft::before, .kt.vorn.ankunft .kt-glanz{ animation:none }
 }
 
 /* Seitlich 16 px Luft für Schatten und die Drehung, die Karte selbst bleibt
@@ -6620,7 +6639,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0300';
+const APP_STAND = '2026-09-27-0345';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -11054,10 +11073,19 @@ function mkvFlug(auf){
 
    Gerechnet statt scrollTo({behavior:'smooth'}): der Browser nimmt
    sich dafuer dieselbe kurze Zeit, egal ob eine Karte oder elf
-   dazwischen liegen — ueber elf Karten waere das ein Zucken. Hier
-   dauert es je Karte ein Stueck laenger, hoechstens aber 1,25 s.
-   Die Kurve laeuft sanft aus, damit die letzte Karte nicht anschlaegt,
-   sondern sich hinlegt. */
+   dazwischen liegen — ueber elf Karten waere das ein Zucken.
+
+   Seit 27.09.2026 in der Handschrift des Grusses:
+   - die Zeit laeuft ueber kurve(.32, .04, .1, 1) — zuegig los, lange
+     weiche Landung, dieselbe Familie wie der Flug in die Leiste. Vorher
+     t·(2−t): quadratisch, am Ende noch mit Tempo;
+   - die Kamera zieht auf: alle Karten treten waehrend der Fahrt um bis
+     zu 11 % zurueck (--zoom, ueber sin², also ohne Ruck an den Enden)
+     und fahren bei der Ankunft wieder heran. Das kostet nichts: die
+     Groesse wird ohnehin in jedem Bild gesetzt;
+   - der Titel verschwimmt waehrend der Fahrt (#mkv.fahrt);
+   - angekommen, geht hinter der Karte ein Schein in ihrer Farbe auf und
+     der Glanz laeuft einmal darueber (.ankunft), dann erst das Anstupsen. */
 function ktFlug(vonNr, bisNr, fertig){
   const bahn = $('#kt-bahn');
   const ende = () => { if(fertig) fertig(); };
@@ -11076,31 +11104,39 @@ function ktFlug(vonNr, bisNr, fertig){
   if(!weit || still || !bahn.clientWidth || document.hidden){
     bahn.scrollLeft = b; kartenTiefe(); return ende();
   }
-  const dauer = Math.min(1000, 240 + weit * 70);
+  const dauer = Math.min(1350, 380 + weit * 80);
+  /* Wie weit die Kamera aufzieht: bei einer Karte kaum, ab zehn voll. */
+  const tief = Math.min(.11, .025 + weit * .009);
   /* Waehrend der Fahrt kein Einrasten: scroll-snap-type zieht bei
      jedem gesetzten scrollLeft zur naechsten Karte, und das kaempft
      gegen die gerechnete Bewegung — daher das Stocken. Und keine
      Uebergaenge auf der Drehung, die liefen der Fahrt hinterher. */
   bahn.classList.add('fliegt', 'wischt');
+  const mkv = $('#mkv');
+  if(mkv) mkv.classList.add('fahrt');
   bahn.scrollLeft = a;
   const start = performance.now();
-  /* Quadratisch auslaufend: gleich zuegig los, weich hin. Zwei andere
-     Kurven waren vorher dran. 1-(1-t)^3 kroch am Ende — in den letzten
-     400 ms bewegten sich noch 60 von 2650 px, und das liest sich als
-     Stocken. Eine S-Kurve legte dafuer einen traegen Start hin: in den
-     ersten 200 ms nur 45 px, und beim Aufschlagen soll es gleich
-     losgehen. */
-  const kurve = t => t * (2 - t);
+  const zeit = kurve(.32, .04, .1, 1);
   const landen = () => {
     bahn.scrollLeft = b;
+    bahn.style.removeProperty('--zoom');
     bahn.classList.remove('fliegt');
+    if(mkv) mkv.classList.remove('fahrt');
     setTimeout(() => bahn.classList.remove('wischt'), 60);
     kartenTiefe();
-    ende();
+    const v = $('.kt.vorn', bahn);
+    if(v){
+      v.classList.remove('ankunft'); void v.offsetWidth; v.classList.add('ankunft');
+      setTimeout(() => v.classList.remove('ankunft'), 1600);
+    }
+    /* Das Anstupsen kommt, wenn der Schein aufgegangen ist. */
+    setTimeout(ende, 260);
   };
   const bild = jetzt => {
     const p = Math.min(1, (jetzt - start) / dauer);
-    bahn.scrollLeft = a + (b - a) * kurve(p);
+    bahn.scrollLeft = a + (b - a) * zeit(p);
+    const hub = Math.sin(Math.PI * p);
+    bahn.style.setProperty('--zoom', (1 - tief * hub * hub).toFixed(4));
     kartenTiefe();               /* gleich hier, nicht ueber den Horcher */
     if(p < 1) requestAnimationFrame(bild);
     else landen();
@@ -11132,7 +11168,7 @@ function karteAuf(nr){
     };
     if(nr){ ktZeige(_ktZeig, false); stups(); }
     else ktFlug(1, _ktZeig, stups);
-  }, 60);
+  }, 160);
 }
 function karteZu(){
   const b = $('#mkv');
