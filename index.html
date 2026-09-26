@@ -689,10 +689,18 @@ body.nurhandy #splash,body.nurhandy #app,body.nurhandy .bg,body.nurhandy .grain{
 /* Die Huelle behaelt ihren Platz, das Zeichen darin kommt spaeter —
    so rueckt beim Erscheinen nichts. Sichtbar wird es erst, wenn es
    wirklich dekodiert ist, siehe playIntro(). */
+/* Seit 27.09.2026 in der Handschrift des Grusses: aus der Unschaerfe,
+   von leicht unten und etwas kleiner, ohne Ueberschwingen — dieselbe
+   Bewegung, mit der dort das Profilbild erscheint. Vorher wuchs es nur
+   und blendete auf. */
 .mark-wrap{position:relative;display:grid;place-items:center;
-  opacity:0;transform:scale(.82);
-  transition:opacity .55s var(--ease-out),transform .75s var(--ease-out)}
-.mark-wrap.da{opacity:1;transform:none}
+  opacity:0;transform:scale(.82)}
+.mark-wrap.da{opacity:1;transform:none;animation:markRein 1.25s var(--ease-out) both}
+@keyframes markRein{
+  0%{opacity:0;transform:translateY(22px) scale(.82);filter:blur(18px)}
+  55%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
 /* Das App-Symbol: tiefes Blau wie die App selbst, weiße Schrift darauf.
    Kein Gold hier — das Warme bleibt dem Slogan und dem Flimmern. */
 .mark-logo{position:relative;z-index:2;display:grid;place-items:center;
@@ -4530,35 +4538,74 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
 /* Einmal, wenn das Zeichen erscheint — nicht in Schleife. Der Vorspann
    ist ein Moment, keine Dauerschleife. */
 .mark-wrap.da .mark-glanz::after{
-  animation:kartenGlanz 1.4s .2s var(--ease) 1 both;
+  animation:kartenGlanz 1.4s .7s var(--ease) 1 both;
 }
 @keyframes kartenGlanz{
   0%,10%  { transform:rotate(45deg) translateX(-300%) }
   58%,100%{ transform:rotate(45deg) translateX(300%) }
 }
-/* ─── Der leise Ladebalken ───────────────────────────────────────
-   Er kuendigt nichts an und will nicht auffallen. Er ist da, damit
-   niemand meint, die App haenge. Darum duenn, schmal und in der
-   Textfarbe der Fassung: im Hellen ein Grau, im Dunkeln ein leises
-   Weiss — beides kommt aus --tx-rgb, also ohne eigene Farbe.
+/* ─── Licht und Schweben ─────────────────────────────────────────
+   Hinter dem Maennchen geht derselbe leise Schimmer auf wie hinter dem
+   Profilbild im Gruss (--licht-a, lichtAuf, lichtAtmen). Steht es,
+   schwebt es fuenf Pixel auf und ab — ueber translate, weil transform
+   dem Auftritt gehoert. */
+.mark-licht{
+  position:absolute; left:50%; top:50%; width:170%; aspect-ratio:1; z-index:0;
+  translate:-50% -50%; border-radius:50%; pointer-events:none; opacity:0;
+  background:radial-gradient(circle,rgba(var(--butter-rgb),var(--licht-a)) 0,
+    rgba(var(--butter-rgb),calc(var(--licht-a)*.45)) 30%,transparent 62%);
+}
+.mark-wrap.da .mark-licht{ opacity:1;
+  animation:lichtAuf 1.7s .05s var(--ease-out) both, lichtAtmen 3.4s 1.7s ease-in-out infinite alternate }
+.mark-wrap.da .mark-logo{ animation:markSchweben 4.2s 1.3s ease-in-out infinite alternate }
+@keyframes markSchweben{ to{ translate:0 -5px } }
 
-   Er zeigt den echten Start, keine Uhr: bis zur Haelfte laeuft er von
-   selbst (dort erscheint das Zeichen), dann bis 86 %, und die letzten
-   Prozent erst, wenn eine Ansicht wirklich steht. */
+/* ─── Die Lichtspur ──────────────────────────────────────────────
+   Bis 26.09.2026 ein leiser grauer Strich in der Textfarbe, der nicht
+   auffallen wollte. Jetzt spricht er dieselbe Sprache wie der
+   Lichtstreif um das Profilbild: ein Schweif in der Markenfarbe, der
+   nach hinten ausläuft, ein weisser Funke mit Hof als Kopf, und ein
+   Glanz, der durch die Spur wandert. Ist sie voll, leuchtet der Funke
+   einmal auf (.voll, gesetzt von balkenZug()).
+
+   Er zeigt weiter den echten Start, keine Uhr: bis zur Haelfte laeuft
+   er von selbst (dort erscheint das Zeichen), dann bis 86 %, und die
+   letzten Prozent erst, wenn eine Ansicht wirklich steht. */
 .sp-lade{
-  width:min(38vw,132px); height:2px; margin-top:30px;
-  border-radius:99px; overflow:hidden;
-  background:rgba(var(--tx-rgb),.12);
+  position:relative; width:min(42vw,150px); height:3px; margin-top:34px;
+  border-radius:99px; overflow:visible;
+  background:rgba(var(--tx-rgb),.09);
   opacity:0; transition:opacity .5s var(--ease-out);
 }
 .sp-lade.da{ opacity:1 }
 .sp-lade i{
-  display:block; width:0; height:100%; border-radius:inherit;
-  background:rgba(var(--tx-rgb),.45);
+  position:relative; display:block; width:0; height:100%; border-radius:inherit;
+  background:linear-gradient(90deg,rgba(var(--butter-rgb),0),rgba(var(--butter-rgb),.5) 55%,var(--butter-2));
   transition:width 1s cubic-bezier(.24,.68,.32,1);
 }
+/* Der Glanz in der Spur: ein heller Fleck, der von hinten nach vorn
+   laeuft, immer wieder — das Laden lebt, auch wenn die Spur steht. */
+.sp-lade i::before{
+  content:""; position:absolute; inset:0; border-radius:inherit; overflow:hidden;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent) no-repeat;
+  background-size:45% 100%;
+  animation:spurGlanz 1.7s ease-in-out infinite;
+}
+@keyframes spurGlanz{ from{ background-position:-80% 0 } to{ background-position:180% 0 } }
+/* Der Kopf: weisser Funke mit violettem Hof, der leise pulsiert. */
+.sp-lade i::after{
+  content:""; position:absolute; right:-3.5px; top:50%; width:7px; height:7px; margin-top:-3.5px;
+  border-radius:50%; background:#fff;
+  box-shadow:0 0 6px 2px rgba(var(--butter-rgb),.7),0 0 16px 5px rgba(var(--butter-rgb),.28);
+  animation:funkePuls 1.5s ease-in-out infinite;
+}
+@keyframes funkePuls{ 50%{ transform:scale(.72); opacity:.8 } }
+.sp-lade.voll i::after{ animation:funkeBlitz .7s var(--ease-out) forwards }
+@keyframes funkeBlitz{ 35%{ transform:scale(1.9); opacity:1 } 100%{ transform:scale(1); opacity:.9 } }
 @media (prefers-reduced-motion:reduce){
   .mark-glanz{ display:none!important }
+  .mark-wrap.da, .mark-wrap.da .mark-logo, .mark-wrap.da .mark-licht,
+  .sp-lade i::before, .sp-lade i::after{ animation:none }
 }
 
 /* ─── Die Kurve fuer Ueberblendungen ─────────────────────────────
@@ -5325,6 +5372,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
            Was bleibt, ist die Bewegung: ueber das Maennchen wandert ein
            Glanz wie ueber eine Metallkarte, von links oben nach rechts
            unten. Er ist auf die Silhouette maskiert, siehe .mark-glanz. -->
+      <i class="mark-licht" aria-hidden="true"></i>
       <span class="mark-logo">
         <img class="mark-img" id="mark-img" alt="MOJI">
         <i class="mark-glanz" id="mark-glanz" aria-hidden="true"></i>
@@ -6572,7 +6620,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0215';
+const APP_STAND = '2026-09-27-0300';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7652,6 +7700,12 @@ function balkenZug(stufe, ms, auf){
   b.style.transitionDuration = ms + 'ms';
   void b.offsetWidth;      /* sonst fasst der Browser beide Zuege zusammen */
   b.style.width = auf;
+  /* Angekommen leuchtet der Funke einmal auf. */
+  if(auf === '100%'){
+    const voll = () => { const l = $('#sp-lade'); if(l) l.classList.add('voll'); };
+    b.addEventListener('transitionend', voll, { once:true });
+    setTimeout(voll, ms + 60);   /* falls transitionend ausbleibt */
+  }
 }
 
 /* ═══ Bausteine fuer den PDF-Export ═════════════════════════════════

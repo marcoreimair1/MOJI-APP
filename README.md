@@ -582,6 +582,23 @@ nahm `body.locked` weg — während der Gruß noch 0,62 s aufblendete. In dieser
 Kalender und Leiste durch das halb sichtbare Profilbild. Bei der Übergabe passiert beides jetzt
 erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält das fest.
 
+### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
+
+Der Vorspann spricht jetzt dieselbe Sprache wie Gruß, Abschied und Registrierung:
+
+- **Das Männchen kommt aus der Unschärfe** (`markRein`) — von leicht unten, etwas kleiner,
+  ohne Überschwingen, dieselbe Bewegung wie das Profilbild im Gruß. Vorher wuchs es nur und
+  blendete auf.
+- **Dahinter derselbe leise Schimmer** (`.mark-licht`, `--licht-a`, `lichtAuf`/`lichtAtmen`),
+  und steht es, schwebt es fünf Pixel (`markSchweben`, über `translate`).
+- **Der Glanz** wandert weiter einmal über die Silhouette, jetzt erst, wenn sie scharf ist (0,7 s).
+- **Der Ladebalken ist eine Lichtspur** wie der Lichtstreif um das Profilbild: ein Schweif in
+  der Markenfarbe, der nach hinten ausläuft, ein weißer Funke mit violettem Hof als Kopf
+  (`.sp-lade i::after`, pulsiert leise), und ein Glanz, der durch die Spur wandert
+  (`spurGlanz`). Kommt er bei 100 % an, leuchtet der Funke einmal auf — `balkenZug()` setzt
+  dafür `.voll`, nach `transitionend` oder spätestens nach der Zugdauer. Die Schiene darunter
+  bleibt in der Textfarbe der Fassung. Was er anzeigt, ist unverändert der echte Start.
+
 ### Der Auftritt des Grußes *(26. September 2026)*
 
 Vorher federte das Profilbild mit einer Drehung herein, der Text blendete auf, und nach 2,35 s

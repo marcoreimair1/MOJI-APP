@@ -29,7 +29,8 @@ ok('Notbremse liegt hinter beiden', INTRO_MAX > INTRO_LANG, INTRO_MAX);
 /* ── 2 · Auf dem Vorspann stehen das Maennchen und ein leiser Balken ──
    Wortmarke und Slogan sind am 14.09.2026 entfallen. Der Balken kam
    zurueck, nachdem der Vorspann ohne ihn wie ein Haenger aussah. */
-ok('Der leise Balken ist da',     !!document.querySelector('#splash .sp-lade #sp-bar'));
+ok('Die Lichtspur ist da',        !!document.querySelector('#splash .sp-lade #sp-bar'));
+ok('Das Licht liegt hinter dem Maennchen', !!document.querySelector('#splash .mark-wrap > .mark-licht'));
 ok('Und steht im gesicherten Markup', INTRO_HTML.indexOf('sp-bar') > -1);
 ok('Das Bild liegt im Vorspann',  !!document.querySelector('#splash .mark-logo #mark-img'));
 ok('Der Glanz liegt darueber',    !!document.querySelector('#splash .mark-logo #mark-glanz'));
@@ -243,12 +244,25 @@ setTimeout(() => {
     /\.mark-logo\{[\s\S]{0,260}box-shadow:none!important/],
    ['Weniger Bewegung schaltet den Glanz ab',
     /prefers-reduced-motion:reduce\)\{\s*\n\s*\.mark-glanz\{ display:none!important \}/],
-   /* Der Balken traegt keine eigene Farbe: im Hellen Grau, im Dunkeln
-      ein leises Weiss — beides aus --tx-rgb. */
-   ['Der Balken nimmt die Textfarbe der Fassung',
-    /\.sp-lade i\{[\s\S]{0,220}background:rgba\(var\(--tx-rgb\),\.45\)/],
-   ['Und bleibt duenn und schmal',
-    /\.sp-lade\{[\s\S]{0,120}width:min\(38vw,132px\); height:2px/],
+   /* Seit 27.09.2026 eine Lichtspur statt eines grauen Strichs: Schweif
+      in der Markenfarbe, Funke als Kopf, Glanz in der Spur. Die Schiene
+      darunter nimmt weiter die Textfarbe der Fassung. */
+   ['Die Schiene nimmt die Textfarbe der Fassung',
+    /\.sp-lade\{[\s\S]{0,200}background:rgba\(var\(--tx-rgb\),\.09\)/],
+   ['Die Spur laeuft als Schweif in der Markenfarbe aus',
+    /\.sp-lade i\{[\s\S]{0,200}linear-gradient\(90deg,rgba\(var\(--butter-rgb\),0\)/],
+   ['Der Kopf ist ein weisser Funke mit Hof',
+    /\.sp-lade i::after\{[\s\S]{0,200}background:#fff;[\s\S]{0,120}box-shadow:0 0 6px 2px rgba\(var\(--butter-rgb\)/],
+   ['Ein Glanz wandert durch die Spur', /\.sp-lade i::before\{[\s\S]{0,300}animation:spurGlanz/],
+   ['Angekommen leuchtet der Funke auf', /\.sp-lade\.voll i::after\{ animation:funkeBlitz/],
+   ['Und balkenZug meldet die Ankunft', /if\(auf === '100%'\)\{[\s\S]{0,200}classList\.add\('voll'\)/],
+   ['Das Maennchen kommt aus der Unschaerfe wie das Profilbild',
+    /@keyframes markRein\{\s*0%\{opacity:0;transform:translateY\(22px\) scale\(\.82\);filter:blur\(18px\)\}/],
+   ['Dahinter derselbe leise Schimmer wie im Gruss',
+    /\.mark-wrap\.da \.mark-licht\{[\s\S]{0,80}lichtAuf [\s\S]{0,60}lichtAtmen/],
+   ['Es schwebt ueber translate, nicht transform', /@keyframes markSchweben\{ to\{ translate:0 -5px \} \}/],
+   ['Weniger Bewegung: kein Auftritt, keine Spur-Effekte',
+    /\.mark-wrap\.da, \.mark-wrap\.da \.mark-logo, \.mark-wrap\.da \.mark-licht,\s*\n\s*\.sp-lade i::before, \.sp-lade i::after\{ animation:none \}/],
    ['Der Glanz laeuft genau einmal',
     /\.mark-wrap\.da \.mark-glanz::after\{[\s\S]{0,120}kartenGlanz [\d.]+s [\d.]+s var\(--ease\) 1 both/],
    ['Das Zeichen ist erst mit dem Vermerk zu sehen',
