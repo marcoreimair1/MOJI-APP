@@ -778,6 +778,21 @@ Kante (99,8 % der Kachel weg, das Männchen mit), dann blockierte der helle Ring
 (nur die Ecken weg). Weiß und die blasse Kachel sind beide entsättigt — über Farbe allein
 lassen sie sich nicht trennen.
 
+**Seit 26. September 2026 ist das ein neues Bild**, und das Herausrechnen ist Geschichte. Es war
+nie ganz sauber: der weiße Rand franste aus, auf dunklem Grund blieb ein grauer Saum, und die
+Farben waren blass, weil ein Teil der Kachel mit in den Körper gerechnet war. Das neue kommt
+freigestellt aus der Vorlage — satte Farben, feine Körnung, ein dünner grauer Umriss um den
+weißen Rand. Das alte schnitt außerdem den Rand unten links ab; das neue zeigt den ganzen
+Sticker.
+
+Es ist **in dasselbe Verhältnis 385:315 eingepasst**, mittig mit transparentem Rand. Dieses
+Verhältnis steht an fünf Stellen fest im CSS (`aspect-ratio`), und so gilt es überall weiter, ohne
+dass eine Regel angefasst werden musste — im Vorspann, am Osterei, im Postfach, in den
+Blattmarken. **578 × 473 Pixel**, weil der Vorspann das Bild bei 141 bis 173 px zeigt; auf einem
+dreifachen Schirm sind das bis zu 519 Pixel. Die Körnung komprimiert schlecht: 32 KB bei
+WebP-Qualität 78 statt 10 KB — aber 78 ist von 90 im direkten Vergleich nicht zu unterscheiden,
+und 90 hätte 56 KB gekostet.
+
 ### Serien — ein Zeitraum ist mehr als seine Tage
 
 Ein Zeitraum schrieb bisher jeden Tag einzeln in `ME.events`; dass sie zusammengehören, stand
