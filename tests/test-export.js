@@ -216,41 +216,51 @@ ok('Ohne Strich kein Bild',        sigBild() === null);
 sigAuf(); go('v-cal');
 ok('Die Ansicht zu wechseln beendet es', !document.body.classList.contains('sigmodus'));
 
-/* ── Das Warten beim Export ── */
-const ov = exOverlay();
-const ring = document.querySelector('.exring');
-ok('Es gibt einen Ladekreis',      !!ring && ring.querySelectorAll('circle').length === 2);
-ok('Mit MOJI darin',
-   (document.querySelector('.exmoji img').getAttribute('src') || '').indexOf('data:image/webp') === 0);
-ok('Und einem Glanz darueber',     !!document.querySelector('.exglanz2'));
+/* ── Das Warten beim Export: ein Blatt, das sich schreibt ──
+   Seit 27.09.2026. Vorher schloss sich ein Ring um das Maennchen. */
+SIG_BILD = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+const ov = exOverlay(1);
+ok('Die Buehne liegt ueber dem ganzen Schirm', ov.el.parentElement === document.body);
+ok('Auf der Farbflaeche der App', !!ov.el.querySelector('.exd-grund.aurahg'));
+ok('In der Mitte steht ein Blatt', !!ov.el.querySelector('.exstapel .exblatt.vorn'));
+ok('Bei einem Monat ohne Blaetter dahinter', !ov.el.querySelector('.exblatt.h1'));
+ok('Mit MOJI als Briefkopf',
+   (ov.el.querySelector('.exb-kopf .exmoji img').getAttribute('src') || '').indexOf('data:image/webp') === 0);
+ok('Und einer Tabelle, die sich fuellt', ov.el.querySelectorAll('.exb-zeilen .exz b').length === 10);
+ok('Sie faengt leer an', parseFloat(ov.el.querySelector('.exz b').style.width) === 0,
+   ov.el.querySelector('.exz b').style.width);
+ok('Die eigene Unterschrift steht darauf', ov.el.querySelector('#ex-sig').getAttribute('src') === SIG_BILD);
+ok('Noch nicht geschrieben', ov.el.querySelector('.exb-sig').style.getPropertyValue('--s') === '0.000');
+ok('Das Siegel wartet auf den Schluss', !!ov.el.querySelector('.exb-siegel svg'));
+ok('Darunter die Lichtspur', !!ov.el.querySelector('.exspur i'));
 ok('Der Text sagt, was passiert',
    document.getElementById('ex-ov-t').textContent === 'Deine Arbeitszeit wird geschrieben …',
    document.getElementById('ex-ov-t').textContent);
 ok('Darunter steht die Zahl',      document.getElementById('ex-ov-s').textContent === '0 %',
    document.getElementById('ex-ov-s').textContent);
-ok('Der Kreis faengt leer an',
-   Math.abs(parseFloat(document.querySelector('.exring-an').style.strokeDashoffset)
-            - parseFloat(document.querySelector('.exring-an').style.strokeDasharray)) < 0.01,
-   document.querySelector('.exring-an').style.strokeDashoffset);
 ov.finish('PDF erstellt · 1 Seite', 'datei.pdf');
-ok('Fertig schliesst den Kreis',   document.querySelector('.qdone').classList.contains('fertig'));
+ok('Fertig stempelt das Siegel',   document.querySelector('.exdone').classList.contains('fertig'));
 ok('Und nennt die Datei',          document.getElementById('ex-ov-s').textContent === 'datei.pdf');
 ok('Ohne Ziffernsperrung',         !document.getElementById('ex-ov-s').classList.contains('expro'));
 ov.stop(); ov.el.remove();
+/* Mehrere Monate: der Stapel dahinter, hoechstens zwei Blaetter. */
+SIG_BILD = null;
+const ov3 = exOverlay(5);
+ok('Bei mehreren Monaten liegen Blaetter dahinter',
+   ov3.el.querySelectorAll('.exblatt.h1, .exblatt.h2').length === 2);
+ok('Ohne Unterschrift kein leeres Bild', !ov3.el.querySelector('#ex-sig'));
+ov3.stop(); ov3.el.remove();
 
-/* ── Das lebende Maennchen im Ladekreis ──
+/* ── Das lebende Maennchen auf dem Blatt ──
    Ohne die Datei bleibt es beim Standbild aus dem Quelltext — das ist
    der Fall gerade eben. Liegt sie vor, tritt sie an seine Stelle. */
 _lebtDa = true;
 const ov2 = exOverlay();
-const m2 = document.querySelector('.exmoji');
+const m2 = ov2.el.querySelector('.exmoji');
 ok('Liegt die Datei vor, bewegt es sich',
    (m2.querySelector('img').getAttribute('src') || '') === 'moji-leben.webp',
    m2.querySelector('img').getAttribute('src'));
 ok('Und die Kachel weiss davon',   m2.classList.contains('lebt'));
-ok('Der Glanz bekommt die kleine Maske',
-   (m2.querySelector('.exglanz2').style.getPropertyValue('--moji-maske') || '').length < 4000,
-   String((m2.querySelector('.exglanz2').style.getPropertyValue('--moji-maske') || '').length));
 ov2.stop(); ov2.el.remove();
 /* Das Aufmachen der Exportseite stoesst das Laden an. */
 _lebtDa = false;
@@ -315,27 +325,28 @@ setTimeout(() => {
    ['Kein Glas mehr beim Export',       !/\.exglas\{/.test(roh)],
    ['Keine Wellen, keine Blasen',       !/@keyframes exwave/.test(roh) && !/@keyframes exbub/.test(roh)],
    ['Und kein Prost',                   !/Prost!/.test(roh)],
-   ['Der Kreis laeuft ueber den Umfang',
-    /strokeDashoffset = \(EX_U \* \(1 - stand \/ 100\)\)/.test(roh)],
-   ['Der Glanz nimmt das Maennchen als Maske',
-    /\.exglanz2\{[\s\S]{0,200}mask-image:var\(--moji-maske\)/.test(roh)],
+   /* ─── Das Blatt, seit 27.09.2026 ─────────────────────────────── */
+   ['Kein Ladekreis mehr', !/\.exring\{/.test(roh) && !/const EX_U/.test(roh)],
+   ['Und keine Schnittmaske, die niemand mehr braucht', !/const MOJI_MASKE/.test(roh)],
+   ['Das Blatt kommt aus der Unschaerfe wie das Profilbild',
+    /\.exblatt\.vorn\{[\s\S]{0,120}animation:halloBild 1\.25s/.test(roh)],
+   ['Die Zeilen fuellen sich von 4 bis 80, die Unterschrift bis 97',
+    /const ZEILEN_AB = 4, ZEILEN_BIS = 80, SIG_BIS = 97;/.test(roh)],
+   ['Die Unterschrift wird von links nach rechts freigelegt',
+    /clip-path:inset\(0 calc\(\(1 - var\(--s, 0\)\) \* 100%\) 0 0\)/.test(roh)],
+   ['Ein Funke schreibt die Zeile', /\.exz\.schreibt b::after\{opacity:1\}/.test(roh)],
+   ['Fertig stempelt sich das Siegel', /\.exdone\.fertig \.exb-siegel\{animation:exStempel/.test(roh)],
+   ['Und eine Lichtwelle geht vom Blatt aus, nicht zu weit',
+    /\.exdone\.fertig \.exwelle\{animation:exWelle /.test(roh) && /@keyframes exWelle\{[^}]*\}[^}]*\}[^}]*scale\(1\.28\)/.test(roh)],
+   ['Die Buehne blendet weich aus', /await ov\.weg\(\);/.test(roh) && /\.exdone\.weg\{animation:halloWeg/.test(roh)],
+   ['Der Stapel zaehlt die Monate mit', /const ov = exOverlay\(list\.length\), t0 = performance\.now\(\);/.test(roh)],
    /* ─── Das lebende Maennchen, seit 15.09.2026 ─────────────────── */
-   ['Der Ladekreis kennt die bewegte Fassung',
+   ['Das Blatt kennt die bewegte Fassung',
     /const MOJI_LEBT\s+= 'moji-leben\.webp';/.test(roh)],
-   ['Und eine eigene, kleine Maske dafuer',
-    /const MOJI_MASKE = 'data:image\/webp;base64,[A-Za-z0-9+/=]{800,4000}';/.test(roh)],
    ['Getauscht wird nicht mitten im Warten',
     /const lebt = _lebtDa && !ruhigGestellt\(\);/.test(roh)],
    ['Wer Bewegung abbestellt hat, bekommt das Standbild',
     /function lebenVorladen\(\)\{\s*\n\s*if\(_lebtDa \|\| ruhigGestellt\(\)\) return;/.test(roh)],
-   ['Die Kachel waechst im selben Verhaeltnis mit',
-    /\.exmoji\.lebt\{ width:84px; aspect-ratio:237\/227; animation:none \}/.test(roh)],
-   ['Und der Koerper sitzt nicht zu hoch im Ring',
-    /\.exmoji\.lebt img\{ transform:translateY\(2\.6%\) \}/.test(roh)],
-   ['Zweimal atmen waere einmal zu viel',
-    /\.exmoji\.lebt\{[^}]*animation:none/.test(roh)],
-   ['Der Hupfer am Schluss bleibt',
-    /\.exdone\.fertig \.exmoji\.lebt\{ animation:exHuepf/.test(roh)]
   ].forEach(([n, re]) => {
     const gut = (typeof re === 'boolean') ? re : re.test(roh);
     E.push({ n, ok: gut, z: gut ? '' : 'Regel fehlt' });

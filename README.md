@@ -582,6 +582,27 @@ nahm `body.locked` weg — während der Gruß noch 0,62 s aufblendete. In dieser
 Kalender und Leiste durch das halb sichtbare Profilbild. Bei der Übergabe passiert beides jetzt
 erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält das fest.
 
+### Das Blatt, das sich schreibt — beim Export *(27. September 2026)*
+
+Nach dem Signieren entsteht das PDF vor den Augen: `exOverlay(seiten)` legt eine Bühne über
+den ganzen Schirm (die Farbfläche der App, `.exd-grund.aurahg`), und in der Mitte entsteht ein
+Blatt. Vorher lag eine Fläche über der Exportkachel, ein Ring schloss sich um das Männchen.
+
+- Das **Blatt** kommt aus der Unschärfe wie das Profilbild im Gruß (`halloBild`). Bei mehreren
+  Monaten liegen ein oder zwei Blätter dahinter, leicht gedreht.
+- Oben das **lebende Männchen als Briefkopf** (`moji-leben.webp`, sonst das Standbild).
+- Die **Tabelle** füllt sich im Takt des echten Fortschritts: zehn Zeilen zwischen 4 und 80 %,
+  an der Zeile, die gerade geschrieben wird, sitzt ein Funke (`.exz.schreibt`).
+- Zwischen 80 und 97 % wird die **eigene Unterschrift** (`SIG_BILD`) von links nach rechts
+  freigelegt (`clip-path` über `--s`), mit einem Lichtpunkt an der Feder, der über die echte
+  Breite des Bilds läuft (`--sb`).
+- Darunter die **Lichtspur** aus dem Vorspann und die Prozentzahl.
+- **Fertig**: ein Siegel mit Haken stempelt sich auf die Ecke (`exStempel`), eine Lichtwelle in
+  der Form des Blatts läuft ein Stück hinaus (`exWelle`, bis 1,28 — mit 1,8 stand sie als
+  Rahmen um den halben Schirm), ein Glanz läuft darüber, dann Dateiname, PDF, und die Bühne
+  blendet weich aus (`ov.weg()`).
+- `MOJI_MASKE` und der Ladekreis sind raus.
+
 ### Die Fahrt durch den Kartenstapel *(neu am 27. September 2026)*
 
 Tippt man im Profilmenü auf **Karten**, fährt der Stapel von der ersten bis zur aktuellen Karte

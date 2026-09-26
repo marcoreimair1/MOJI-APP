@@ -3603,89 +3603,126 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
   text-decoration-color:var(--line);transition:.2s;padding:4px 0}
 .linkbtn:hover{color:var(--butter);text-decoration-color:var(--butter-dim)}
 .linkbtn:disabled{opacity:.35;cursor:not-allowed}
-/* ─── Beim Export: MOJI im Ladekreis ──────────────────────────────
-   Frueher fuellte sich hier ein Glas mit goldener Fluessigkeit. Das war
-   huebsch gebaut und hatte mit Arbeitszeit nichts zu tun. Jetzt steht da,
-   worum es geht: das Maennchen, freigestellt, ein Lichtband darueber und
-   ein Ring, der sich schliesst. */
-.exring{position:relative;width:138px;height:138px;margin:6px auto 4px;
-  display:grid;place-items:center}
-.exring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.exring circle{fill:none;stroke-linecap:round;stroke-width:5}
-.exring-bg{stroke:rgba(var(--tx-rgb),.10)}
-.exring-an{stroke:url(#exring-farbe);stroke-dashoffset:0;
-  filter:drop-shadow(0 0 7px rgba(var(--marke-rgb),.42))}
-/* Farbverlaeufe im SVG nehmen keine Attribute mit var() — das muss ueber
-   CSS kommen, dort loest sich die Variable auf. */
-.exring stop.s1{stop-color:var(--butter-2)}
-.exring stop.s2{stop-color:var(--butter)}
-/* Der Ring dreht sich ganz langsam mit, damit der Kopf nicht stillsteht,
-   waehrend nichts passiert. */
-.exring svg{animation:exDreh 9s linear infinite}
-@keyframes exDreh{to{transform:rotate(270deg)}}
-.exmoji{position:relative;display:block;width:78px;aspect-ratio:385/315;z-index:2;
-  animation:exAtmen 3.4s var(--ease) infinite}
-.exmoji img{width:100%;height:100%;object-fit:contain;display:block}
-@keyframes exAtmen{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-/* ─── Wenn das Maennchen lebt ────────────────────────────────────
-   Die Einzelbilder tragen oben und unten Luft fuer die Schwungstriche
-   und haben darum einen flacheren Rahmen als das Standbild: 237 zu 227
-   statt 385 zu 315. Damit das Maennchen trotzdem gleich gross im Kreis
-   steht, waechst die Kachel im selben Verhaeltnis mit. Nachgerechnet:
-   der Koerper misst in den Einzelbildern im Schnitt 218 von 237
-   Punkten, im Standbild 381 von 385 — 78 · (237 · 381/218) / 385 = 84.
+/* ─── Beim Export: das Blatt, das sich schreibt ─────────────────────
+   Seit 27.09.2026 in der Handschrift des Grusses. Vorher lag eine
+   Flaeche ueber der Exportkachel, ein Ring schloss sich um das
+   Maennchen, und eine Zahl zaehlte. Jetzt geht ueber den ganzen Schirm
+   die Farbflaeche der App auf, und in der Mitte entsteht das, was
+   gerade entsteht: ein Blatt.
 
-   Der Koerper steht in den Einzelbildern auf einer Grundlinie bei 84,6
-   Prozent der Rahmenhoehe, sitzt also etwas ueber der Mitte. Ohne den
-   Versatz haenge er im Ring zu hoch. */
-.exmoji.lebt{ width:84px; aspect-ratio:237/227; animation:none }
-.exmoji.lebt img{ transform:translateY(2.6%) }
-/* Das Atmen steckt jetzt in den Bildern selbst — zweimal atmen waere
-   einmal zu viel. Der Hupfer am Schluss bleibt, der ist ein Moment. */
-.exdone.fertig .exmoji.lebt{ animation:exHuepf .82s var(--ease-out) }
-/* Der Glanz wandert ueber das Maennchen — dieselbe Machart wie im
-   Vorspann: das Bild ist die Maske, das Lichtband liegt darin. Hier
-   allerdings in Schleife, es ist ja ein Warten und kein Moment. */
-.exglanz2{position:absolute;inset:0;overflow:hidden;pointer-events:none;display:none;
-  -webkit-mask-image:var(--moji-maske);mask-image:var(--moji-maske);
-  -webkit-mask-size:contain;mask-size:contain;
-  -webkit-mask-position:center;mask-position:center;
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-@supports ((-webkit-mask-image:linear-gradient(#000,#000)) or (mask-image:linear-gradient(#000,#000))){
-  .exglanz2{display:block}
+   Es kommt aus der Unschaerfe wie das Profilbild im Gruss. Oben steht
+   das lebende Maennchen als Briefkopf, darunter fuellt sich die
+   Tabelle Zeile fuer Zeile — ein Funke schreibt jede von links nach
+   rechts, im Takt des echten Fortschritts. Zuletzt wird die eigene
+   Unterschrift unten aufs Blatt geschrieben, von links nach rechts,
+   mit einem Lichtpunkt an der Feder. Fertig, stempelt sich ein Siegel
+   auf die Ecke, eine Lichtwelle geht vom Blatt aus und ein Glanz
+   laeuft darueber.
+
+   Bei mehreren Monaten liegen hinter dem Blatt ein oder zwei weitere —
+   der Stapel zeigt, dass es mehr als eine Seite wird. */
+.exdone{position:fixed;inset:0;z-index:60;display:grid;place-items:center;border-radius:0;
+  background:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+  animation:qdoneIn .5s var(--ease-blend)}
+.exd-grund{position:absolute;inset:0;z-index:0}
+.exdone > .qd-in{position:relative;z-index:1;gap:14px}
+.exdone.weg{animation:halloWeg .55s var(--ease-blend) forwards}
+.exdone .qd-in b{animation-delay:.45s}
+.exdone .qd-in small{animation-delay:.6s}
+
+.exstapel{position:relative;width:min(56vw,214px);aspect-ratio:210/297;margin:0 auto 14px}
+.exlicht{position:absolute;left:50%;top:50%;width:200%;aspect-ratio:1;translate:-50% -50%;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(var(--butter-rgb),var(--licht-a)) 0,
+    rgba(var(--butter-rgb),calc(var(--licht-a)*.45)) 30%,transparent 62%);
+  animation:lichtAuf 1.7s .1s var(--ease-out) both, lichtAtmen 3.4s 1.8s ease-in-out infinite alternate}
+.exblatt{position:absolute;inset:0;border-radius:9px;background:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 30px 60px -26px rgba(var(--s-schatten),.75),
+    0 0 0 1px rgba(25,11,36,.06)}
+/* Die Blaetter dahinter: leicht gedreht und versetzt, sie kommen kurz
+   nach dem vorderen. */
+.exblatt.h1{transform:translate(9px,-7px) rotate(3.2deg);opacity:.92;
+  animation:exHinten 1s .3s var(--ease-out) both}
+.exblatt.h2{transform:translate(-8px,-12px) rotate(-3.6deg);opacity:.8;
+  animation:exHinten 1s .42s var(--ease-out) both}
+@keyframes exHinten{from{opacity:0;transform:none}}
+.exblatt.vorn{overflow:hidden;display:flex;flex-direction:column;padding:9% 9% 8%;
+  animation:halloBild 1.25s .12s var(--ease-out) both}
+/* Briefkopf: das Maennchen und zwei Zeilen fuer Name und Monat. */
+.exb-kopf{display:flex;align-items:center;gap:8%;margin-bottom:9%}
+.exb-kopf .exmoji{width:26%;aspect-ratio:385/315;flex:none}
+.exb-kopf .exmoji.lebt{aspect-ratio:237/227}
+.exb-kopf .exmoji img{width:100%;height:100%;object-fit:contain;display:block}
+.exb-kopf span{flex:1;display:flex;flex-direction:column;gap:6px}
+.exb-kopf span i{display:block;height:5px;border-radius:9px;width:var(--w);background:rgba(25,11,36,.16)}
+.exb-kopf span i:first-child{height:7px;background:rgba(25,11,36,.3)}
+/* Die Tabelle: jede Zeile eine Schiene, die sich fuellt. Wie weit,
+   setzt exOverlay() in jedem Bild als Breite. */
+.exb-zeilen{display:flex;flex-direction:column;gap:7.5%;flex:1}
+.exz{position:relative;display:block;height:4px;border-radius:9px;width:var(--w);
+  background:rgba(25,11,36,.05)}
+.exz b{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;
+  background:linear-gradient(90deg,rgba(25,11,36,.2),rgba(25,11,36,.3))}
+/* Der Funke am Kopf der Zeile, die gerade geschrieben wird. */
+.exz b::after{content:"";position:absolute;right:-3px;top:50%;width:6px;height:6px;margin-top:-3px;
+  border-radius:50%;background:#fff;opacity:0;
+  box-shadow:0 0 5px 2px rgba(var(--butter-rgb),.8),0 0 12px 4px rgba(var(--butter-rgb),.3)}
+.exz.schreibt b::after{opacity:1}
+.exz.schreibt b{background:linear-gradient(90deg,rgba(25,11,36,.2),rgba(var(--butter-rgb),.55))}
+/* Die Unterschrift: das echte Bild, von links nach rechts freigelegt. */
+.exb-sig{position:relative;height:17%;margin-top:6%;display:flex;align-items:flex-end}
+.exb-sig img{position:absolute;left:4%;bottom:14%;height:92%;max-width:58%;object-fit:contain;
+  clip-path:inset(0 calc((1 - var(--s, 0)) * 100%) 0 0)}
+.exb-linie{display:block;width:58%;height:1px;background:rgba(25,11,36,.28)}
+/* Der Lichtpunkt laeuft ueber die echte Breite des Bilds (--sb), sonst
+   liefe er bei einer kurzen Unterschrift der Tinte voraus. */
+.exb-sig::after{content:"";position:absolute;bottom:40%;left:calc(4% + var(--s, 0) * var(--sb, 66%));
+  width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff;opacity:0;
+  box-shadow:0 0 5px 2px rgba(var(--butter-rgb),.8),0 0 12px 4px rgba(var(--butter-rgb),.3)}
+.exb-sig.schreibt::after{opacity:1}
+/* Das Siegel: stempelt sich zum Schluss auf die Ecke. */
+.exb-siegel{position:absolute;right:7%;bottom:6%;width:21%;aspect-ratio:1;border-radius:50%;
+  display:grid;place-items:center;background:var(--butter);color:#fff;opacity:0;
+  box-shadow:0 8px 18px -6px rgba(var(--butter-rgb),.7),0 0 0 3px rgba(255,255,255,.9)}
+.exb-siegel svg{width:52%;height:52%}
+.exdone.fertig .exb-siegel{animation:exStempel .62s .12s var(--ease-out) both}
+@keyframes exStempel{
+  0%{opacity:0;transform:scale(1.8) rotate(-14deg);filter:blur(6px)}
+  55%{opacity:1;transform:scale(.92) rotate(3deg);filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}
 }
-.exglanz2::after{content:"";position:absolute;left:50%;margin-left:-15%;width:30%;
-  top:-60%;bottom:-60%;
-  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.08) 26%,
-    rgba(255,255,255,.62) 46%,rgba(255,255,255,.9) 50%,rgba(255,255,255,.62) 54%,
-    rgba(255,255,255,.08) 74%,rgba(255,255,255,0) 100%);
-  filter:blur(2.5px);transform:rotate(45deg) translateX(-330%);
-  animation:exGlanz 3.2s .9s var(--ease) infinite}
-@keyframes exGlanz{
-  0%{transform:rotate(45deg) translateX(-330%)}
-  42%,100%{transform:rotate(45deg) translateX(330%)}
-}
+/* Der Glanz, einmal, wenn es fertig ist. */
+.exb-glanz{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(112deg,transparent 32%,rgba(255,255,255,.7) 49%,rgba(var(--butter-rgb),.12) 55%,transparent 68%);
+  transform:translateX(-135%)}
+.exdone.fertig .exb-glanz{animation:halloGlanz 1.2s .25s var(--ease-blend) forwards}
+.exdone.fertig .exblatt.vorn{animation:halloBild 1.25s .12s var(--ease-out) both, halloPuls .75s .1s var(--ease-out)}
+/* Die Lichtwelle in der Form des Blatts. */
+.exwelle{position:absolute;inset:0;border-radius:9px;pointer-events:none;opacity:0;
+  border:2px solid rgba(var(--butter-rgb),.7);box-shadow:0 0 20px rgba(var(--butter-rgb),.5)}
+/* Kuerzer und weniger weit als die Welle um das Profilbild: ein Blatt
+   ist gross, mit 1,8 stand sie als Rahmen um den halben Schirm. */
+.exdone.fertig .exwelle{animation:exWelle 1.05s .12s cubic-bezier(.2,.7,.3,1) both}
+@keyframes exWelle{0%{opacity:0;transform:scale(1)}10%{opacity:.85}100%{opacity:0;transform:scale(1.28)}}
+/* Darunter die Lichtspur aus dem Vorspann, im selben Takt. */
+.exspur{position:relative;width:min(42vw,150px);height:3px;border-radius:99px;
+  background:rgba(var(--tx-rgb),.09);opacity:0;animation:fadeUp .5s .55s var(--ease-out) forwards}
+.exspur i{position:relative;display:block;height:100%;width:0;border-radius:inherit;
+  background:linear-gradient(90deg,rgba(var(--butter-rgb),0),rgba(var(--butter-rgb),.5) 55%,var(--butter-2))}
+.exspur i::after{content:"";position:absolute;right:-3.5px;top:50%;width:7px;height:7px;margin-top:-3.5px;
+  border-radius:50%;background:#fff;
+  box-shadow:0 0 6px 2px rgba(var(--butter-rgb),.7),0 0 16px 5px rgba(var(--butter-rgb),.28);
+  animation:funkePuls 1.5s ease-in-out infinite}
+.exdone.fertig .exspur i::after{animation:funkeBlitz .7s var(--ease-out) forwards}
 /* Die Zahl steht unter dem Satz und zaehlt mit. */
 .expro{font-variant-numeric:tabular-nums;letter-spacing:.04em}
-/* Fertig: der Ring blitzt einmal nach aussen, das Maennchen huepft. */
-.exdone.fertig .exmoji{animation:exHuepf .82s var(--ease-out)}
-@keyframes exHuepf{
-  0%{transform:scale(1)}26%{transform:scale(1.16)}
-  56%{transform:scale(.96)}80%{transform:scale(1.03)}100%{transform:scale(1)}
-}
-.exdone.fertig .exring::after{content:"";position:absolute;inset:0;border-radius:50%;
-  border:2px solid var(--butter);animation:exWelle .9s .06s var(--ease-out) forwards;
-  pointer-events:none}
-@keyframes exWelle{
-  0%{opacity:.8;transform:scale(.94)}
-  100%{opacity:0;transform:scale(1.28)}
-}
-.exdone.fertig .exring svg{animation-play-state:paused}
 @media(prefers-reduced-motion:reduce){
-  .exmoji,.exglanz2::after,.exring svg{animation:none}
+  .exdone, .exblatt.vorn, .exblatt.h1, .exblatt.h2, .exlicht, .exspur i::after,
+  .exdone.fertig .exb-siegel, .exdone.fertig .exb-glanz, .exdone.fertig .exwelle,
+  .exdone.fertig .exblatt.vorn{animation:none}
+  .exdone.fertig .exb-siegel{opacity:1}
+  .exz b::after, .exb-sig::after{display:none}
 }
-.exdone .qd-in b{animation-delay:.05s}
-.exdone .qd-in small{animation-delay:.16s}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));translate:-50% 0;z-index:80;padding:14px 22px;border-radius:999px;
   background:rgba(var(--s-hoch),.98);border:1px solid var(--butter-dim);box-shadow:var(--shadow);font-size:13.5px;
   display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.34s var(--ease-out)}
@@ -6639,7 +6676,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0345';
+const APP_STAND = '2026-09-27-0440';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14137,14 +14174,13 @@ function pdfIcon(doc, type, x, y, r, c){
 let _busy = false;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-/* Fortschrittsring über der Export-Karte */
 /* ─── Das lebende Maennchen ──────────────────────────────────────
    Dreizehn Einzelbilder, auf eine gemeinsame Grundlinie gestellt und
    als bewegtes WebP gebunden: 1,35 s im Kreis. Der Koerper wird
    groesser und wieder kleiner wie beim Atmen, dazwischen blinzelt und
    zwinkert er, und ab und zu fliegen Schwungstriche mit.
 
-   Es steht im Ladekreis beim Export und sonst nirgends. Im Vorspann
+   Es steht beim Export auf dem Blatt und sonst nirgends. Im Vorspann
    war es einmal drin und ist wieder heraus: dort dauert das Warten
    2,45 s, und 84 KB fuer anderthalb Sekunden Bewegung, die jeder Start
    mitlaedt, ist kein guter Tausch. Beim Export dauert das Warten
@@ -14154,14 +14190,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
    wenn jemand die Exportseite aufmacht. Wer nie exportiert, laedt sie
    nie.
 
-   Der Glanz braucht eine Silhouette, aber die aendert sich ja bei
-   jedem Bild. MOJI_MASKE ist darum die SCHNITTMENGE aller dreizehn —
-   was in jedem Bild Koerper ist. So kann das Lichtband nie ueber den
-   Rand hinauslaufen und im Leeren leuchten. Es deckt 84 Prozent der
-   kleinsten Silhouette ab; bei einem weichen Band von knapp einem
-   Drittel Breite faellt der Unterschied nicht auf. */
+   Seit 27.09.2026 steht es als Briefkopf auf dem Blatt, das beim
+   Export entsteht. */
 const MOJI_LEBT  = 'moji-leben.webp';
-const MOJI_MASKE = 'data:image/webp;base64,UklGRoIFAABXRUJQVlA4THYFAAAvdkAcEAZKkiQJbiP//7cxBAaY1nHXIiMoYNtkSJL+jKjdsz2zPNu2bdu2bdu2bdu27eEa3ZkZEdlVMQH9D1FhQ7Xtn7HhQvAuwqGdbji4NtTshpvfghluTtPBpYDRjoUwVFi3DRzmAnd42Q/+02fA4PTp8ZO33O0CB1jerFBhdCIBD8pwO7rMJ3olXql1Vko6Gl6Z5E+POsGyKiiMDoMwlKWc6HU9OlzDZG1RkgmbUo2OyBJVeCb61DlWxRDqICjILPbxmgk8Kk2m18r7jIipuZZPnWgkhPAhUJDFne03HpUIfZN98EqkeAbcbhVIwAcYhqziYRO4hlClYt+oJitc29PWg7DwNARZ1N0iV2SmXO+CrdsJ5cwz1oDQszCYxtnGc0qUd9m2vkvixPVmA/wgJIClvccZUX6exH1lCVA9BkFONYGLyiMlbtAmgIRnqNLlcU4k9oyIouU4CP2egAIr+Z2LlD2lydzNpgX8awjKISZwWWHrsZO5tywA+LcwOMa9buOMKg+XuD4bAf4lDDZjPDLl8USjZXPAvyDgVxUYrUctUeWE0zHOcoC/hbAA1yqvcVk5JNH43myAvoIFKF1Wt6mtbGFTyzifS+wUydzDCH8BCZDlnORlPZRXWsp2jkTuHFDdhiBbeEWbpyYyoVPIxnaMidQ2oLoJg+Ge5FFRJlGldnmMyIy1IqBbMFjNf1waoZdK7DARxb9GA7oBgxWN1Yj0TzalF3aQZO4lFRI+QmCk39US/ZNtowrbOqmOyB0C+BNh2PMakb77ctwx/5pb2AcYHM1MpWO7YlOOuXeSuHMAvyekSw+RqdIV69CjenQJe6uZxqtcYn/tVIncmYDfQ2Blkwllf7GTjI79QYniX3OB8FYIHMdFpnQguo1dRUXuRMDvCXhu4yJTdrHT7C+i9r3pQHirTeVOTqjCXthx2C6iMrM14PcSljOYminHvdh2JXG3AvogYdlKv8JOs7/YS0Txm5lB+KBh8Dgnp+mFja5rWcumgD8J5Q4uH4fRsdr+kLgL7wCrm0TZadp6d7LiTQzCJ0u373TIcT5kEncDIPgYg/2pSNnJ6LQtf48L1aaeTeYeAqHPl4P0yYSebJLVAd0QAnvrSCcj3MMCgjsxsqMi0R2LzWRLwk1gP7VIx04lc6cCgpsczkW6HUrm3jUNEu5y4gs7E+H+MBoQ3OV0LlKmHJnqGLAcYLjNGVxiypEp07YhYLjPKVxSjkyZ2j6A4QsO4ORIREfL7oDhGzajO5HMjbURYPgiAsuZqrDjTOL+thJg+KaQ2f2uoacZ4143AlR9V8hTXGZnkbi2cwwFDF/GMC4pJ5UV7gOrQAi+jcB6hLJz0HETnG1awAJ8fZnT3xp6io1ru8MiEIJfFHIvJ2eghEsesxKEBfhJDHbQOQJlfJ6zJoQR/KiQmf2ooU9jZHxetimEgt/F4GguP4vKaq7tCetBAoZf3sziBzV9EInnf7daGRIw/DgCe2hE9pARhWt86ghdEMLw+0jlHi6yJ5B4xnnYZhhCwROFmc49XKS/NqJwje+cZiEoLMBDl8r1XJF/ickKT797bWVaCGEBnruyj7+4Qn6EyZRnirccZQQURvBsAYHhLtPDFcK+NhJP8oUzLQuFsADPR5CFXek/riGx+0ZlxstPLrK6CgoLcMYhyGhn+kHhGiZTdsOIrMOT/OJ625gBCiM4KAoyk+3c7lctnpqSsf0xSmSm4en3itOsbjoojAQ47DCUWazjRM/7T+Zp1IxUUjq8TPSVG+yiGyqEBTjxMILKfLZwqvv94F+TeJoier3rKvtbylCoMBLg3MPBq+kNt6b9nOY6NzrJFrrhFWEBzj/c4F2E0eCfuSEcCjf4T3Y=';
 let _lebtDa = false;
 /* Wer Bewegung abbestellt hat, bekommt das Standbild. Ein bewegtes Bild
    laesst sich mit CSS nicht anhalten, also wird es gar nicht erst
@@ -14181,62 +14212,82 @@ function lebenVorladen(){
   v.src = MOJI_LEBT;
 }
 
-/* Das Warten beim Export. Ein Ring schliesst sich um das Maennchen, ein
-   Lichtband wandert darueber, darunter steht, was gerade passiert. Erst
-   wenn der Ring geschlossen ist, kommt die Datei — siehe buildPdf(). */
-const EX_R = 54, EX_U = 2 * Math.PI * EX_R;
-function exOverlay(){
+/* Das Warten beim Export: ein Blatt, das sich schreibt. Die Tabelle
+   fuellt sich von 4 bis 80 Prozent Zeile fuer Zeile, die Unterschrift
+   von 80 bis 97, der Rest gehoert dem fertigen Dokument — siehe
+   buildPdf(). seiten: wie viele Monate, fuer den Stapel dahinter. */
+const EX_ZEILEN = [92, 78, 86, 64, 90, 72, 84, 58, 88, 70];
+const EX_SIEGEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>';
+function exOverlay(seiten){
+  const n = Math.max(1, Math.min(3, seiten || 1));
   const ov = document.createElement('div');
   ov.className = 'qdone exdone';
-  ov.innerHTML = '<div class="qd-in">'
-    + '<div class="exring">'
-    +   '<svg viewBox="0 0 120 120" aria-hidden="true">'
-    +     '<defs><linearGradient id="exring-farbe" x1="0" y1="0" x2="1" y2="1">'
-    +       '<stop class="s1" offset="0"/><stop class="s2" offset="1"/>'
-    +     '</linearGradient></defs>'
-    +     '<circle class="exring-bg" cx="60" cy="60" r="' + EX_R + '"/>'
-    +     '<circle class="exring-an" cx="60" cy="60" r="' + EX_R + '"/>'
-    +   '</svg>'
-    +   '<span class="exmoji"><img alt=""><span class="exglanz2"></span></span>'
+  ov.innerHTML = '<div class="exd-grund aurahg"></div>'
+    + '<div class="qd-in">'
+    + '<div class="exstapel">'
+    +   '<i class="exlicht" aria-hidden="true"></i>'
+    +   (n >= 3 ? '<i class="exblatt h2" aria-hidden="true"></i>' : '')
+    +   (n >= 2 ? '<i class="exblatt h1" aria-hidden="true"></i>' : '')
+    +   '<div class="exblatt vorn" aria-hidden="true">'
+    +     '<div class="exb-kopf"><span class="exmoji"><img alt=""></span>'
+    +       '<span><i style="--w:78%"></i><i style="--w:52%"></i></span></div>'
+    +     '<div class="exb-zeilen">'
+    +       EX_ZEILEN.map(w => '<i class="exz" style="--w:' + w + '%"><b></b></i>').join('')
+    +     '</div>'
+    +     '<div class="exb-sig"><img id="ex-sig" alt=""><span class="exb-linie"></span></div>'
+    +     '<span class="exb-siegel">' + EX_SIEGEL + '</span>'
+    +     '<span class="exb-glanz"></span>'
+    +   '</div>'
+    +   '<i class="exwelle" aria-hidden="true"></i>'
     + '</div>'
     + '<b id="ex-ov-t">Deine Arbeitszeit wird geschrieben …</b>'
+    + '<div class="exspur" aria-hidden="true"><i></i></div>'
     + '<small id="ex-ov-s" class="expro">0 %</small></div>';
-  $('#ex-card').appendChild(ov);
+  document.body.appendChild(ov);
 
   /* Gewechselt wird nicht mitten im Warten: entweder die Datei ist da,
-     wenn der Kreis aufgeht, oder es bleibt beim Standbild. Ein Tausch
-     vor offenen Augen waere ein Ruck, weil die Kachel dabei ihr Mass
-     aendert — die Einzelbilder haben oben und unten Luft fuer die
-     Schwungstriche und damit einen flacheren Rahmen. */
+     wenn das Blatt aufgeht, oder es bleibt beim Standbild. */
   const lebt = _lebtDa && !ruhigGestellt();
   const bild = $('.exmoji img', ov);
   bild.src = lebt ? MOJI_LEBT : LOGO_MOJI;
   if(lebt) $('.exmoji', ov).classList.add('lebt');
-  const glanz = $('.exglanz2', ov);
-  if(glanz) glanz.style.setProperty('--moji-maske',
-    'url("' + (lebt ? MOJI_MASKE : LOGO_MOJI) + '")');
-  const bogen = $('.exring-an', ov), zahl = $('#ex-ov-s');
-  bogen.style.strokeDasharray = EX_U.toFixed(2);
-  bogen.style.strokeDashoffset = EX_U.toFixed(2);
+  const sig = $('#ex-sig', ov), sigFeld = $('.exb-sig', ov);
+  if(SIG_BILD){
+    sig.onload = () => { if(sig.offsetWidth) sigFeld.style.setProperty('--sb', sig.offsetWidth + 'px'); };
+    sig.src = SIG_BILD;
+  } else sig.remove();
+  const zeilen = $$('.exz', ov), spur = $('.exspur i', ov), zahl = $('#ex-ov-s');
 
-  /* Das Ziel wird gesetzt, der Stand laeuft weich hinterher — so zieht der
-     Ring nach, statt zu springen. */
+  /* Das Ziel wird gesetzt, der Stand laeuft weich hinterher — so
+     schreibt das Blatt nach, statt zu springen. */
   let ziel = 0, stand = 0, raf = null, aus = false;
+  const ZEILEN_AB = 4, ZEILEN_BIS = 80, SIG_BIS = 97;
+  const zeichne = () => {
+    const je = (ZEILEN_BIS - ZEILEN_AB) / zeilen.length;
+    zeilen.forEach((z, i) => {
+      const f = Math.max(0, Math.min(1, (stand - ZEILEN_AB - i * je) / je));
+      z.firstChild.style.width = (f * 100).toFixed(1) + '%';
+      z.classList.toggle('schreibt', f > 0 && f < 1);
+    });
+    const sf = Math.max(0, Math.min(1, (stand - ZEILEN_BIS) / (SIG_BIS - ZEILEN_BIS)));
+    sigFeld.style.setProperty('--s', sf.toFixed(3));
+    sigFeld.classList.toggle('schreibt', sf > 0 && sf < 1 && !!SIG_BILD);
+    spur.style.width = stand.toFixed(1) + '%';
+    if(!aus) zahl.textContent = Math.round(stand) + ' %';
+  };
   const mal = () => {
     const tempo = ziel >= 100 ? .16 : .055;
     stand += (ziel - stand) * tempo;
     if(ziel - stand < .2) stand = ziel;
-    bogen.style.strokeDashoffset = (EX_U * (1 - stand / 100)).toFixed(2);
-    if(!aus) zahl.textContent = Math.round(stand) + ' %';
+    zeichne();
     raf = requestAnimationFrame(mal);
   };
+  zeichne();
   raf = requestAnimationFrame(mal);
 
   return {
     el: ov,
     setz(p){ ziel = Math.max(ziel, Math.min(100, p)); },
-    /* Welcher Monat gerade gesetzt wird, steht nicht mehr da: es ist ein
-       Satz und eine Zahl, mehr braucht ein Warten nicht. */
     step(){},
     finish(title, sub){
       ziel = 100; aus = true;
@@ -14248,6 +14299,8 @@ function exOverlay(){
       zahl.textContent = sub;
       setTimeout(() => cancelAnimationFrame(raf), 1600);
     },
+    /* Die Buehne blendet weich aus, statt einfach zu verschwinden. */
+    weg(){ return new Promise(r => { ov.classList.add('weg'); setTimeout(() => { ov.remove(); r(); }, 560); }); },
     stop(){ cancelAnimationFrame(raf); }
   };
 }
@@ -14263,7 +14316,7 @@ async function buildPdf(list){
   if(!window.jspdf || !window.jspdf.jsPDF){ toast('PDF-Bibliothek nicht geladen — bitte online neu laden'); return; }
   _busy = true;
   $('#ex-go').disabled = true;
-  const ov = exOverlay(), t0 = performance.now();
+  const ov = exOverlay(list.length), t0 = performance.now();
 
   /* Der Balken läuft nach der Zeit bis 95 % und wartet dort, falls das Setzen
      länger braucht. Die letzten fünf Prozent gehören dem fertigen Dokument —
@@ -14303,8 +14356,8 @@ async function buildPdf(list){
     }
     /* Erst jetzt zählt der Monat: die Datei ist geschrieben. */
     merkeExporte(list);
-    await wait(1100);
-    ov.el.remove();
+    await wait(700);
+    await ov.weg();
   }catch(err){
     console.error(err);
     clearInterval(takt);
