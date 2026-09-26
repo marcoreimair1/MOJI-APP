@@ -23,8 +23,13 @@ ok('Abgemeldet (UID === null)', UID === null, 'UID=' + UID);
 ME = normalize({ id:'t', vorname:'Marco', nachname:'Reimair', dob:'1990-05-04', av:3 });
 enterApp();
 var v = document.querySelector('#v-cal');
-var tabKal = document.querySelector('#fabbar [data-go="v-cal"]');
-var tabExp = document.querySelector('#fabbar [data-go="v-export"]');
+/* Kalender und Export stehen seit dem 21. September 2026 in der Leiste
+   unten. Vorher waren es zwei Knoepfe in #fabbar — als die wegfielen,
+   fand dieser Test sie nicht mehr, brach vor dem Zaehlen ab und
+   meldete "0 gescheitert". Dabei war genau das Verhalten verloren, das
+   er prueft. */
+var tabKal = document.querySelector('#tabbar .tab[data-go="v-cal"]');
+var tabExp = document.querySelector('#tabbar .tab[data-go="v-export"]');
 var heute = new Date();
 function imLaufenden(){ return CAL.y === heute.getFullYear() && CAL.m === heute.getMonth(); }
 function woanders(){ CAL.y = 2025; CAL.m = 2; renderCal(); }

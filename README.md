@@ -1144,6 +1144,20 @@ die Farbwolken der App durch —, und damit ließ er auch die Leiste durchschein
 einer Navigation darin ist kein Ladebild mehr. Sie weicht jetzt bei allem, was die Seite festhält
 (`body.locked`): Vorspann, Gruß, Blätter, Kartenstapel.
 
+**Zwei Sonderfälle gingen mit dem Umbau verloren und kamen erst am 26. September zurück.** Am
+alten Kalender-Knopf hing: Steht man schon auf dem Kalender, ist ein zweiter Tipp keine
+Navigation, sondern die Bitte um den laufenden Monat. Am alten Export-Knopf hing, dass der Export
+sein Jahr bekommt, bevor er gezeichnet wird. Der neue Horcher an der Leiste rief nur `go()` —
+beides lief fünf Tage lang ins Leere.
+
+**Die Tests hätten es gemeldet, und ich habe es nicht gesehen.** Die Kalender-Reihe griff noch nach
+den alten Knöpfen in `#fabbar`, bekam `null` und brach im Laufzeitteil ab — *bevor* sie ihre
+Prüfungen melden konnte. Dasselbe in der Menü-Reihe, dort an zwei Stellen, die nach Elementen
+fragten, die bewusst entfernt worden waren. 166 Prüfungen liefen fünf Tage lang gar nicht. Die
+Reihen zeigten ein ✗, der Rückgabewert war 1 — aber die Summenzeile sagte *0 gescheitert*, und die
+habe ich gelesen. Jetzt nennt sie abgebrochene Reihen ausdrücklich: *1 Reihe NICHT
+DURCHGELAUFEN*. Gegengeprüft mit dem alten Stand.
+
 **Unten steht entweder die Navigation oder eine Entscheidung, nie beides.** Sobald ein Zeitraum
 markiert ist, stehen dort *Eintragen* und *Eintrag verwerfen*, beim Unterschreiben *Signieren* —
 dann weicht die Leiste, als Kreuzblende, nicht als Sprung. Solange etwas zu entscheiden ist, ist

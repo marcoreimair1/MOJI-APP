@@ -45,7 +45,7 @@ console.log('  ' + DATEI);
 console.log('  Stand ' + stand + '  ·  ' + (fs.statSync(DATEI).size / 1024).toFixed(0) + ' KB');
 console.log('');
 
-let ganz = 0, schlecht = 0, reihenSchlecht = 0;
+let ganz = 0, schlecht = 0, reihenSchlecht = 0, abgebrochen = 0;
 const t0 = Date.now();
 
 REIHEN.forEach(([name, was]) => {
@@ -70,12 +70,25 @@ REIHEN.forEach(([name, was]) => {
        etwa, weil ein Name doppelt vergeben ist. Ohne diesen Hinweis sieht
        die Zeile fast aus wie eine bestandene. */
     else if (n === 0) console.log('       (kein einziger Testfall gelaufen — Skriptfehler?)');
+    /* Ausgezaehlt, nichts gescheitert, und trotzdem nicht sauber beendet:
+       dann hat der Laufzeitteil abgebrochen, BEVOR er seine Pruefungen
+       melden konnte. Genau so lief es vom 21. bis 26. September 2026 —
+       zwei Reihen brachen still ab, 166 Pruefungen liefen nie, darunter
+       die, die ein verlorenes Verhalten gemeldet haetten. Die Summe
+       sagte "0 gescheitert". */
+    else if (fehl === 0) {
+      abgebrochen++;
+      console.log('       (nicht zu Ende gelaufen — die Pruefungen danach fehlen)');
+    }
   }
 });
 
 const dauer = ((Date.now() - t0) / 1000).toFixed(1);
 console.log('');
 console.log('  ' + ganz + ' Prüfungen in ' + REIHEN.length + ' Reihen · '
-          + (ganz - schlecht) + ' bestanden · ' + schlecht + ' gescheitert · ' + dauer + ' s');
+          + (ganz - schlecht) + ' bestanden · ' + schlecht + ' gescheitert'
+          + (abgebrochen ? ' · ' + abgebrochen + (abgebrochen === 1 ? ' Reihe' : ' Reihen')
+                           + ' NICHT DURCHGELAUFEN' : '')
+          + ' · ' + dauer + ' s');
 console.log('');
 process.exit(reihenSchlecht ? 1 : 0);

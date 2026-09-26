@@ -452,16 +452,21 @@ window.__WEITER = function(){
   go('v-login');
   ok('Beim Einstieg nicht',
      document.getElementById('tabbar').style.display === 'none');
-  /* Meine Firma ist ueber die Leiste ein Ziel wie der Kalender — und
-     Ziele haben kein Zurueck. */
-  _vonMenu = false; firmaAuf();
-  ok('Meine Firma ohne Zurueck-Pfeil, wenn aus der Leiste',
-     document.getElementById('fi-back').hidden);
-  _vonMenu = true; firmaAuf();
-  ok('Aber mit Pfeil, wenn aus dem Menue',
-     !document.getElementById('fi-back').hidden);
-  _vonMenu = false;
+  /* Meine Firma ist ein Ziel wie der Kalender — und Ziele haben kein
+     Zurueck. Den Pfeil gibt es nicht mehr, auch nicht aus dem Menue:
+     dort steht Meine Firma seit dem 21. September nicht mehr. */
+  firmaAuf();
+  ok('Meine Firma ohne Zurueck-Pfeil', !document.getElementById('fi-back'));
+  ok('Und steht offen', document.querySelector('#v-firma').classList.contains('on'));
   go('v-cal');
+  /* Die beiden Sonderfaelle, die am alten Kalender-Knopf hingen und
+     mit ihm verloren gingen. */
+  CAL.y = 2025; CAL.m = 2; renderCal();
+  document.querySelector('#tabbar .tab[data-go="v-cal"]')
+    .dispatchEvent(new window.MouseEvent('click', { bubbles:true }));
+  var h = new Date();
+  ok('Zweiter Tipp auf Kalender holt den laufenden Monat',
+     CAL.y === h.getFullYear() && CAL.m === h.getMonth(), CAL.m + '/' + CAL.y);
 
   /* ── Die Karte traegt nur noch, was sie zeigt ──
      Mail und Geburtsdatum sind in eine eigene Flaeche gewandert,
@@ -485,7 +490,10 @@ window.__WEITER = function(){
      Sorte. Manuela 5, Luis 5, Marlene 3 macht 13. */
   TEE_PAARE = { a:{punkte:5}, b:{punkte:5}, c:{punkte:3} };
   malTeeBadge();
-  var tb = document.getElementById('ma-tee');
+  /* Seit dem 21. September ist die Plakette das erste der drei Felder
+     (#mw-tee). Der Test fragte noch nach #ma-tee, bekam null und brach
+     ab — samt allem, was danach kommt. */
+  var tb = document.getElementById('mw-tee');
   ok('Die Plakette zaehlt alle Becher zusammen',
      !tb.hidden && document.getElementById('ma-tee-n').textContent === '13',
      document.getElementById('ma-tee-n').textContent);
@@ -495,8 +503,8 @@ window.__WEITER = function(){
   ok('Darin steht der echte Becher dieser Sorte',
      /tee-1\.webp$/.test(document.getElementById('ma-tee-b').getAttribute('src')),
      document.getElementById('ma-tee-b').getAttribute('src'));
-  ok('Sie steht in der Textspalte, unter Name und Firma',
-     document.getElementById('ma-tee').parentNode.classList.contains('mhtext'));
+  ok('Sie steht in der Reihe der drei Staende',
+     tb.parentNode.classList.contains('ma-werte'));
   /* Der Stand wandert ins Profil — sonst stand die Plakette beim
      naechsten Start leer da, bis die Tabelle geladen war. */
   ok('Der Stand ist im Profil gemerkt', ME.teeSum === 13 && ME.teeLvl === teeLevel(5),
@@ -756,7 +764,8 @@ window.__WEITER = function(){
      === 'Arbeitsort|Dein Dienstplan|Dabei seit|Feiertage|Bubble Tea',
      [].slice.call(document.querySelectorAll('#fi-zeilen .fiz u'))
        .map(function(u){ return u.textContent; }).join('|'));
-  ok('Es gibt einen Zurueck-Knopf', !!document.getElementById('fi-back'));
+  /* Kein Zurueck mehr: Meine Firma ist ein Ziel in der Leiste. */
+  ok('Kein Zurueck-Knopf, sie ist ein Ziel', !document.getElementById('fi-back'));
   ok('Die alte Augenbraue ist weg', !document.querySelector('#v-firma .eyebrow'));
 
   /* Die Stufenrechnung muss dieselbe sein wie tee_level() in der Datenbank. */
@@ -923,29 +932,33 @@ window.__WEITER = function(){
   ok('Offen ist nur, wer zuletzt geschickt hat',
      Object.keys(offen).sort().join(',') === 'u-b,u-c', Object.keys(offen).sort().join(','));
 
-  /* ── Der Zaehler: rot, violett, halb und halb ── */
+  /* ── Die Zaehler ──
+     Am Profilbild stehen Nachrichten und Stufenaufstiege; die wartenden
+     Bubble Teas stehen am Becher in der Leiste, dort, wo man sie
+     beantwortet. Alle in Violett — die Sonderfaelle "violett fuer Tee"
+     und "halb und halb" gibt es seit dem 21. September nicht mehr. */
   var z = document.getElementById('av-zaehler');
   _zaehlerFrei = true;
   ME.gelesen = alleNachrichten().map(function(n){ return n.id; });
   TEE_OFFEN = {}; malZaehler();
   ok('Ohne alles kein Punkt', z.hidden);
   TEE_OFFEN = {'u-b':true}; malZaehler();
-  ok('Nur Tee: violett und eins', !z.hidden && z.textContent === '1'
-     && z.classList.contains('tee') && !z.classList.contains('beides'), z.className);
-  ok('Und im Menue steht es auch',
+  ok('Ein wartender Tee zaehlt nicht am Profilbild', z.hidden, z.textContent);
+  ok('Sondern am Becher in der Leiste',
      document.getElementById('fi-zaehler').textContent === '1'
      && !document.getElementById('fi-zaehler').hidden);
   /* Er sitzt am Punkt in der Leiste, der dorthin fuehrt. */
   ok('Er sitzt am Symbol in der Leiste',
      document.getElementById('fi-zaehler').closest('.tab[data-go="v-firma"]') !== null);
   ME.gelesen = []; malZaehler();
-  var summe = pfNeu().length + aufOffen() + 1;
-  ok('Beides: halb und halb, Zahl zusammengezaehlt',
-     z.classList.contains('beides') && z.textContent === String(summe),
-     z.className + ' ' + z.textContent);
-  TEE_OFFEN = {}; malZaehler();
-  ok('Nur Nachrichten: wieder rot',
+  var summe = pfNeu().length + aufOffen();
+  ok('Nachrichten und Tee zugleich: jeder an seiner Stelle',
+     z.textContent === String(summe)
+     && document.getElementById('fi-zaehler').textContent === '1',
+     z.textContent + ' / ' + document.getElementById('fi-zaehler').textContent);
+  ok('Keine Sonderklassen mehr am Zaehler',
      !z.classList.contains('tee') && !z.classList.contains('beides'), z.className);
+  TEE_OFFEN = {}; malZaehler();
   ME.besties = []; TEE_OFFEN = {};
 
   TEAM = []; TEAM_FEHLER = 'keine Rechte';

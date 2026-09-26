@@ -6382,7 +6382,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-26-1015';
+const APP_STAND = '2026-09-26-1105';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14471,19 +14471,21 @@ $('#tabbar').addEventListener('click', e => {
      sieht man die Seite unter einer schliessenden Flaeche wechseln. */
   if($('#menu').classList.contains('on')){ _vonMenu = false; menuZu(true); }
   if(ziel === 'v-firma'){ firmaAuf(); return; }
-  go(ziel);
-});
-$('#fabbar').addEventListener('click', e => {
-  const b = e.target.closest('[data-go]'); if(!b) return;
-  const ziel = b.dataset.go;
-  /* Merken, BEVOR go() die Ansicht umschaltet: stand man schon auf dem
-     Kalender, ist der zweite Tipp keine Navigation, sondern die Bitte
-     um den laufenden Monat. */
-  const schonDa = ziel === 'v-cal' && $('#v-cal').classList.contains('on');
+  /* Zwei Sonderfaelle, die bis zum 21. September am alten Kalender-
+     und Export-Knopf hingen und mit ihm verloren gingen:
+     Stand man schon auf dem Kalender, ist der zweite Tipp keine
+     Navigation, sondern die Bitte um den laufenden Monat. Merken,
+     BEVOR go() die Ansicht umschaltet.
+     Und der Export braucht sein Jahr, bevor er gezeichnet wird. */
+  const schonDa = ziel === 'v-cal' && $('#v-cal').classList.contains('on')
+                  && !$('#menu').classList.contains('on');
   if(ziel === 'v-export') exYear();
   go(ziel);
   if(schonDa) kalenderFrisch();
 });
+/* Hier hing ein Horcher an #fabbar fuer die Knoepfe "Kalender" und
+   "Export". Die gibt es seit der Leiste unten nicht mehr; seine beiden
+   Sonderfaelle stehen jetzt im Horcher an #tabbar. */
 $('#sheet').addEventListener('click', e => { if(e.target.dataset.close === 'sheet') closeSheet(); });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ closeSheet(); msZu(); pfZu(); dlZu(); firmaZu(); menuZu(); if(zrModus()) zrAus(); }
