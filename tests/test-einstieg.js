@@ -403,7 +403,11 @@ ok('Die Vorgabe endet um 17 Uhr', defaultWeek()[1].nmTo === '17:00', defaultWeek
 
 /* ── 12 · Der Schluss hat eine eigene Fassung des Grusses ── */
 ok('GRUSS kennt fertig',      !!GRUSS.fertig);
-ok('Fertig traegt Konfetti',  GRUSS.fertig.konfetti === true);
+/* Seit 26.09.2026 feiert das Ende mit Licht statt Konfetti. */
+ok('Fertig feiert ohne Konfetti', !GRUSS.fertig.konfetti);
+ok('Und mit zwei Lichtwellen',
+   document.querySelectorAll('#hallo .hallo-rahmen > .hallo-welle').length === 2);
+ok('Der Abschied laesst sich Zeit zum Lesen', GRUSS.ab.dauer >= 2400, GRUSS.ab.dauer);
 ok('Reif liegt um das Profilbild',
    !!document.querySelector('#hallo .hallo-rahmen .hallo-ring .rg'));
 /* Das Profilbild bleibt ein weiches Viereck wie ueberall sonst; der Reif
@@ -604,7 +608,8 @@ roh('Der Reif laeuft ueber den gemessenen Umfang',
 roh('Das Bild wird scharf, statt zu federn',
     /@keyframes halloBild\{\s*0%\{opacity:0;transform:translateY\(22px\) scale\(\.82\);filter:blur\(18px\)\}/.test(HTML));
 roh('Die Zeichen steigen einzeln aus der Unschaerfe',
-    /\.hallo-in b \.hz\{[\s\S]{0,120}animation:halloZeichen [\d.]+s calc\(\.5s \+ var\(--i\) \* 34ms\)/.test(HTML));
+    /\.hallo-in b \.hz\{[\s\S]{0,120}animation:halloZeichen [\d.]+s calc\(var\(--hz-start\) \+ var\(--i\) \* 34ms\)/.test(HTML)
+    && /\.hallo\{--hz-start:\.5s;/.test(HTML));
 roh('Der Schweif endet dort, wo der Kopf ist',
     /\.kg\{--l:22;--k:40;[\s\S]{0,200}\.k3\{--l:62;--k:0;[\s\S]{0,200}\.k2\{--l:34;--k:28;[\s\S]{0,200}\.kl\{--l:5;--k:57;/.test(HTML));
 roh('Im Grund ziehen die Lichtkegel',
@@ -615,7 +620,34 @@ roh('Das Licht kennt beide Fassungen',
     (HTML.match(/--licht-a:/g) || []).length === 3, (HTML.match(/--licht-a:/g) || []).length);
 roh('Beim Abflug blitzt kein Haken auf, wo keiner stand',
     !/\.hallo\.fliegt \.hallo-haken\{/.test(HTML)
-    && /\.hallo\.neu\.fliegt \.hallo-haken, \.hallo\.fertig\.fliegt \.hallo-haken\{opacity:1/.test(HTML));
+    && /\.hallo\.neu\.fliegt \.hallo-haken\{opacity:1/.test(HTML)
+    && !/\.hallo\.fertig[^{]*\.hallo-haken\{/.test(HTML));
+/* ─── Registrierung und Abschied im neuen Kleid ─── */
+roh('Der Lichtstreif zeichnet den Reif: gleiche Zeit, gleiche Kurve',
+    /\.hallo-komet rect\{[\s\S]{0,160}kometLauf 1\.6s \.75s cubic-bezier\(\.45,\.05,\.35,1\)/.test(HTML)
+    && /\.hallo-ring \.rg\{[\s\S]{0,200}ringZieh 1\.6s cubic-bezier\(\.45,\.05,\.35,1\) \.75s/.test(HTML));
+roh('Und liegen auf derselben Form',
+    /\.hallo-komet\{position:absolute;inset:-6%/.test(HTML) && /\.hallo-ring\{ display:none; position:absolute; inset:-6%/.test(HTML));
+roh('Beim Anlegen laeuft der Lichtstreif mit', !/\.hallo\.fertig \.hallo-komet/.test(HTML));
+roh('Die Wellen kommen, wenn der Reif zu ist',
+    /\.hallo\.fertig \.hallo-welle\{display:block;animation:halloWelle [\d.]+s 2\.3s/.test(HTML));
+roh('Die Wellen stehen nicht schon vor ihrem Einsatz da',
+    /@keyframes halloWelle\{0%\{opacity:0;/.test(HTML));
+roh('Der Abschied kommt aus der Leiste', /function halloAnflug\(von\)\{/.test(HTML)
+    && /const von = art === 'ab' \? halloZiel\(\) : null;/.test(HTML));
+roh('Dabei blendet nur der Grund auf, nicht das Bild',
+    /\.hallo\.kommt\{animation:none;/.test(HTML) && /\.hallo\.kommt \.hallo-grund\{animation:var\(--aura-anim\), halloRein \.62s/.test(HTML));
+roh('Der Grund deckt so schnell wie bisher — das Abmelden wartet darauf',
+    /\.hallo\.kommt \.hallo-grund\{[^}]*halloRein \.62s/.test(HTML));
+roh('Zum Schluss schlaeft das Bild ein',
+    /@keyframes halloEinschlafen\{to\{opacity:0;transform:translateY\(10px\) scale\(\.9\);filter:blur\(14px\)\}\}/.test(HTML));
+roh('Das Schweben bleibt dabei in der Liste',
+    /\.hallo\.ab\.weg \.hallo-rahmen\{animation:halloSchweben [^}]*halloEinschlafen/.test(HTML));
+roh('Beim Abmelden greift der Cloud-Zuhoerer nicht vor',
+    /evt === 'SIGNED_OUT' && ME && !_meldetAb/.test(HTML)
+    && /async function doLogout\(\)\{\s*_meldetAb = true;\s*try\{ await abmeldenMitAbschied\(\); \}\s*finally\{ _meldetAb = false; \}/.test(HTML));
+roh('Das Abraeumen wartet, bis der Abschied fertig ist',
+    /const GRUSS_WEG = 1000;/.test(HTML) && /@keyframes halloAbWeg/.test(HTML) && /\.hallo\.ab\.weg\{animation:halloAbWeg 1s/.test(HTML));
 roh('Das Bild fliegt in die Leiste', /function halloFlug\(ziel\)\{/.test(HTML));
 roh('Die Bahn laeuft ueber eine eigene Zeitkurve', /const zeit = kurve\(\.5, 0, \.14, 1\);/.test(HTML));
 roh('Solange es fliegt, ist sein Platz leer',

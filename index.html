@@ -2781,7 +2781,7 @@ body.locked #tabbar{
   to{stroke-dashoffset:calc(-331px - var(--k) * 1px)}
 }
 @keyframes kometSicht{0%{opacity:0}18%{opacity:1}72%{opacity:1}100%{opacity:0}}
-.hallo.fertig .hallo-komet, .hallo.ab .hallo-komet{display:none}
+.hallo.ab .hallo-komet{display:none}
 /* Der Haken erscheint nur nach dem Anlegen — er sitzt außerhalb des
    beschnittenen Bildfelds, sonst würde ihn die runde Ecke abschneiden. */
 .hallo-haken{position:absolute;right:-6px;top:-6px;width:54px;height:54px;border-radius:50%;
@@ -2790,8 +2790,6 @@ body.locked #tabbar{
      Pastell — der Rand traegt jetzt die Farbe der Flaeche darunter. */
   border:4px solid rgba(var(--s-tief),.92);box-shadow:0 14px 28px -12px rgba(var(--s-schatten),.85)}
 .hallo.neu .hallo-haken{animation:hakenRein .58s .9s var(--ease-out) both}
-/* Am Ende des Funnels kommt er nach dem Reif. */
-.hallo.fertig .hallo-haken{animation:hakenRein .58s 1.15s var(--ease-out) both}
 @keyframes hakenRein{
   0%{opacity:0;transform:scale(.3) rotate(-25deg)}
   65%{opacity:1;transform:scale(1.14) rotate(4deg)}
@@ -2810,13 +2808,51 @@ body.locked #tabbar{
    umbricht. Siehe halloZerlegen(). */
 .hallo-in b .hw{display:inline-block;white-space:nowrap}
 .hallo-in b .hz{display:inline-block;
-  animation:halloZeichen .95s calc(.5s + var(--i) * 34ms) var(--ease-out) both}
+  animation:halloZeichen .95s calc(var(--hz-start) + var(--i) * 34ms) var(--ease-out) both}
 @keyframes halloZeichen{from{opacity:0;transform:translateY(.45em) scale(.94);filter:blur(9px)}}
 /* Der Satz darunter zieht sich zusammen, wie ein Blick, der scharf
    stellt. */
 .hallo-s{display:block;margin-top:12px;font-size:clamp(14px,4vw,16px);color:var(--tx-2);
-  animation:halloZeile 1.2s 1.05s var(--ease-out) both}
+  animation:halloZeile 1.2s var(--zeile-start) var(--ease-out) both}
 @keyframes halloZeile{from{opacity:0;letter-spacing:.16em;filter:blur(5px)}}
+
+/* ─── Geschafft: das Ende der Registrierung ───
+   Ist der Reif zu, gehen zwei Lichtwellen in seiner Form vom Bild aus,
+   das Bild atmet einmal auf und das Licht dahinter blitzt kurz. Das ist
+   die ganze Feier — leiser als Konfetti, und in der Sprache der Flaeche. */
+.hallo-welle{display:none;position:absolute;inset:-6%;border-radius:32%;pointer-events:none;opacity:0;
+  border:2px solid rgba(var(--butter-rgb),.75);
+  box-shadow:0 0 22px rgba(var(--butter-rgb),.55),inset 0 0 14px rgba(var(--butter-rgb),.3)}
+.hallo.fertig .hallo-welle{display:block;animation:halloWelle 1.4s 2.3s cubic-bezier(.2,.7,.3,1) both}
+.hallo.fertig .hallo-welle.w2{animation-delay:2.52s}
+/* Das erste Bild ist unsichtbar: mit "both" steht es schon waehrend der
+   Wartezeit da — sonst laege von Anfang an ein dicker Rahmen um das Bild. */
+@keyframes halloWelle{0%{opacity:0;transform:scale(1)}8%{opacity:.95}100%{opacity:0;transform:scale(1.8)}}
+.hallo.fertig .hallo-bild{animation:halloBild 1.25s .12s var(--ease-out) both, halloPuls .75s 2.22s var(--ease-out)}
+@keyframes halloPuls{40%{transform:scale(1.045)}}
+.hallo.fertig .hallo-licht{animation:lichtAuf 1.7s .1s var(--ease-out) both,
+  lichtAtmen 3.4s 1.8s ease-in-out infinite alternate, lichtBlitz 1.3s 2.22s ease-out}
+@keyframes lichtBlitz{30%{transform:scale(1.3);opacity:1}}
+
+/* ─── Der Abschied ───
+   Die Anmeldung, rueckwaerts: das Bild hebt aus der Leiste ab und
+   fliegt in die Mitte (halloAnflug()), dahinter geht die Flaeche auf.
+   Die Buehne blendet dafuer nicht als Ganzes auf — sonst kaeme das Bild
+   halb durchsichtig an —, nur ihr Grund. Name und Satz warten, bis das
+   Bild fast da ist. */
+.hallo{--hz-start:.5s;--zeile-start:1.05s}
+.hallo.kommt{animation:none;--hz-start:.8s;--zeile-start:1.3s}
+.hallo.kommt .hallo-grund{animation:var(--aura-anim), halloRein .62s var(--ease-blend) both}
+.hallo.kommt .hallo-bild{animation:none}
+/* Zum Schluss schlaeft das Bild ein: es wird unscharf, sinkt ein wenig
+   und loest sich auf. Erst danach geht die Flaeche. Das Schweben bleibt
+   in der Liste, sonst spraenge das Bild um seine fuenf Pixel zurueck. */
+.hallo.ab.weg{animation:halloAbWeg 1s var(--ease-blend) forwards}
+@keyframes halloAbWeg{0%,30%{opacity:1}100%{opacity:0}}
+.hallo.ab.weg .hallo-rahmen{animation:halloSchweben 4.2s 1.4s ease-in-out infinite alternate,
+  halloEinschlafen .8s var(--ease-blend) forwards}
+@keyframes halloEinschlafen{to{opacity:0;transform:translateY(10px) scale(.9);filter:blur(14px)}}
+.hallo.ab.weg .hallo-in b, .hallo.ab.weg .hallo-s{animation:halloTextWeg .55s ease-in forwards}
 
 /* ─── Der Flug in die Leiste ─── */
 .hallo.fliegt{cursor:default;pointer-events:none}
@@ -2826,8 +2862,8 @@ body.locked #tabbar{
 /* Nur wo der Haken wirklich stand, blendet er beim Abflug aus. Eine
    erste Fassung galt fuer jede Buehne — bei der Anmeldung, die keinen
    Haken hat, blitzte er so vor dem Flug eine Viertelsekunde auf. */
-.hallo.neu.fliegt .hallo-haken, .hallo.fertig.fliegt .hallo-haken{opacity:1;animation:halloAus .25s ease-in forwards}
-.hallo.fliegt .hallo-ring, .hallo.fliegt .hallo-komet,
+.hallo.neu.fliegt .hallo-haken{opacity:1;animation:halloAus .25s ease-in forwards}
+.hallo.fliegt .hallo-ring, .hallo.fliegt .hallo-komet, .hallo.fliegt .hallo-welle,
 .hallo.fliegt .hallo-licht, .hallo.fliegt canvas{animation:halloAus .4s ease-in forwards}
 @keyframes halloAus{to{opacity:0}}
 /* Solange das Bild fliegt, ist sein Platz in der Leiste leer — sonst
@@ -2845,7 +2881,8 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 
 @media (prefers-reduced-motion:reduce){
   .hallo-rahmen, .hallo-licht, .hallo-bild::after, .hallo-komet, .hallo-komet rect,
-  .hallo-in b .hz, .hallo-s, .hallo-grund::after{animation:none}
+  .hallo-in b .hz, .hallo-s, .hallo-grund::after, .hallo-welle{animation:none}
+  .hallo-welle{display:none!important}
   .hallo-bild{animation:halloAb .4s ease-out both}
   .hallo-komet{display:none}
 }
@@ -4839,17 +4876,25 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
    war es das einzige runde Profilbild der App, waehrend es im Gruss, am
    Geburtstag und im Menue als weiches Viereck steht. Jetzt behaelt es
    seine Form, und der Reif nimmt sie an.
-   Danach kommt der Kalender nicht einfach, er faehrt herein. */
-.hallo-ring{ display:none; position:absolute; inset:-9%; pointer-events:none }
+   Danach kommt der Kalender nicht einfach, er faehrt herein.
+
+   Seit 26.09.2026 zeichnet der Lichtstreif den Reif: beide liegen auf
+   derselben Form, laufen mit derselben Zeit und Kurve, und das Ende
+   des Reifs sitzt genau am Ende des Schweifs. Der Reif ist dafuer duenn
+   und leuchtet, statt als dicker Strich dazustehen. Der Haken und das
+   Konfetti sind weg — ist der Reif zu, gehen zwei Lichtwellen vom Bild
+   aus. Siehe .hallo-welle. */
+.hallo-ring{ display:none; position:absolute; inset:-6%; pointer-events:none;
+  filter:drop-shadow(0 0 3px rgba(var(--butter-rgb),.85)) }
 .hallo.fertig .hallo-ring{ display:block }
 .hallo-ring svg{ display:block; width:100%; height:100%; overflow:visible }
 /* 331 ist der Umfang des weichen Vierecks: zweimal 34 gerade Strecke je
    Achse plus der volle Kreis aus den vier Ecken (2π·31) — am Geraet mit
    getTotalLength() nachgemessen: 330,46. pathLength waere eleganter,
    wird auf <rect> aber nicht ueberall gerechnet. */
-.hallo-ring .rg{ fill:none; stroke:var(--butter); stroke-width:3.4; stroke-linecap:round;
+.hallo-ring .rg{ fill:none; stroke:var(--butter-2); stroke-width:1.5; stroke-linecap:round;
   stroke-dasharray:331; stroke-dashoffset:331;
-  animation:ringZieh .9s var(--ease-out) .45s forwards }
+  animation:ringZieh 1.6s cubic-bezier(.45,.05,.35,1) .75s forwards }
 @keyframes ringZieh{ to{ stroke-dashoffset:0 } }
 
 @media(max-width:520px){
@@ -6283,6 +6328,8 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
       <div class="hallo-komet" aria-hidden="true"><svg viewBox="0 0 100 100"><rect class="kg" x="2" y="2" width="96" height="96" rx="31"/><rect class="k3" x="2" y="2" width="96" height="96" rx="31"/><rect class="k2" x="2" y="2" width="96" height="96" rx="31"/><rect class="kl" x="2" y="2" width="96" height="96" rx="31"/></svg></div>
       <!-- Nur am Ende des Funnels: der Reif zieht sich um das Profilbild. -->
       <div class="hallo-ring" aria-hidden="true"><svg viewBox="0 0 100 100"><rect class="rg" x="2" y="2" width="96" height="96" rx="31"/></svg></div>
+      <!-- Nur am Ende der Registrierung: zwei Lichtwellen, wenn der Reif zu ist. -->
+      <i class="hallo-welle" aria-hidden="true"></i><i class="hallo-welle w2" aria-hidden="true"></i>
       <div class="hallo-bild"><img id="hallo-img" alt=""></div>
       <span class="hallo-haken" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.2 5.2L20 7"/></svg></span>
     </div>
@@ -6542,7 +6589,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0040';
+const APP_STAND = '2026-09-27-0130';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -9539,7 +9586,7 @@ function enterApp(){
 let _halloT = null;
 /* introLaeuft() und die Zeiten des Vorspanns stehen weiter oben, bei
    playIntro() — dort werden sie gebraucht, bevor es hier weitergeht. */
-const GRUSS_WEG = 900;              /* Ausblenden der Begrüßung */
+const GRUSS_WEG = 1000;              /* Ausblenden der Begrüßung */
 /* Aufblenden. Muss zu .hallo.on{animation:halloRein .62s} passen —
    danach deckt der Gruss, und erst dann darf sich darunter etwas
    aendern. */
@@ -9554,11 +9601,12 @@ const GRUSS = {
   neu: { kopf: n => 'Willkommen, <i>' + n + '</i>!',  zeile: () => 'Dein Profil ist angelegt.',
          dauer: 3600, konfetti: true },
   ab:  { kopf: n => 'Bis bald, <i>' + n + '</i>!',    zeile: () => CLOUD_ON ? 'Deine Zeiten sind gesichert.' : 'Bis zum nächsten Mal.',
-         dauer: 1750 },
-  /* Das Ende des Funnels. Das Profilbild wird rund, ein Reif zieht sich
-     darum, der Haken springt an die Ecke — und Konfetti steigt. */
+         dauer: 2500 },
+  /* Das Ende des Funnels. Der Lichtstreif zeichnet einen Reif um das
+     Bild, ist er zu, gehen zwei Lichtwellen aus — dann fliegt es in die
+     Leiste. Konfetti und Haken gab es bis 26.09.2026. */
   fertig:{ kopf: n => 'Hi <i>' + n + '</i>!',  zeile: () => 'Willkommen bei MOJI.',
-         dauer: 2900, konfetti: true }
+         dauer: 3500 }
 };
 /* wennOben laeuft, sobald der Gruss den Schirm deckt. Dafuer ist er da:
    Er ist nicht nur Zierde, er ist der Vorhang, hinter dem die Ansicht
@@ -9577,10 +9625,14 @@ function zeigeGruss(art, wennOben){
   halloZerlegen($('#hallo-t'));
   $('#hallo-s').textContent = g.zeile();
   halloAufraeumen();
-  el.classList.remove('weg','ab','neu','fertig','fliegt');
+  el.classList.remove('weg','ab','neu','fertig','fliegt','kommt');
   if(art !== 'an') el.classList.add(art);
+  /* Beim Abschied kommt das Bild aus der Leiste — wenn sie zu sehen ist. */
+  const von = art === 'ab' ? halloZiel() : null;
+  if(von) el.classList.add('kommt');
   void el.offsetWidth;                       /* Animationen neu anstoßen */
   el.classList.add('on');
+  if(von && !halloAnflug(von)) el.classList.remove('kommt');
   /* Erst jetzt: vorher ist die Leinwand nicht sichtbar und damit null groß. */
   if(g.konfetti) konfetti($('#hkanvas'), gruessend, { starts:[140,540,1120], regen:2100 });
   /* Läuft der Vorspann noch, dürfen sich beide überschneiden — aber sie
@@ -9664,8 +9716,47 @@ function halloAbtreten(){
   const ziel = !el.classList.contains('ab') && halloZiel();
   if(!ziel || !halloFlug(ziel)){
     el.classList.add('weg');
-    _halloT = setTimeout(() => { el.classList.remove('on','weg','ab','neu'); schirmPruefen(); }, GRUSS_WEG);
+    _halloT = setTimeout(() => { el.classList.remove('on','weg','ab','neu','kommt'); halloAufraeumen(); schirmPruefen(); }, GRUSS_WEG);
   }
+}
+
+/* Der Anflug beim Abschied: dieselbe Bahn wie der Flug in die Leiste,
+   nur rueckwaerts durchlaufen — vom Profilbild unten rechts im Bogen in
+   die Mitte, dabei waechst es und nimmt wieder die Ecken des grossen
+   Bilds an. Die Zeit laeuft zuegig los und landet lange und weich. */
+const HALLO_ANFLUG = 950;
+function halloAnflug(von){
+  const rahmen = $('#hallo-rahmen'), bild = rahmen && rahmen.querySelector('.hallo-bild');
+  if(!rahmen || !bild || typeof rahmen.animate !== 'function') return false;
+  const q = rahmen.getBoundingClientRect();
+  if(q.width < 10) return false;
+  const dx = (von.left + von.width / 2) - (q.left + q.width / 2);
+  const dy = (von.top + von.height / 2) - (q.top + q.height / 2);
+  const sz = von.width / q.width;
+  const cx = dx * .28, cy = -Math.min(70, Math.abs(dy) * .14);
+  const zeit = kurve(.35, 0, .1, 1);
+  const bilder = [];
+  const N = 48;
+  for(let k = 0; k <= N; k++){
+    const v = 1 - zeit(k / N);                /* 1 = unten in der Leiste, 0 = Mitte */
+    const m = 1 - v;
+    const x = 2 * m * v * cx + v * v * dx;
+    const y = 2 * m * v * cy + v * v * dy;
+    const sc = 1 + (sz - 1) * v;
+    const rot = -5 * Math.sin(v * Math.PI);
+    bilder.push({ offset:k / N, transform:'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) rotate(' + rot.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')' });
+  }
+  const kleinRund = (17 / 48 * 100).toFixed(1) + '%';
+  try{
+    rahmen.animate(bilder, { duration:HALLO_ANFLUG, easing:'linear' });
+    bild.animate([{ borderRadius:kleinRund }, { borderRadius:'30%' }],
+                 { duration:HALLO_ANFLUG * .8, easing:'ease-in-out' });
+  }catch(e){ return false; }
+  /* Solange es unterwegs ist, ist sein Platz in der Leiste leer. Danach
+     deckt die Flaeche ohnehin alles. */
+  document.body.classList.add('halloflug');
+  setTimeout(() => document.body.classList.remove('halloflug'), HALLO_ANFLUG);
+  return true;
 }
 
 /* Der Flug. Das Bild holt kurz Luft, hebt leicht ab und zieht in einem
@@ -14352,7 +14443,18 @@ $('#menu').addEventListener('click', e => {
   if(a === 'logout') doLogout();
   if(a === 'delete') doDelete();
 });
+/* Solange doLogout() laeuft, raeumt nur doLogout() ab. Die Cloud meldet
+   SIGNED_OUT, sobald signOut() durch ist — und der Zuhoerer dafuer rief
+   dann sofort loginScreen(), noch waehrend der Abschied aufblendete. Die
+   Anmeldeseite stand so nach wenigen Millisekunden da und schien durch.
+   Nachgemessen am 26.09.2026: 8 ms statt 620. */
+let _meldetAb = false;
 async function doLogout(){
+  _meldetAb = true;
+  try{ await abmeldenMitAbschied(); }
+  finally{ _meldetAb = false; }
+}
+async function abmeldenMitAbschied(){
   /* Erst der Abschied, dann das Abmelden: solange die Bühne oben liegt,
      räumt die App darunter auf und die Anmeldeseite steht schon bereit,
      wenn sich das Bild auflöst.
@@ -15139,7 +15241,7 @@ $('#erin-ask-no').addEventListener('click', () => erinAskFertig(false));
      weil die Begrüßung darauf wartet. */
   sb.auth.onAuthStateChange((evt, session) => {
     if(evt === 'SIGNED_IN' && session && !UID) afterLogin(session, true);
-    if(evt === 'SIGNED_OUT' && ME){ ME = null; UID = null; loginScreen(); }
+    if(evt === 'SIGNED_OUT' && ME && !_meldetAb){ ME = null; UID = null; loginScreen(); }
   });
   let session = null;
   try{ const r = await sb.auth.getSession(); session = r.data.session; }catch(e){ console.warn(e); }

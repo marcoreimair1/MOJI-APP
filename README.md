@@ -623,6 +623,25 @@ Damit das Bild bleiben kann, während alles andere geht, trägt der Gruß seine 
 steht das Farbwandern mit in der Animationsliste — ohne es sprang der Verlauf mitten im
 Ausblenden auf Anfang.
 
+**Abschied und Registrierung** *(26. September 2026)* tragen dieselbe Handschrift:
+
+- **Abmelden** ist die Anmeldung rückwärts. `halloAnflug()` lässt das Bild aus der Leiste in
+  einem Bogen in die Mitte fliegen, über dieselbe Bahn wie `halloFlug()`, nur rückwärts
+  durchlaufen. Die Bühne blendet dafür nicht als Ganzes auf (`.hallo.kommt`), nur ihr Grund,
+  in denselben 0,62 s — sonst käme das Bild halb durchsichtig an, und das Abmelden wartet
+  weiter auf `GRUSS_REIN`. Name und Satz setzen später ein (`--hz-start`, `--zeile-start`).
+  Zum Schluss **schläft das Bild ein** (`halloEinschlafen`: unscharf, etwas kleiner, sinkt),
+  und erst danach geht die Fläche (`halloAbWeg`, 1 s, darum `GRUSS_WEG` = 1000).
+- **Dabei behoben:** Der Zuhörer für `SIGNED_OUT` rief `loginScreen()`, sobald `signOut()`
+  durch war — nachgemessen nach 8 ms, noch während der Abschied aufblendete. Die Anmeldeseite
+  schien durch. Solange `doLogout()` läuft (`_meldetAb`), räumt jetzt nur es selbst ab: 667 ms.
+- **Registrierung:** Der Lichtstreif zeichnet den Reif. Beide liegen auf derselben Form
+  (`inset:-6%`), laufen über dieselbe Zeit und Kurve, und das Ende des Reifs sitzt am Ende
+  des Schweifs. Ist der Reif zu, gehen zwei Lichtwellen in seiner Form vom Bild aus
+  (`.hallo-welle`), das Bild atmet einmal auf (`halloPuls`) und das Licht dahinter blitzt
+  (`lichtBlitz`). Konfetti und Haken sind raus. Das erste Bild der Wellen ist unsichtbar:
+  mit `both` stand es sonst schon während der Wartezeit als dicker Rahmen da.
+
 **Kein Flug**, wenn die Leiste nicht zu sehen ist (`halloZiel()` gibt dann `null`): beim
 Abmelden, unter einem Blatt, oder bei *weniger Bewegung*. Dann blendet alles gemeinsam aus
 wie bisher. Ein Tippen auf den Gruß startet den Flug sofort (`grussEnde()` → `halloAbtreten()`).
