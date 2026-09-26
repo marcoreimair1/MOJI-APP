@@ -576,6 +576,51 @@ Balken räumen schneller (0,3 s), sonst lägen sie über *Hallo <Name>* — nur 
 Vorher blendete der Vorspann erst ganz aus, gab dabei den Kalender frei, und der Gruß legte
 sich danach wieder darüber: drei Bewegungen für einen Übergang.
 
+**Die App kommt erst hoch, wenn der Gruß deckt** *(26. September 2026)*. Der Vorspann ist
+durchsichtig, er zeigt die Farbwolken der App. `endIntro()` setzte aber sofort `#app.on` und
+nahm `body.locked` weg — während der Gruß noch 0,62 s aufblendete. In dieser Zeit schienen
+Kalender und Leiste durch das halb sichtbare Profilbild. Bei der Übergabe passiert beides jetzt
+erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält das fest.
+
+### Der Auftritt des Grußes *(26. September 2026)*
+
+Vorher federte das Profilbild mit einer Drehung herein, der Text blendete auf, und nach 2,35 s
+blendete alles gemeinsam aus. Jetzt läuft es in dieser Reihenfolge ab:
+
+| ab | was geschieht |
+|---|---|
+| 0 s | Das Männchen des Vorspanns verschwimmt und wird kleiner (`uebergabeMark`), darüber blendet der Gruß auf |
+| 0,1 s | Hinter dem Bild geht ein Licht in der Markenfarbe auf (`.hallo-licht`) und atmet danach mit |
+| 0,12 s | Das Profilbild kommt aus der Unschärfe, von leicht unten und etwas kleiner, **ohne Überschwingen** |
+| 0,2 s | Lichtstaub steigt langsam am Bild vorbei: 20 Punkte auf `#hstaub`, weißer Kern in violettem Hof |
+| 0,5 s | Der Name setzt sich Zeichen für Zeichen zusammen, jedes 34 ms nach dem vorigen, aus der Unschärfe |
+| 0,75 s | Ein Lichtstreif läuft einmal um das Bild (`.hallo-komet`) |
+| 1,05 s | Ein Glanz wandert über das Bild, der Satz darunter zieht sich zusammen wie ein Blick, der scharf stellt |
+| 1,4 s | Das Bild schwebt fünf Pixel auf und ab, bis es weitergeht |
+| 2,75 s | **Der Flug**: das Bild holt kurz Luft, hebt leicht ab und zieht in einem Bogen hinunter auf das Profilbild in der Leiste |
+
+**Der Flug** (`halloFlug()`) ist das, was den Gruß mit der App verbindet: man sieht, wo das Bild
+hingehört. Die Bahn ist eine quadratische Kurve mit dem Kontrollpunkt etwas rechts über dem
+Start, die Zeit läuft über `kurve(.5, 0, .14, 1)` — ruhiger Abflug, zügige Mitte, lange weiche
+Landung. Web Animations bekommt 49 fertig gerechnete Bilder und läuft linear; so bleibt die
+Bahn eine Kurve, statt zwischen wenigen Stützpunkten zu knicken. Nebenbei nimmt das Bild die
+Ecken des kleinen an (30 % → 17 von 48 px) und neigt sich in der Mitte um fünf Grad.
+
+Währenddessen blenden Farbfläche, Text, Licht und Staub aus, und `#v-cal` stellt sich aus der
+Unschärfe scharf — nur die Ansicht, nicht `#app`: ein Filter auf `#app` machte ihn für eine
+Sekunde zum Bezugsrahmen für alles Feste darin. Das Profilbild in der Leiste und seine violette
+Zahl sind so lange leer (`body.halloflug`); gelandet, kommt das echte Bild unter dem fliegenden
+hervor, federt einmal nach, und die Zahl springt auf.
+
+Damit das Bild bleiben kann, während alles andere geht, trägt der Gruß seine Farbfläche als
+**eigene Lage** (`.hallo-grund.aurahg`), nicht mehr als Hintergrund der Bühne. Beim Abflug
+steht das Farbwandern mit in der Animationsliste — ohne es sprang der Verlauf mitten im
+Ausblenden auf Anfang.
+
+**Kein Flug**, wenn die Leiste nicht zu sehen ist (`halloZiel()` gibt dann `null`): beim
+Abmelden, unter einem Blatt, oder bei *weniger Bewegung*. Dann blendet alles gemeinsam aus
+wie bisher. Ein Tippen auf den Gruß startet den Flug sofort (`grussEnde()` → `halloAbtreten()`).
+
 ### Überblendungen und die Kurve dafür
 
 `--ease-out` ist `cubic-bezier(.16,1,.3,1)`, also Expo: nach einem Sechstel der Zeit ist fast

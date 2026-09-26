@@ -114,9 +114,17 @@ ok('Der Vorspann steht noch', sp.style.display !== 'none', sp.style.display || '
 ok('Der Vorspann ist als Uebergabe vermerkt', sp.dataset.uebergabe === '1');
 ok('Schlange ist leer', _nachIntro.length === 0, _nachIntro.length);
 ok('Vorspann gilt als aus', window.__introLaeuft === false);
-ok('Die App kommt darunter hoch', document.querySelector('#app').classList.contains('on'));
+/* Seit 26.09.2026: die App kommt erst hoch, wenn der Gruss deckt. Der
+   Vorspann ist durchsichtig — sofort freigegeben, schienen Kalender und
+   Leiste durch den noch halb aufgeblendeten Gruss. */
+ok('Die App wartet, bis der Gruss deckt', !document.querySelector('#app').classList.contains('on'));
+ok('Die Leiste bleibt so lange versteckt', document.body.classList.contains('locked'));
+ok('Und das Warten ist nicht kuerzer als das Aufblenden', UEBERGABE >= GRUSS_REIN,
+   UEBERGABE + ' >= ' + GRUSS_REIN);
 
 window.__WEITER = function(){
+  ok('Danach kommt die App darunter hoch', document.querySelector('#app').classList.contains('on'));
+  ok('Und die Leiste ist frei', !document.body.classList.contains('locked'));
   ok('Vorspann ist danach abgeraeumt', sp.style.display === 'none', sp.style.display);
   ok('Uebergabe-Vermerk ist weg', !sp.dataset.uebergabe);
   ok('Der Gruss liegt immer noch oben', hallo.classList.contains('on'));

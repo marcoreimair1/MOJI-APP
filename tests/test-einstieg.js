@@ -426,7 +426,26 @@ ok('Profilbild ist gesetzt',  (el('hallo-img').getAttribute('src') || '').indexO
    el('hallo-img').getAttribute('src'));
 ok('Und wird nicht versteckt', document.querySelector('#hallo .hallo-rahmen') !== null
    && el('hallo').classList.contains('fertig'));
+/* Seit 26.09.2026 setzt sich der Name Zeichen fuer Zeichen zusammen. */
+var hz = el('hallo-t').querySelectorAll('.hz');
+ok('Der Name steht Zeichen fuer Zeichen', hz.length === 'HiAnna!'.length, hz.length);
+ok('Jedes Zeichen kennt seinen Platz',
+   hz.length > 0 && hz[hz.length - 1].style.getPropertyValue('--i') === String(hz.length - 1),
+   hz.length ? hz[hz.length - 1].style.getPropertyValue('--i') : '-');
+ok('Die Leerzeichen bleiben stehen', el('hallo-t').textContent === 'Hi Anna!', el('hallo-t').textContent);
+ok('Der Name bleibt in einer Huelle beisammen',
+   !!el('hallo-t').querySelector('i .hw') && el('hallo-t').querySelector('i .hw').textContent === 'Anna');
+ok('Die Farbflaeche ist eine eigene Lage', !!document.querySelector('#hallo > .hallo-grund.aurahg'));
+ok('Die Buehne selbst traegt sie nicht mehr', !el('hallo').classList.contains('aurahg'));
+ok('Das Licht liegt hinter dem Bild', !!document.querySelector('#hallo .hallo-rahmen > .hallo-licht'));
+ok('Der Lichtstreif hat Kopf und Schweif',
+   document.querySelectorAll('#hallo .hallo-komet rect').length === 4);
+ok('Der Staub hat seine Leinwand', !!el('hstaub'));
+/* Ohne Leiste darunter kein Flug — dann blendet alles gemeinsam aus. */
+ok('Ohne sichtbare Leiste gibt es kein Ziel', halloZiel() === null);
 grussEnde();
+ok('Dann tritt der Gruss wie bisher ab', el('hallo').classList.contains('weg'));
+ok('Und fliegt nicht', !el('hallo').classList.contains('fliegt'));
 
 /* ── 13 · Das Profil kommt aus dem Funnel ── */
 ME = null; _funnelId = null; OB.mailOk = true;
@@ -579,6 +598,28 @@ roh('Der Gruss macht das Bild nicht mehr rund',
     !/\.hallo\.fertig \.hallo-bild\{ ?border-radius:50%/.test(HTML));
 roh('Der Reif laeuft ueber den gemessenen Umfang',
     /stroke-dasharray:331; stroke-dashoffset:331/.test(HTML));
+/* ─── 26.09.2026: der neue Auftritt ─── */
+roh('Das Bild wird scharf, statt zu federn',
+    /@keyframes halloBild\{\s*0%\{opacity:0;transform:translateY\(22px\) scale\(\.82\);filter:blur\(18px\)\}/.test(HTML));
+roh('Die Zeichen steigen einzeln aus der Unschaerfe',
+    /\.hallo-in b \.hz\{[\s\S]{0,120}animation:halloZeichen [\d.]+s calc\(\.5s \+ var\(--i\) \* 34ms\)/.test(HTML));
+roh('Der Schweif endet dort, wo der Kopf ist',
+    /\.kg\{--l:22;--k:40;[\s\S]{0,200}\.k3\{--l:62;--k:0;[\s\S]{0,200}\.k2\{--l:34;--k:28;[\s\S]{0,200}\.kl\{--l:5;--k:57;/.test(HTML));
+roh('Die Staubfarbe wird vorher aufgeloest',
+    /getPropertyValue\('--butter-rgb'\)/.test(HTML));
+roh('Das Licht kennt beide Fassungen',
+    (HTML.match(/--licht-a:/g) || []).length === 3, (HTML.match(/--licht-a:/g) || []).length);
+roh('Das Bild fliegt in die Leiste', /function halloFlug\(ziel\)\{/.test(HTML));
+roh('Die Bahn laeuft ueber eine eigene Zeitkurve', /const zeit = kurve\(\.5, 0, \.14, 1\);/.test(HTML));
+roh('Solange es fliegt, ist sein Platz leer',
+    /body\.halloflug \.tabbar \.avatar, body\.halloflug #av-zaehler\{opacity:0;transition:none\}/.test(HTML));
+roh('Die Farbflaeche wandert beim Abflug weiter',
+    /\.hallo\.fliegt \.hallo-grund\{ animation:var\(--aura-anim\), halloGrundWeg/.test(HTML));
+roh('Der Kalender taucht auf, nicht #app',
+    /body\.halloflug #v-cal\{animation:halloApp/.test(HTML) && !/body\.halloflug #app\{/.test(HTML));
+roh('Weniger Bewegung: kein Flug', /function halloZiel\(\)\{[\s\S]{0,400}prefers-reduced-motion: reduce/.test(HTML));
+roh('Das Maennchen verschwimmt bei der Uebergabe',
+    /@keyframes uebergabeMark\{ to\{ opacity:0; transform:scale\(\.9\); filter:blur\(14px\) \} \}/.test(HTML));
 roh('Ruhige Geraete bekommen nichts davon',
     /#za-inhalt > \.za-wahl > button, #za-inhalt > \.za-tage > button,\s*\n\s*#v-zeitassi\.on \.za-moji\{ animation:none \}/.test(HTML));
 

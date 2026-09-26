@@ -175,6 +175,8 @@
   --line-2:rgba(235,225,255,.11);
 
   --butter:#C643FE;
+  --butter-rgb:198,67,254;
+  --licht-a:.42;          /* Licht hinter dem Profilbild im Gruss */
   --butter-2:#D169FF;   /* heller Verlaufsrand — gedaempft, der Knopf stach heraus */
   --butter-dim:rgba(198,67,254,.20);
   --on-primary:#FFFFFF;
@@ -280,6 +282,8 @@
   --line-2:rgba(26,5,38,.11);
 
   --butter:#A716E8;
+  --butter-rgb:167,22,232;
+  --licht-a:.26;
   --butter-2:#C643FE;
   --butter-dim:rgba(167,22,232,.13);
   --on-primary:#FFFFFF;
@@ -356,6 +360,8 @@
   --line-2:rgba(26,5,38,.11);
 
   --butter:#A716E8;
+  --butter-rgb:167,22,232;
+  --licht-a:.26;
   --butter-2:#C643FE;
   --butter-dim:rgba(167,22,232,.13);
   --on-primary:#FFFFFF;
@@ -2674,19 +2680,32 @@ body.locked #tabbar{
 @keyframes neuvBalken{to{width:100%}}
 
 /* ─── Begrüßung nach dem Anmelden ──────────────────────────────────────
-   Kurz, aber mit Anlauf: das Bild federt herein, dann der Name, dann der
-   Satz. Nach rund zweieinhalb Sekunden löst sich alles auf und der
-   Kalender liegt schon darunter. Sie fängt Berührungen ab, damit niemand
-   blind in den Kalender tippt — ein Tippen darauf beendet sie sofort. */
-.hallo{position:fixed;inset:0;z-index:60;display:none;place-items:center;
-  background:radial-gradient(circle at 50% 42%,rgba(var(--s-hoch),.97),rgba(var(--s-tief),.99) 68%);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer}
+   Seit 26. September 2026 ein Auftritt in vier Zeilen statt eines
+   Federns. Das Maennchen des Vorspanns verschwimmt, und an seiner Stelle
+   wird das Profilbild scharf — man sieht keinen Schnitt, nur wie das
+   eine Bild zum anderen wird. Dahinter geht ein Licht in der
+   Markenfarbe auf, ein Lichtstreif laeuft einmal um das Bild, ein Glanz
+   wandert darueber, und der Name setzt sich Zeichen fuer Zeichen
+   zusammen, jedes aus der Unschaerfe.
+
+   Zum Schluss blendet nicht alles gemeinsam aus: das Bild fliegt in
+   einem Bogen an seinen Platz in der Leiste unten, und der Kalender
+   taucht darunter auf. So weiss man, wo man sich wiederfindet. Siehe
+   halloFlug().
+
+   Sie faengt Beruehrungen ab, damit niemand blind in den Kalender
+   tippt — ein Tippen darauf beendet sie sofort. */
+.hallo{position:fixed;inset:0;z-index:60;display:none;place-items:center;cursor:pointer}
 /* Der Gruss blendet ueber dem noch stehenden Vorspann auf — beide tragen
    dieselbe Farbflaeche, man sieht also nur, wie das Symbol zum Profilbild
    wird. Siehe endIntro(). */
 .hallo.on{display:grid;animation:halloRein .62s var(--ease-blend)}
-/* Und loest sich zum Schluss lange auf. Der Kalender darunter steht da
-   schon fertig, es wird also nichts mehr aufgebaut — nur freigegeben. */
+/* Die Farbflaeche ist eine eigene Lage. Waere sie der Hintergrund der
+   Buehne selbst, ginge das Profilbild beim Ausblenden mit — es soll aber
+   bleiben und fliegen. */
+.hallo-grund{position:absolute;inset:0;z-index:0}
+/* Ohne Leiste darunter (beim Abmelden, oder wenn sie nicht zu sehen ist)
+   loest sich alles gemeinsam auf, wie bisher. */
 .hallo.weg{animation:halloWeg .9s var(--ease-blend) forwards}
 @keyframes halloRein{from{opacity:0}}
 @keyframes halloWeg{to{opacity:0;transform:scale(1.03)}}
@@ -2694,11 +2713,57 @@ body.locked #tabbar{
 /* Beim Anlegen steigen Raketen — dasselbe Konfetti wie am Geburtstag,
    nur auf dieser Leinwand und mit kürzerem Programm. */
 #hkanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
-.hallo-rahmen{position:relative;width:min(62vw,212px);margin:0 auto 26px}
-.hallo-bild{width:100%;aspect-ratio:1;border-radius:30%;
+/* Lichtstaub: ein paar leuchtende Punkte steigen langsam am Bild vorbei.
+   Liegt unter dem Bild, damit es davor steht. */
+#hstaub{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.hallo-rahmen{position:relative;width:min(62vw,212px);margin:0 auto 28px;
+  animation:halloSchweben 4.2s 1.4s ease-in-out infinite alternate}
+/* Solange es wartet, atmet das Bild: fuenf Pixel auf und ab. Ueber
+   translate statt transform — transform gehoert dem Flug. */
+@keyframes halloSchweben{to{translate:0 -5px}}
+/* Das Licht dahinter: geht auf, dann atmet es mit. */
+.hallo-licht{position:absolute;left:50%;top:50%;width:190%;aspect-ratio:1;pointer-events:none;
+  translate:-50% -50%;border-radius:50%;
+  background:radial-gradient(circle,rgba(var(--butter-rgb),var(--licht-a)) 0,rgba(var(--butter-rgb),calc(var(--licht-a)*.4)) 34%,transparent 64%);
+  animation:lichtAuf 1.7s .1s var(--ease-out) both, lichtAtmen 3.4s 1.8s ease-in-out infinite alternate}
+@keyframes lichtAuf{from{opacity:0;transform:scale(.45)}}
+@keyframes lichtAtmen{to{transform:scale(1.1);opacity:.78}}
+.hallo-bild{position:relative;width:100%;aspect-ratio:1;border-radius:30%;
   overflow:hidden;background:#fff;border:1px solid rgba(var(--s-auf),.22);
-  box-shadow:0 34px 70px -26px rgba(var(--s-schatten),.8),0 0 60px -18px rgba(var(--c-zeit-rgb),.4);
-  animation:halloBild .82s var(--ease-out) both}
+  box-shadow:0 34px 70px -26px rgba(var(--s-schatten),.8),0 0 60px -18px rgba(var(--butter-rgb),.5);
+  animation:halloBild 1.25s .12s var(--ease-out) both}
+/* Aus der Unschaerfe, von leicht unten und etwas kleiner — und ohne
+   Ueberschwingen: es federt nicht, es wird scharf. */
+@keyframes halloBild{
+  0%{opacity:0;transform:translateY(22px) scale(.82);filter:blur(18px)}
+  55%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
+/* Der Glanz wandert einmal darueber, wie ueber die Mitgliedskarte. */
+.hallo-bild::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(112deg,transparent 32%,rgba(255,255,255,.62) 49%,rgba(255,255,255,.18) 55%,transparent 68%);
+  transform:translateX(-135%);animation:halloGlanz 1.3s 1.05s var(--ease-blend) forwards}
+@keyframes halloGlanz{to{transform:translateX(135%)}}
+/* Der Lichtstreif, einmal rundherum. Dieselbe Form wie der Reif am Ende
+   des Funnels, nur ein kurzes Stueck davon, das wandert. */
+.hallo-komet{position:absolute;inset:-6%;pointer-events:none;opacity:0;
+  animation:kometSicht 1.6s .75s ease-in-out both}
+.hallo-komet svg{display:block;width:100%;height:100%;overflow:visible}
+/* Ein Kopf und ein Schweif, der auslaeuft: vier Striche verschiedener
+   Laenge, deren vordere Enden aufeinander liegen. --k schiebt jeden so
+   weit zurueck, dass er dort endet, wo der laengste endet. */
+.hallo-komet rect{fill:none;stroke-linecap:round;stroke-dasharray:var(--l) 400;
+  animation:kometLauf 1.6s .75s cubic-bezier(.45,.05,.35,1) both}
+.hallo-komet .kg{--l:22;--k:40;stroke:var(--butter-2);stroke-width:9;opacity:.55;filter:blur(4px)}
+.hallo-komet .k3{--l:62;--k:0;stroke:var(--butter-2);stroke-width:1.6;opacity:.28}
+.hallo-komet .k2{--l:34;--k:28;stroke:var(--butter-2);stroke-width:2.2;opacity:.62}
+.hallo-komet .kl{--l:5;--k:57;stroke:#fff;stroke-width:3.2}
+@keyframes kometLauf{
+  from{stroke-dashoffset:calc(var(--k) * -1px)}
+  to{stroke-dashoffset:calc(-331px - var(--k) * 1px)}
+}
+@keyframes kometSicht{0%{opacity:0}18%{opacity:1}72%{opacity:1}100%{opacity:0}}
+.hallo.fertig .hallo-komet, .hallo.ab .hallo-komet{display:none}
 /* Der Haken erscheint nur nach dem Anlegen — er sitzt außerhalb des
    beschnittenen Bildfelds, sonst würde ihn die runde Ecke abschneiden. */
 .hallo-haken{position:absolute;right:-6px;top:-6px;width:54px;height:54px;border-radius:50%;
@@ -2706,7 +2771,7 @@ body.locked #tabbar{
   /* Stand fest auf Dunkelblau und war im Hellen ein dunkler Fleck auf
      Pastell — der Rand traegt jetzt die Farbe der Flaeche darunter. */
   border:4px solid rgba(var(--s-tief),.92);box-shadow:0 14px 28px -12px rgba(var(--s-schatten),.85)}
-.hallo.neu .hallo-haken{animation:hakenRein .58s .5s var(--ease-out) both}
+.hallo.neu .hallo-haken{animation:hakenRein .58s .9s var(--ease-out) both}
 /* Am Ende des Funnels kommt er nach dem Reif. */
 .hallo.fertig .hallo-haken{animation:hakenRein .58s 1.15s var(--ease-out) both}
 @keyframes hakenRein{
@@ -2715,20 +2780,53 @@ body.locked #tabbar{
   100%{opacity:1;transform:none}
 }
 .hallo-bild img{width:100%;height:100%;object-fit:cover;object-position:center 86%;display:block}
-@keyframes halloBild{
-  0%{opacity:0;transform:scale(.7) rotate(-5deg)}
-  62%{opacity:1;transform:scale(1.05) rotate(1.5deg)}
-  100%{opacity:1;transform:none}
-}
-/* Beim Abmelden kein Federn — das Bild tritt ruhig ab. */
+/* Beim Abmelden kein Auftritt — das Bild tritt ruhig ab. */
 .hallo.ab .hallo-bild{animation:halloAb .68s var(--ease-out) both}
+.hallo.ab .hallo-bild::after{animation:none}
 @keyframes halloAb{from{opacity:0;transform:scale(1.07)}to{opacity:1;transform:none}}
 .hallo-in b{display:block;font-family:var(--font-dis);font-weight:400;
-  font-size:clamp(27px,7.6vw,40px);letter-spacing:-.015em;line-height:1.1;
-  animation:fadeUp .6s .34s var(--ease-out) both}
+  font-size:clamp(27px,7.6vw,40px);letter-spacing:-.015em;line-height:1.1}
 .hallo-in b i{font-style:normal;color:var(--butter)}
-.hallo-s{display:block;margin-top:10px;font-size:clamp(14px,4vw,16px);color:var(--tx-2);
-  animation:fadeUp .6s .5s var(--ease-out) both}
+/* Zeichen fuer Zeichen: jedes steigt aus der Unschaerfe, 34 ms nach dem
+   vorigen. Die Woerter bleiben zusammen, damit nichts mitten im Namen
+   umbricht. Siehe halloZerlegen(). */
+.hallo-in b .hw{display:inline-block;white-space:nowrap}
+.hallo-in b .hz{display:inline-block;
+  animation:halloZeichen .95s calc(.5s + var(--i) * 34ms) var(--ease-out) both}
+@keyframes halloZeichen{from{opacity:0;transform:translateY(.45em) scale(.94);filter:blur(9px)}}
+/* Der Satz darunter zieht sich zusammen, wie ein Blick, der scharf
+   stellt. */
+.hallo-s{display:block;margin-top:12px;font-size:clamp(14px,4vw,16px);color:var(--tx-2);
+  animation:halloZeile 1.2s 1.05s var(--ease-out) both}
+@keyframes halloZeile{from{opacity:0;letter-spacing:.16em;filter:blur(5px)}}
+
+/* ─── Der Flug in die Leiste ─── */
+.hallo.fliegt{cursor:default;pointer-events:none}
+@keyframes halloGrundWeg{to{opacity:0}}
+.hallo.fliegt .hallo-in b, .hallo.fliegt .hallo-s{animation:halloTextWeg .42s ease-in forwards}
+@keyframes halloTextWeg{to{opacity:0;transform:translateY(-10px);filter:blur(6px)}}
+.hallo.fliegt .hallo-haken{opacity:1;animation:halloAus .25s ease-in forwards}
+.hallo.fliegt .hallo-ring, .hallo.fliegt .hallo-komet,
+.hallo.fliegt .hallo-licht, .hallo.fliegt canvas{animation:halloAus .4s ease-in forwards}
+@keyframes halloAus{to{opacity:0}}
+/* Solange das Bild fliegt, ist sein Platz in der Leiste leer — sonst
+   stuende es dort schon, bevor es ankommt. */
+body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:none}
+/* Die Zahl daran springt erst nach der Landung auf. */
+#av-zaehler.nachflug{animation:zaehlerAuf .5s var(--ease-out) both}
+@keyframes zaehlerAuf{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:none;opacity:1}}
+/* Und der Kalender taucht auf, statt einfach dazustehen. Nur die
+   Ansicht, nicht #app: ein Filter auf #app machte ihn zum Bezugsrahmen
+   fuer alles Feste darin, und das saesse fuer eine Sekunde falsch. */
+body.halloflug #v-cal{animation:halloApp 1s .2s var(--ease-out) both}
+@keyframes halloApp{from{transform:scale(.97);filter:blur(8px)}}
+
+@media (prefers-reduced-motion:reduce){
+  .hallo-rahmen, .hallo-licht, .hallo-bild::after, .hallo-komet, .hallo-komet rect,
+  .hallo-in b .hz, .hallo-s, body.halloflug #v-cal{animation:none}
+  .hallo-bild{animation:halloAb .4s ease-out both}
+  .hallo-komet{display:none}
+}
 
 /* ─── Stufe, Karte, Rangliste ───────────────────────────────────────────
    Jede Stufe bringt zwei Farben mit (--rf hell, --rf2 dunkel). Ab Stufe 8
@@ -4269,7 +4367,7 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
     var(--ink);
 }
 :root{ --aura-anim:auraWandern 26s ease-in-out infinite alternate }
-.aurahg, #bleib.aurahg, #geb.aurahg, #hallo.aurahg{
+.aurahg, #bleib.aurahg, #geb.aurahg{
   background:var(--aura-flaeche);
   background-size:220% 220%,220% 220%,220% 220%,220% 220%,220% 220%,auto;
   background-position:20% 24%, 78% 16%, 72% 80%, 28% 72%, 50% 50%, 0 0;
@@ -4286,7 +4384,10 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
    und wurden beim Umbranden von .aurahg ueberschrieben. `animation` ist
    ein Kurzschreiben: wer nur das Wandern der Farben hineinschreibt,
    loescht damit das Auf- und Abblenden. Und #hallo.aurahg (eine ID)
-   schlaegt .hallo.on (zwei Klassen).
+   schlug .hallo.on (zwei Klassen). Seit 26.09.2026 traegt der Gruss
+   seine Farbflaeche als eigene Lage (.hallo-grund), damit das
+   Profilbild beim Ausblenden stehen bleiben und fliegen kann — die
+   Buehne selbst blendet deshalb wieder ueber .hallo.on auf.
 
    Nachgemessen war das Ergebnis: der Vorspann lief splashOut ueber 5 s
    statt 1,1 s — die 5 s kamen aus #splash.aurahg, gleich stark und
@@ -4298,14 +4399,16 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
    Vorspann verzichtet beim Ausblenden auf das Farbwandern: 1,1 s reichen
    dafuer ohnehin nicht. */
 
-#hallo.aurahg.on  { animation:var(--aura-anim), halloRein .62s var(--ease-blend) }
-#hallo.aurahg.weg { animation:var(--aura-anim), halloWeg .9s var(--ease-blend) forwards }
+/* Die Farbflaeche des Grusses wandert beim Abflug weiter. Ohne das
+   Wandern in der Liste sprang der Verlauf zurueck auf Anfang, mitten im
+   Ausblenden. */
+.hallo.fliegt .hallo-grund{ animation:var(--aura-anim), halloGrundWeg .8s .2s var(--ease-blend) forwards }
 #geb.aurahg.on    { animation:var(--aura-anim), qdoneIn .3s var(--ease-blend) }
 #bleib.aurahg.on  { animation:var(--aura-anim), bleibRein .3s var(--ease-blend) both }
 #bleib.aurahg.weg { animation:var(--aura-anim), bleibRaus .5s ease-in both }
 
 @media (prefers-reduced-motion:reduce){
-  .aurahg, #hallo.aurahg.on, #hallo.aurahg.weg,
+  .aurahg, #hallo.on, #hallo.weg,
   #geb.aurahg.on, #bleib.aurahg.on, #bleib.aurahg.weg{ animation:none }
   /* Ohne Animation haelt kein forwards die Deckkraft — von Hand setzen,
      sonst bleibt das Abgeblendete sichtbar stehen. */
@@ -4437,15 +4540,17 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
    Wortmarke, Unterzeile und Balken raeumen dagegen in 0,3 s. Blieben
    sie so lange wie das Symbol, laegen sie eine halbe Sekunde lang ueber
    "Hallo <Name>" — nur 13 px daneben, das wird Matsch. */
-#splash[data-uebergabe] .mark-wrap{ animation:uebergabeRaus .62s var(--ease-blend) forwards }
+/* Das Maennchen verschwimmt, waehrend darueber das Profilbild scharf
+   wird — so liest sich die Uebergabe als ein Bild, das sich wandelt. */
+#splash[data-uebergabe] .mark-wrap{ animation:uebergabeMark .7s var(--ease-blend) forwards }
+@keyframes uebergabeMark{ to{ opacity:0; transform:scale(.9); filter:blur(14px) } }
 #splash[data-uebergabe] .sp-lade{ animation:uebergabeRaus .3s var(--ease-blend) forwards }
 @keyframes uebergabeRaus{ to{ opacity:0 } }
 
 /* Die Begruessung liegt seit dem Umbranden auf der deckenden Farbflaeche
-   (--ink als unterste Lage). Der Backdrop-Filter von frueher hat dahinter
-   nichts mehr zu verwischen, kostet auf dem Handy aber eine ganze
-   Vollbildlage — weg damit, das macht den Uebergang ruhiger. */
-#hallo.aurahg{ backdrop-filter:none; -webkit-backdrop-filter:none }
+   (--ink als unterste Lage). Einen Backdrop-Filter hat sie nicht mehr —
+   er haette dahinter nichts zu verwischen und kostete auf dem Handy eine
+   ganze Vollbildlage. */
 
 
 
@@ -6149,9 +6254,14 @@ body.kalrein #v-cal{ animation:kalRein .78s var(--ease-out) both }
 
 <!-- Begrüßung nach dem Anmelden. Hier darf der Charakter groß und
      unbeschnitten auftreten — 3:4 Feld auf 3:4 Motiv. -->
-<div class="hallo aurahg" id="hallo" aria-hidden="true">
+<div class="hallo" id="hallo" aria-hidden="true">
+  <div class="hallo-grund aurahg"></div>
+  <canvas id="hstaub" aria-hidden="true"></canvas>
   <div class="hallo-in">
-    <div class="hallo-rahmen">
+    <div class="hallo-rahmen" id="hallo-rahmen">
+      <i class="hallo-licht" aria-hidden="true"></i>
+      <!-- Der Lichtstreif, der einmal um das Bild laeuft. -->
+      <div class="hallo-komet" aria-hidden="true"><svg viewBox="0 0 100 100"><rect class="kg" x="2" y="2" width="96" height="96" rx="31"/><rect class="k3" x="2" y="2" width="96" height="96" rx="31"/><rect class="k2" x="2" y="2" width="96" height="96" rx="31"/><rect class="kl" x="2" y="2" width="96" height="96" rx="31"/></svg></div>
       <!-- Nur am Ende des Funnels: der Reif zieht sich um das Profilbild. -->
       <div class="hallo-ring" aria-hidden="true"><svg viewBox="0 0 100 100"><rect class="rg" x="2" y="2" width="96" height="96" rx="31"/></svg></div>
       <div class="hallo-bild"><img id="hallo-img" alt=""></div>
@@ -6413,7 +6523,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-26-2210';
+const APP_STAND = '2026-09-26-2330';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7626,8 +7736,6 @@ function endIntro(){
   const sp = $('#splash');
   if(sp.classList.contains('done') || sp.dataset.uebergabe) return;
   clearTimeout(playIntro._a);
-  $('#app').classList.add('on');
-  document.body.classList.remove('locked');
 
   if(_nachIntro.length){
     sp.dataset.uebergabe = '1';
@@ -7635,13 +7743,21 @@ function endIntro(){
     window.__introLaeuft = false;
     const q = _nachIntro; _nachIntro = [];
     q.forEach(fn => { try{ fn(); }catch(e){ console.warn(e); } });
+    /* Die App kommt erst hoch, wenn der Gruss deckt. Der Vorspann ist
+       durchsichtig, und der Gruss blendet 0,62 s lang auf — gab endIntro()
+       die App sofort frei, schienen Kalender und Leiste in dieser Zeit
+       durch das halb aufgeblendete Profilbild. Gesehen am 26.09.2026. */
     playIntro._b = setTimeout(() => {
+      $('#app').classList.add('on');
+      document.body.classList.remove('locked');
       sp.style.display = 'none';
       delete sp.dataset.uebergabe;
     }, UEBERGABE);
     return;
   }
 
+  $('#app').classList.add('on');
+  document.body.classList.remove('locked');
   sp.classList.add('done');
   playIntro._b = setTimeout(() => {
     sp.style.display = 'none';
@@ -9406,7 +9522,7 @@ const GRUSS_REIN = 620;
 /* Drei Anlässe, dieselbe Bühne: anmelden, anlegen, abmelden. */
 const GRUSS = {
   an:  { kopf: n => 'Hallo <i>' + n + '</i>,',        zeile: () => 'schön dich wieder zu sehen!',
-         dauer: 2350 },
+         dauer: 2750 },
   neu: { kopf: n => 'Willkommen, <i>' + n + '</i>!',  zeile: () => 'Dein Profil ist angelegt.',
          dauer: 3600, konfetti: true },
   ab:  { kopf: n => 'Bis bald, <i>' + n + '</i>!',    zeile: () => CLOUD_ON ? 'Deine Zeiten sind gesichert.' : 'Bis zum nächsten Mal.',
@@ -9430,23 +9546,250 @@ function zeigeGruss(art, wennOben){
   clearTimeout(_halloT);
   $('#hallo-img').src = avDatei(avNummer());
   $('#hallo-t').innerHTML = g.kopf(esc(ME.vorname));
+  halloZerlegen($('#hallo-t'));
   $('#hallo-s').textContent = g.zeile();
-  el.classList.remove('weg','ab','neu','fertig');
+  halloAufraeumen();
+  el.classList.remove('weg','ab','neu','fertig','fliegt');
   if(art !== 'an') el.classList.add(art);
   void el.offsetWidth;                       /* Animationen neu anstoßen */
   el.classList.add('on');
   /* Erst jetzt: vorher ist die Leinwand nicht sichtbar und damit null groß. */
   if(g.konfetti) konfetti($('#hkanvas'), gruessend, { starts:[140,540,1120], regen:2100 });
+  if(art !== 'ab') halloStaub();
   /* Läuft der Vorspann noch, dürfen sich beide überschneiden — aber sie
      müssen zugleich enden, sonst bleibt eines allein stehen. Also wird ein
      gemeinsamer Schlusszeitpunkt bestimmt und der Vorspann darauf
      umgestellt. */
   if(wennOben) setTimeout(() => { try{ wennOben(); }catch(e){ console.warn(e); } }, GRUSS_REIN);
   const halten = g.dauer;
-  _halloT = setTimeout(() => {
+  _halloT = setTimeout(halloAbtreten, halten);
+}
+
+/* Der Name, Zeichen fuer Zeichen. Jedes Zeichen bekommt seine Nummer
+   als --i, die Verzoegerung rechnet das CSS. Woerter bleiben in einer
+   Huelle zusammen, damit nichts mitten im Namen umbricht; die Leerzeichen
+   stehen dazwischen als echter Text, sonst fielen sie weg. */
+function halloZerlegen(el){
+  let i = 0;
+  (function geh(k){
+    Array.from(k.childNodes).forEach(n => {
+      if(n.nodeType === 1){ geh(n); return; }
+      if(n.nodeType !== 3) return;
+      const frag = document.createDocumentFragment();
+      n.textContent.split(/(\s+)/).forEach(teil => {
+        if(!teil) return;
+        if(/^\s+$/.test(teil)){ frag.appendChild(document.createTextNode(teil)); return; }
+        const w = document.createElement('span');
+        w.className = 'hw';
+        Array.from(teil).forEach(z => {
+          const c = document.createElement('span');
+          c.className = 'hz';
+          c.style.setProperty('--i', i++);
+          c.textContent = z;
+          w.appendChild(c);
+        });
+        frag.appendChild(w);
+      });
+      k.replaceChild(frag, n);
+    });
+  })(el);
+}
+
+/* Lichtstaub: ein paar leuchtende Punkte, die langsam am Bild vorbei
+   aufsteigen. Wenige und leise — es soll schimmern, nicht schneien.
+   Die Farbe wird vorher aufgeloest: eine Leinwand kennt keine
+   CSS-Variablen. */
+function halloStaub(){
+  const cv = $('#hstaub');
+  if(!cv || !cv.getContext) return;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+  const ctx = cv.getContext('2d');
+  if(!ctx) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if(!w || !h) return;
+  cv.width = w * dpr; cv.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.documentElement);
+  const rgb = (cs.getPropertyValue('--butter-rgb') || '198,67,254').trim();
+  const r = $('#hallo-rahmen').getBoundingClientRect();
+  const mx = r.left + r.width / 2, my = r.top + r.height / 2;
+  const punkte = [];
+  for(let k = 0; k < 20; k++){
+    const a = Math.random() * Math.PI * 2, d = r.width * (.38 + Math.random() * .75);
+    punkte.push({
+      x: mx + Math.cos(a) * d, y: my + Math.sin(a) * d * .9,
+      vy: -(6 + Math.random() * 14), vx: (Math.random() - .5) * 6,
+      g: .8 + Math.random() * 1.6, t0: 200 + Math.random() * 1400,
+      leben: 1800 + Math.random() * 1600
+    });
+  }
+  const start = performance.now();
+  (function mal(jetzt){
+    const el = $('#hallo');
+    if(!el.classList.contains('on')){ ctx.clearRect(0, 0, w, h); return; }
+    const t = jetzt - start;
+    ctx.clearRect(0, 0, w, h);
+    punkte.forEach(p => {
+      const u = (t - p.t0) / p.leben;
+      if(u <= 0 || u >= 1) return;
+      const a = Math.sin(u * Math.PI);           /* auf und wieder ab */
+      const s = (t - p.t0) / 1000;
+      const x = p.x + p.vx * s, y = p.y + p.vy * s;
+      /* Ein weisser Kern in einem Hof aus Markenfarbe — so liest sich
+         der Punkt als Licht. Ganz in Violett sah er aus wie ein Fleck. */
+      const grd = ctx.createRadialGradient(x, y, 0, x, y, p.g * 5);
+      grd.addColorStop(0, 'rgba(255,255,255,' + (.95 * a) + ')');
+      grd.addColorStop(.18, 'rgba(255,255,255,' + (.7 * a) + ')');
+      grd.addColorStop(.4, 'rgba(' + rgb + ',' + (.22 * a) + ')');
+      grd.addColorStop(1, 'rgba(' + rgb + ',0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(x, y, p.g * 5, 0, Math.PI * 2); ctx.fill();
+    });
+    if(t < 5200) requestAnimationFrame(mal); else ctx.clearRect(0, 0, w, h);
+  })(start);
+}
+
+/* Eine Zeitkurve wie cubic-bezier() im CSS, fuer Bahnen, die von Hand
+   gerechnet werden. Newton-Schritte auf x, dann y dazu. */
+function kurve(x1, y1, x2, y2){
+  const bx = t => 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t;
+  const by = t => 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t;
+  const dx = t => 3 * x1 * (1 - t) * (1 - t) + 6 * (x2 - x1) * t * (1 - t) + 3 * (1 - x2) * t * t;
+  return u => {
+    if(u <= 0) return 0;
+    if(u >= 1) return 1;
+    let t = u;
+    for(let k = 0; k < 8; k++){
+      const d = dx(t);
+      if(Math.abs(d) < 1e-6) break;
+      t -= (bx(t) - u) / d;
+      t = Math.min(1, Math.max(0, t));
+    }
+    return by(t);
+  };
+}
+
+/* Wohin das Bild fliegt: zum Profilbild in der Leiste — wenn die gerade
+   zu sehen ist. Beim Abmelden ist sie es nicht, dann bleibt es beim
+   gemeinsamen Ausblenden. */
+function halloZiel(){
+  const bar = $('#tabbar'), av = $('#tabbar .avatar');
+  if(!bar || !av || bar.style.display === 'none') return null;
+  if(document.body.classList.contains('locked')) return null;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return null; }catch(e){}
+  const r = av.getBoundingClientRect();
+  if(r.width < 10 || r.bottom <= 0 || r.top >= innerHeight) return null;
+  return r;
+}
+
+/* Der Gruss tritt ab. Mit Leiste darunter fliegt das Bild an seinen
+   Platz, sonst blendet alles gemeinsam aus. */
+function halloAbtreten(){
+  const el = $('#hallo');
+  if(!el.classList.contains('on') || el.classList.contains('weg') || el.classList.contains('fliegt')) return;
+  clearTimeout(_halloT);
+  const ziel = !el.classList.contains('ab') && halloZiel();
+  if(!ziel || !halloFlug(ziel)){
     el.classList.add('weg');
     _halloT = setTimeout(() => { el.classList.remove('on','weg','ab','neu'); schirmPruefen(); }, GRUSS_WEG);
-  }, halten);
+  }
+}
+
+/* Der Flug. Das Bild holt kurz Luft, hebt leicht ab und zieht in einem
+   Bogen hinunter in die Leiste — dabei wird es kleiner, neigt sich ein
+   wenig und nimmt die Ecken des kleinen Bilds an. Die Bahn ist eine
+   quadratische Kurve, die Zeit laeuft ueber eine eigene Kurve: ruhiger
+   Abflug, zuegige Mitte, weiche Landung. Web Animations bekommt deshalb
+   fertig gerechnete Bilder und laeuft selbst gleichmaessig.
+
+   Waehrenddessen blenden Farbflaeche, Text und Licht aus, der Kalender
+   stellt sich darunter scharf. Gelandet, blendet das echte Profilbild
+   in der Leiste unter dem fliegenden auf, erst dann geht der Gruss. */
+const HALLO_FLUG = 1050;
+function halloFlug(ziel){
+  const el = $('#hallo'), rahmen = $('#hallo-rahmen'), bild = rahmen && rahmen.querySelector('.hallo-bild');
+  if(!rahmen || !bild || typeof rahmen.animate !== 'function') return false;
+  /* Das Schweben anhalten, wo es gerade ist — sonst wandert das Ziel mit. */
+  const cs = getComputedStyle(rahmen);
+  rahmen.style.translate = cs.translate && cs.translate !== 'none' ? cs.translate : '0px 0px';
+  rahmen.style.animation = 'none';
+  const q = rahmen.getBoundingClientRect();
+  if(q.width < 10) return false;
+  const dx = (ziel.left + ziel.width / 2) - (q.left + q.width / 2);
+  const dy = (ziel.top + ziel.height / 2) - (q.top + q.height / 2);
+  const sz = ziel.width / q.width;
+  /* Kontrollpunkt: etwas nach rechts und ueber dem Start — so hebt es
+     ab, bevor es faellt. */
+  const cx = dx * .28, cy = -Math.min(70, Math.abs(dy) * .14);
+  const zeit = kurve(.5, 0, .14, 1);
+  const AUSHOLEN = .14;                       /* Anteil zum Luftholen */
+  const bilder = [];
+  const N = 48;
+  for(let k = 0; k <= N; k++){
+    const o = k / N;
+    let x = 0, y = 0, sc = 1, rot = 0;
+    if(o <= AUSHOLEN){
+      const v = Math.sin((o / AUSHOLEN) * Math.PI / 2);
+      sc = 1 + .045 * v;
+    }else{
+      const u = zeit((o - AUSHOLEN) / (1 - AUSHOLEN));
+      const m = 1 - u;
+      x = 2 * m * u * cx + u * u * dx;
+      y = 2 * m * u * cy + u * u * dy;
+      /* Von 1,045 auf die Zielgroesse. Das Aufsetzen macht danach das
+         Bild in der Leiste, mit einem kleinen Nachfedern. */
+      sc = 1.045 + (sz - 1.045) * u;
+      rot = -5 * Math.sin(u * Math.PI);
+    }
+    bilder.push({ offset:o, transform:'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) rotate(' + rot.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')' });
+  }
+  el.classList.add('fliegt');
+  document.body.classList.add('halloflug');
+  /* Die Ecken: 30 % im Gruss, 17 von 48 px in der Leiste. */
+  const zielRund = (17 / 48 * 100).toFixed(1) + '%';
+  let flug, ecken;
+  try{
+    flug = rahmen.animate(bilder, { duration:HALLO_FLUG, easing:'linear', fill:'forwards' });
+    ecken = bild.animate([{ borderRadius:'30%' }, { borderRadius:zielRund }],
+                         { duration:HALLO_FLUG * .8, delay:HALLO_FLUG * .2, easing:'ease-in-out', fill:'forwards' });
+  }catch(e){
+    el.classList.remove('fliegt'); document.body.classList.remove('halloflug');
+    rahmen.style.animation = ''; rahmen.style.translate = '';
+    return false;
+  }
+  const gelandet = () => {
+    /* Das echte Bild in der Leiste kommt unter dem fliegenden hervor. */
+    document.body.classList.remove('halloflug');
+    const av = $('#tabbar .avatar');
+    if(av && av.animate) av.animate([{ transform:'scale(1.06)' }, { transform:'none' }],
+                                   { duration:420, easing:'cubic-bezier(.16,1,.3,1)' });
+    const z = $('#av-zaehler');
+    if(z && !z.hidden){
+      z.classList.remove('nachflug'); void z.offsetWidth; z.classList.add('nachflug');
+      setTimeout(() => z.classList.remove('nachflug'), 900);
+    }
+    _halloT = setTimeout(() => {
+      el.classList.remove('on','ab','neu','fliegt');
+      halloAufraeumen();
+      schirmPruefen();
+    }, 260);
+  };
+  flug.onfinish = gelandet;
+  _halloT = setTimeout(() => { if(el.classList.contains('fliegt') && document.body.classList.contains('halloflug')) gelandet(); }, HALLO_FLUG + 400);
+  return true;
+}
+/* Nach dem Flug steht alles wieder am Anfang: kein angehaltenes
+   Schweben, keine gerechneten Bilder, die das naechste Mal im Weg
+   waeren. */
+function halloAufraeumen(){
+  const rahmen = $('#hallo-rahmen');
+  if(!rahmen) return;
+  if(rahmen.getAnimations) rahmen.getAnimations().forEach(a => { if(!a.animationName) a.cancel(); });
+  const bild = rahmen.querySelector('.hallo-bild');
+  if(bild && bild.getAnimations) bild.getAnimations().forEach(a => { if(!a.animationName) a.cancel(); });
+  rahmen.style.animation = ''; rahmen.style.translate = '';
+  document.body.classList.remove('halloflug');
 }
 function zeigeHallo(){ zeigeGruss('an'); }
 
@@ -9484,13 +9827,7 @@ function gruessend(){
   const el = $('#hallo');
   return el.classList.contains('on') && !el.classList.contains('weg');
 }
-function grussEnde(){
-  const el = $('#hallo');
-  if(!el.classList.contains('on') || el.classList.contains('weg')) return;
-  clearTimeout(_halloT);
-  el.classList.add('weg');
-  _halloT = setTimeout(() => { el.classList.remove('on','weg','ab','neu'); schirmPruefen(); }, GRUSS_WEG);
-}
+function grussEnde(){ halloAbtreten(); }
 
 /* ═══════════════════════════════════════════════════════════
    MITGLIEDSCHAFT — Stufen, Karte, Zeitersparnis
