@@ -273,6 +273,29 @@ ok('Liegt die Datei vor, bewegt es sich',
    m2.querySelector('img').getAttribute('src'));
 ok('Und die Kachel weiss davon',   m2.classList.contains('lebt'));
 ov2.stop(); ov2.el.remove();
+
+/* ── Am Ende: teilen oder fertig, seit 27.09.2026 ──
+   Vorher wurde das PDF als blob-Adresse im selben Tab geoeffnet — nach
+   einem Neuladen stand dort "WebKitBlobResource-Fehler 1". */
+ok('Ohne Teilen-Funktion bleibt es beim Oeffnen', pdfDatei({ output(){ return new Blob(['x']); } }, 'x.pdf') === null);
+const ov4 = exOverlay(1);
+ok('Die Knoepfe warten versteckt', ov4.el.querySelector('.exwahl').hidden);
+window.__w4 = 'offen';
+ov4.wahl(() => Promise.reject(Object.assign(new Error('abgebrochen'), { name:'AbortError' })))
+   .then(() => { window.__w4 = 'zu'; });
+ok('Am Ende stehen Teilen und Fertig', !ov4.el.querySelector('.exwahl').hidden
+   && ov4.el.querySelector('#ex-teilen').textContent.indexOf('PDF teilen') > -1
+   && ov4.el.querySelector('#ex-fertig').textContent === 'Fertig');
+ov4.el.querySelector('#ex-teilen').click();
+const ov5 = exOverlay(1);
+window.__w5 = 'offen';
+ov5.wahl(() => Promise.resolve()).then(() => { window.__w5 = 'zu'; });
+ov5.el.querySelector('#ex-teilen').click();
+setTimeout(() => {
+  window.__w4NachAbbruch = window.__w4;
+  ov4.el.querySelector('#ex-fertig').click();
+  setTimeout(() => { window.__w4NachFertig = window.__w4; ov4.stop(); ov4.el.remove(); ov5.stop(); ov5.el.remove(); }, 30);
+}, 30);
 /* Das Aufmachen der Exportseite stoesst das Laden an. */
 _lebtDa = false;
 let geholt = '';
@@ -303,6 +326,9 @@ setTimeout(() => {
   E.push({ n:'Ein alter Vermerk zaehlt nicht mehr', ok: alt.window.eval('ZURUECK_VOM_PDF') === false, z:'' });
   E.push({ n:'Wird aber trotzdem weggeraeumt', ok: alt.window.localStorage.getItem('moji.pdf.zurueck') === null, z:'' });
   E.push({ n:'Ohne Vermerk ist es ein normaler Start', ok: dom.window.eval('ZURUECK_VOM_PDF') === false, z:'' });
+  E.push({ n:'Abbrechen des Teilen-Blatts laesst die Buehne stehen', ok: dom.window.__w4NachAbbruch === 'offen', z: dom.window.__w4NachAbbruch });
+  E.push({ n:'Fertig schliesst sie', ok: dom.window.__w4NachFertig === 'zu', z: dom.window.__w4NachFertig });
+  E.push({ n:'Geteilt schliesst sie auch', ok: dom.window.__w5 === 'zu', z: dom.window.__w5 });
   /* Regeln, die jsdom nicht rechnet — aber dastehen muessen. */
   [['Abgegeben faerbt nur, wenn nicht gewaehlt', /\.mgrid \.chip\.fertig:not\(\.on\)\{/],
    ['Der Haken liegt in der Ecke der Kachel', /\.mgrid \.chip \.exhaken\{/],
@@ -320,6 +346,10 @@ setTimeout(() => {
    /* Seit 14.09.2026 wird vor jedem Export unterschrieben. */
    ['Der Knopf fuehrt zum Unterschreiben', /\$\('#ex-go'\)\.addEventListener\('click', sigAuf\)/.test(roh)],
    ['Die Unterschrift steht im PDF', /doc\.addImage\(SIG_BILD, 'PNG'/.test(roh)],
+   ['Wo es geht, kommt das PDF ueber das Teilen-Blatt',
+    /const datei = pdfDatei\(doc, name\);\s*\n\s*if\(datei\)\{[\s\S]{0,200}await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\)\);/.test(roh)],
+   ['Der Monat zaehlt auch dort erst mit der fertigen Datei',
+    /if\(datei\)\{[\s\S]{0,120}merkeExporte\(list\);/.test(roh)],
    ['Vor dem Oeffnen des PDFs merkt sich die App die Rueckkehr', /pdfVermerken\(\);\s*\n\s*doc\.save\(name\);/.test(roh)],
    ['Zurueck vom PDF: kein Vorspann', /if\(FASSUNG_NEU \|\| ZURUECK_VOM_PDF\) vorspannUeberspringen\(\);/.test(roh)],
    ['Und kein Gruss', /afterLogin\(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF\)/.test(roh)],

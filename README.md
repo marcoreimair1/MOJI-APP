@@ -603,6 +603,22 @@ Blatt. Vorher lag eine Fläche über der Exportkachel, ein Ring schloss sich um 
   blendet weich aus (`ov.weg()`).
 - `MOJI_MASKE` und der Ladekreis sind raus.
 
+### Das PDF kommt über das Teilen-Blatt *(27. September 2026)*
+
+Nach dem Export stand in Safari **„WebKitBlobResource-Fehler 1"**. Ursache: `doc.save()` öffnet
+das PDF als `blob:`-Adresse im selben Tab. Die lebt nur, solange die Seite lebt, die sie gemacht
+hat, und jsPDF gibt sie nach 40 s selbst frei. Lädt Safari die PDF-Seite neu (nach einem Wechsel
+in eine andere App, beim Vor- und Zurückblättern), ist die Datei weg.
+
+Jetzt verlässt das PDF die App nicht mehr, wo das Gerät Dateien teilen kann (iPhone, Android):
+`pdfDatei()` baut aus `doc.output('blob')` eine `File`, und am Ende der Bühne stehen zwei Knöpfe,
+**PDF teilen** und **Fertig**. Das Teilen-Blatt zeigt eine Vorschau und bietet Sichern in
+Dateien, Mail, Nachrichten und Drucken. Ein Knopf statt eines Automatismus, weil iOS
+`navigator.share()` nur direkt nach einem Tipp erlaubt — nach fünf Sekunden Animation wäre das
+vorbei. Teilen oder „Fertig" schließt die Bühne; bricht man das Teilen-Blatt ab, bleibt sie stehen.
+Kann das Gerät keine Dateien teilen, bleibt es beim Öffnen mit `doc.save()` samt dem Vermerk
+darunter.
+
 ### Zurück vom PDF ohne Vorspann *(27. September 2026)*
 
 Auf dem iPhone öffnet sich das PDF in derselben Ansicht. Wer es ansah und zurückging, bekam die
