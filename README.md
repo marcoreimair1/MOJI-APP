@@ -1084,16 +1084,30 @@ iPhone. Nachgeprüft ist, dass kein Filter mehr am Schriftzug liegt und beide Fa
 richtige Datei bekommen, auch beim Wechsel ohne Neuladen; eine Nachstellung mit 59 px
 Statusleiste zeigte, dass keine Schicht über dem Schriftzug liegt.
 
-**Das reichte nicht: unter iOS 27 blieb der Kopf unscharf.** Bleibt das Milchglas selbst. In der
-installierten App läuft die Seite unter die Statusleiste, die Leiste ist 59 px höher, und iOS
-rechnet den Weichzeichner über diese Fläche offenbar anders als im Browser. Seitdem ist die
-Kopfleiste **in der installierten App deckend**, ohne `backdrop-filter` — was deckend ist, kann
-nicht verschwimmen. Im Browser bleibt das Milchglas.
+**Das reichte nicht, und die zweite Vermutung war auch falsch.** Unter iOS 27 blieb der Kopf
+unscharf. Als Nächstes war das Milchglas dran: eine deckende Kopfleiste nur für die installierte
+App. Auch das änderte nichts — und das nächste Bildschirmfoto zeigte warum: **Die Überschrift
+„Meine Firma" war genauso weich**, und die steht weder in der Kopfleiste noch trägt sie einen
+Filter. Am Bild nachgemessen: die Oberkanten der Buchstaben weich (Kantenstärke 92 von 255), die
+Unterkanten scharf (255). Ein Weichzeichner, der von der Statusleiste nach unten ausläuft.
 
-Erkannt wird die installierte App schon im Kopfskript, vor dem ersten Anstrich: an
-`navigator.standalone` (der alte iOS-Weg) oder an `display-mode: standalone` (der heutige), und
-das `<html>` bekommt die Klasse `als-app`. Beide Wege, damit keiner durchrutscht. Der Preis: Der
-Kalender scheint beim Rollen nicht mehr durch die Leiste — in der App, nicht im Browser.
+**iOS 27 zeichnet in vom Homebildschirm gestarteten Web-Apps alles weich, was unter der
+Statusleiste liegt.** Und die Seite sagte iOS ausdrücklich, dass sie dort liegen will:
+`apple-mobile-web-app-status-bar-style` stand auf `black-translucent`, zusammen mit
+`viewport-fit=cover`. Seit 26. September steht es auf **`default`** — die Statusleiste bekommt
+ihre eigene Fläche, und darunter liegt kein Inhalt mehr, der verschwimmen könnte. Das Kopfskript
+setzt es vor dem ersten Anstrich passend zur Fassung (`black` auf Dunkel, als sichere Wahl, falls
+ein Gerät die `theme-color` nicht liest). `env(safe-area-inset-top)` ist damit in der App 0, und
+alle Polster, die damit rechnen, fallen von selbst weg.
+
+Die deckende Kopfleiste ist wieder herausgenommen — das Milchglas war nie die Ursache. Die zweite
+Datei für die Wortmarke bleibt: sie ist ohnehin sauberer als ein Filter. Und das Manifest trug
+noch die dunkelblauen Farben aus der Zeit vor dem Umbranden (`#0A1129`, `#080D22`); iOS kann sie
+für die Statusleiste heranziehen, sie stehen jetzt auf der hellen Fassung (`#F4F1FA`).
+
+**Einen Haken hat es:** iOS liest die Statusleisten-Einstellung womöglich nur, wenn das Lesezeichen
+angelegt wird. Hilft das Neustarten der App nicht, muss es einmal vom Homebildschirm entfernt und
+neu hinzugefügt werden.
 
 ### Die Leiste unten
 

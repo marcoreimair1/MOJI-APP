@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>MOJI — Arbeitszeitaufzeichnung</title>
 <meta name="theme-color" content="#F4F1FA">
+<!-- Die Statusleiste bekommt ihre eigene Flaeche. Bis zum 26. September
+     2026 stand hier black-translucent: die Seite lief unter die Leiste,
+     mit viewport-fit=cover bis ganz nach oben. iOS 27 zeichnet in vom
+     Homebildschirm gestarteten Web-Apps alles weich, was dort liegt —
+     von der Statusleiste nach unten auslaufend. Der Schriftzug oben war
+     unscharf, und genauso die Ueberschrift "Meine Firma", die weder in
+     der Kopfleiste steht noch einen Filter traegt. Nachgemessen am
+     Bildschirmfoto: Oberkanten der Buchstaben weich, Unterkanten scharf.
+     Mit eigener Flaeche liegt dort kein Inhalt mehr. Die Farbe setzt das
+     Kopfskript gleich darunter nach der Fassung. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
 <script>
 /* Die Fassung MUSS vor dem ersten Anstrich stehen.
@@ -19,18 +30,15 @@
    theme-color steht damit von Anfang an richtig: die Statusleiste
    uebernimmt sie nur beim Laden, nicht wenn man sie spaeter aendert.  */
 (function(){try{
-  /* Vom Homebildschirm gestartet? Dann laeuft die Seite unter die
-     Statusleiste, und manches verhaelt sich anders als in Safari —
-     siehe .als-app bei der Kopfleiste. navigator.standalone ist der
-     alte iOS-Weg, display-mode der heutige; beide, damit keiner
-     durchrutscht. Hier oben, damit schon der erste Anstrich stimmt. */
-  var app = window.navigator.standalone === true
-         || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-  if (app) document.documentElement.classList.add('als-app');
   var d = localStorage.getItem('moji.erscheinung') === 'dark';
   document.documentElement.dataset.theme = d ? 'dark' : 'light';
   var m = document.querySelector('meta[name=theme-color]');
   if (m) m.content = d ? '#0B0711' : '#F4F1FA';
+  /* Die Statusleiste der Web-App: hell auf Hell, dunkel auf Dunkel.
+     "default" folgt auf neueren Geraeten der theme-color; "black" ist
+     die sichere Wahl fuer Dunkel, falls ein Geraet sie nicht liest. */
+  var sb = document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]');
+  if (sb) sb.content = d ? 'black' : 'default';
 }catch(e){}})();
 </script>
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -38,7 +46,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MOJI">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="MOJI — Arbeitszeitaufzeichnung. Eine App von Studio MARU 丸.">
 <meta name="author" content="Studio MARU 丸">
 <meta name="application-name" content="MOJI">
@@ -777,18 +784,12 @@ body.nurhandy #splash,body.nurhandy #app,body.nurhandy .bg,body.nurhandy .grain{
   background:rgba(var(--s-tief),.78);
   border-bottom:1px solid var(--line-2)}
 .topbar-in{max-width:1080px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:14px}
-/* In der vom Homebildschirm gestarteten App kein Milchglas. Dort war
-   der Kopf verschwommen und der Schriftzug kaum zu lesen — in Safari
-   nicht. Erst lag es nahe, dass der Filter am Schriftzug schuld war;
-   der ist seit dem 26. September weg, und es blieb unscharf (iOS 27).
-   Bleibt das Milchglas selbst: die Seite laeuft dort unter die
-   Statusleiste, die Leiste ist 59 px hoeher, und iOS rechnet den
-   Weichzeichner ueber diese Flaeche offenbar anders. Deckend kann
-   nichts verschwimmen. Der Preis: der Kalender scheint beim Rollen
-   nicht mehr durch — in der App, nicht im Browser. */
-html.als-app .topbar{
-  -webkit-backdrop-filter:none; backdrop-filter:none;
-  background:rgb(var(--s-tief)) }
+/* Hier stand kurz eine deckende Kopfleiste nur fuer die installierte
+   App. Sie beruhte auf der Annahme, das Milchglas mache den Kopf
+   unscharf. Das war es nicht: iOS 27 zeichnet alles unter der
+   Statusleiste weich, auch Ueberschriften ohne jeden Filter. Die
+   Abhilfe steht jetzt im Kopf der Seite (status-bar-style), und das
+   Milchglas darf bleiben. */
 .topbar{padding-top:env(safe-area-inset-top)}
 .brand{display:flex;align-items:baseline;gap:9px;text-decoration:none;color:inherit}
 .brand{align-items:flex-end;gap:12px}
@@ -3663,7 +3664,6 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
      deutlicher. Genau diese Leiste steht auf dem Telefon hinter dem
      Zeichen und dem Profilbild. */
   .topbar{background:rgba(var(--s-tief),.72)}
-  html.als-app .topbar{ background:rgb(var(--s-tief)) }
 }
 
 /* ─── Hintergrund am Handy ───
@@ -6413,7 +6413,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-26-2135';
+const APP_STAND = '2026-09-26-2210';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
