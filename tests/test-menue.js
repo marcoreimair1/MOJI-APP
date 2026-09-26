@@ -816,10 +816,14 @@ window.__WEITER = function(){
   /* Bis 90 Tage wird gezaehlt — vorher war bei 40 Schluss. */
   ok('Auch nach zwei Monaten noch',   zuletztText(vor(24 * 60)) === 'vor 60 Tagen',
      zuletztText(vor(24 * 60)));
-  ok('Bei 89 Tagen noch die Zahl',    zuletztText(vor(24 * 89 + 2)) === 'vor 89 Tagen',
-     zuletztText(vor(24 * 89 + 2)));
-  ok('Ab 90 Tagen wird es vage',      zuletztText(vor(24 * 90 + 2)) === 'es ist schon ewig her',
-     zuletztText(vor(24 * 90 + 2)));
+  /* Gezaehlt wird in Kalendertagen. "Vor 89 Tagen und 2 Stunden" sind
+     zwischen Mitternacht und zwei Uhr schon 90 Kalendertage — die
+     Pruefung scheiterte deshalb am 27.09.2026 um 0:01. Jetzt steht der
+     Zeitpunkt mittags am Kalendertag, egal wann geprueft wird. */
+  function tageHer(n){ const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - n); return d.toISOString(); }
+  ok('Bei 89 Tagen noch die Zahl',    zuletztText(tageHer(89)) === 'vor 89 Tagen', zuletztText(tageHer(89)));
+  ok('Ab 90 Tagen wird es vage',      zuletztText(tageHer(90)) === 'es ist schon ewig her', zuletztText(tageHer(90)));
+
   ok('Ohne Zeitstempel steht nichts', zuletztText(null) === '');
 
   /* Die Liste selbst. */
@@ -1015,6 +1019,12 @@ setTimeout(() => {
     roh.indexOf("localStorage.getItem('moji.erscheinung')") < roh.indexOf('<style')],
    ['Der Deckel traegt die Farbe der neuen Fassung',
     /\.fassungsdeckel\{[\s\S]{0,120}background:var\(--ink\)/],
+   /* Zwischen zwei Mitternaechten liegen ganze Tage — ausser eine
+      Zeitumstellung liegt dazwischen, dann eine Stunde mehr oder weniger.
+      Abgerundet wurden aus 89 Tagen so 88. Laufend pruefen laesst sich
+      das nur zu bestimmten Jahreszeiten, darum hier am Quelltext. */
+   ['Die Tage werden gerundet, nicht abgerundet',
+    /const tage = Math\.round\(\(h - new Date\(d\)\.setHours\(0,0,0,0\)\) \/ 86400e3\);/],
    ['Nach dem Wechsel kommt kein Gruss', /afterLogin\(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF\)/],
    /* Das alte Formular ist am 14.09.2026 entfallen — mitsamt Schloessern
       und Zeit-Popover. Es darf nicht zurueckkommen. */

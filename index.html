@@ -6682,7 +6682,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0610';
+const APP_STAND = '2026-09-27-0630';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -10218,7 +10218,10 @@ function zuletztText(iso){
   if(std === 1) return 'vor 1 Stunde';
   if(std <= 4) return 'vor ' + std + ' Stunden';
   const h = new Date(); h.setHours(0,0,0,0);
-  const tage = Math.floor((h - new Date(d).setHours(0,0,0,0)) / 86400e3);
+  /* Gerundet, nicht abgerundet: zwischen zwei Mitternaechten liegen
+     ganze Tage, ausser eine Zeitumstellung liegt dazwischen — dann eine
+     Stunde mehr oder weniger. Abgerundet wurden aus 89 Tagen so 88. */
+  const tage = Math.round((h - new Date(d).setHours(0,0,0,0)) / 86400e3);
   if(tage <= 0) return 'heute zuletzt online';
   if(tage === 1) return 'gestern';
   if(tage < 90) return 'vor ' + tage + ' Tagen';
