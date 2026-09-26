@@ -1015,7 +1015,7 @@ setTimeout(() => {
     roh.indexOf("localStorage.getItem('moji.erscheinung')") < roh.indexOf('<style')],
    ['Der Deckel traegt die Farbe der neuen Fassung',
     /\.fassungsdeckel\{[\s\S]{0,120}background:var\(--ink\)/],
-   ['Nach dem Wechsel kommt kein Gruss', /afterLogin\(session, !FASSUNG_NEU\)/],
+   ['Nach dem Wechsel kommt kein Gruss', /afterLogin\(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF\)/],
    /* Das alte Formular ist am 14.09.2026 entfallen — mitsamt Schloessern
       und Zeit-Popover. Es darf nicht zurueckkommen. */
    ['Kein altes Dienstplan-Formular mehr', !/function renderSched\(/.test(roh)],

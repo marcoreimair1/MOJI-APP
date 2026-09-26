@@ -6676,7 +6676,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0440';
+const APP_STAND = '2026-09-27-0520';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -9662,7 +9662,9 @@ function enterApp(){
   malErinnerung();
   exYear(); renderCal();
   setTimeout(pruefeStand, 3500);
-  go('v-cal');
+  /* Wer vom PDF zurueckkommt, will dort weitermachen, wo er war. */
+  go(ZURUECK_VOM_PDF && !enterApp._schonDa ? 'v-export' : 'v-cal');
+  enterApp._schonDa = true;
   /* Nach einem Fassungswechsel geht das Menue wieder auf — dort wurde
      ja umgeschaltet. Ohne Einlaufbewegung: es war schon da, und der
      Wechsel ist der Schnitt, nicht das Menue. */
@@ -14352,6 +14354,7 @@ async function buildPdf(list){
          dann das Dokument. Sonst verdeckt die PDF-Anzeige den Schluss. */
       ov.finish('PDF erstellt · ' + total + (total === 1 ? ' Seite' : ' Seiten'), name);
       await wait(1250);
+      pdfVermerken();
       doc.save(name);
     }
     /* Erst jetzt zählt der Monat: die Datei ist geschrieben. */
@@ -15209,6 +15212,40 @@ const FASSUNG_NEU = (function(){
     return ja;
   }catch(e){ return false; }
 })();
+/* ─── Zurueck vom PDF ───────────────────────────────────────────
+   Auf dem iPhone oeffnet sich das PDF in derselben Ansicht. Wer es
+   angesehen hat und zurueckgeht, bekam die App frisch geladen — mit
+   Vorspann und Gruss, als haette er sie gerade erst geoeffnet. Dabei
+   war er nur kurz weg.
+
+   Vor dem Oeffnen merkt sich die App das (pdfVermerken()). Startet sie
+   innerhalb von zehn Minuten neu, gilt es als Rueckkehr: kein Vorspann,
+   kein Gruss, und sie steht wieder auf der Exportseite. Der Vermerk
+   gilt fuer genau einen Start. localStorage statt sessionStorage, weil
+   iOS beim Zurueckgehen nicht sicher dieselbe Sitzung fortsetzt. */
+const PDF_VERMERK = 'moji.pdf.zurueck';
+const PDF_GILT = 10 * 60 * 1000;
+const ZURUECK_VOM_PDF = (function(){
+  try{
+    const t = +localStorage.getItem(PDF_VERMERK) || 0;
+    if(t) localStorage.removeItem(PDF_VERMERK);
+    return t > 0 && Date.now() - t < PDF_GILT;
+  }catch(e){ return false; }
+})();
+function pdfVermerkWeg(){ try{ localStorage.removeItem(PDF_VERMERK); }catch(e){} }
+function pdfVermerken(){
+  try{ localStorage.setItem(PDF_VERMERK, String(Date.now())); }catch(e){ return; }
+  /* Laedt die Seite gar nicht neu — das PDF lag nur darueber, oder es
+     kam ein Teilen-Blatt —, darf der Vermerk nicht auf den naechsten,
+     echten Start warten. Sobald die Seite wieder zu sehen ist, geht er. */
+  const zurueck = () => {
+    if(document.visibilityState !== 'visible') return;
+    document.removeEventListener('visibilitychange', zurueck);
+    pdfVermerkWeg();
+  };
+  setTimeout(() => document.addEventListener('visibilitychange', zurueck), 400);
+  setTimeout(pdfVermerkWeg, PDF_GILT);
+}
 /* Und stand dabei das Menue offen? Dann geht es danach wieder auf. */
 const FASSUNG_MENU = (function(){
   try{
@@ -15254,7 +15291,7 @@ function fassungsdeckelWeg(){
 
 wireDob('ob'); wireDob('lg'); wireDob('dt');
 if(AM_HANDY){
-  if(FASSUNG_NEU) vorspannUeberspringen();
+  if(FASSUNG_NEU || ZURUECK_VOM_PDF) vorspannUeberspringen();
   else try{ playIntro(); }catch(e){ console.warn(e); endIntro(); }
 }
 DB.profiles.forEach(normalize);
@@ -15379,7 +15416,7 @@ $('#erin-ask-no').addEventListener('click', () => erinAskFertig(false));
   try{ const r = await sb.auth.getSession(); session = r.data.session; }catch(e){ console.warn(e); }
   /* Nach einem Fassungswechsel kein Gruss: man hat gerade einen
      Schalter umgelegt, nicht sich angemeldet. */
-  if(session) await afterLogin(session, !FASSUNG_NEU);
+  if(session) await afterLogin(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF);
   else loginScreen();
 })();
 </script>

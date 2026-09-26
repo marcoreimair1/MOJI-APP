@@ -603,6 +603,21 @@ Blatt. Vorher lag eine Fläche über der Exportkachel, ein Ring schloss sich um 
   blendet weich aus (`ov.weg()`).
 - `MOJI_MASKE` und der Ladekreis sind raus.
 
+### Zurück vom PDF ohne Vorspann *(27. September 2026)*
+
+Auf dem iPhone öffnet sich das PDF in derselben Ansicht. Wer es ansah und zurückging, bekam die
+App frisch geladen — mit Vorspann und Gruß. Jetzt ruft `buildPdf()` direkt vor `doc.save()`
+`pdfVermerken()` auf: ein Zeitstempel unter `moji.pdf.zurueck` in `localStorage` (nicht
+`sessionStorage` — iOS setzt beim Zurückgehen nicht sicher dieselbe Sitzung fort).
+
+Beim Start liest `ZURUECK_VOM_PDF` den Vermerk einmal und löscht ihn. Ist er jünger als zehn
+Minuten (`PDF_GILT`), läuft derselbe Weg wie nach einem Fassungswechsel: `vorspannUeberspringen()`,
+kein Gruß (`afterLogin(session, false)`), und `enterApp()` geht beim ersten Mal auf `v-export`
+statt auf den Kalender. Lädt die Seite gar nicht neu (das PDF lag nur darüber), räumt ein
+`visibilitychange` den Vermerk beim Wiedersehen weg, spätestens nach zehn Minuten ein Zeitgeber —
+so bekommt ein späterer echter Start wieder seinen Vorspann. `test-export.js` startet dafür zwei
+zusätzliche Instanzen, eine mit frischem und eine mit altem Vermerk.
+
 ### Die Fahrt durch den Kartenstapel *(neu am 27. September 2026)*
 
 Tippt man im Profilmenü auf **Karten**, fährt der Stapel von der ersten bis zur aktuellen Karte

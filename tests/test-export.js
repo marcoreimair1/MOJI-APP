@@ -14,6 +14,17 @@ const dom = new JSDOM(roh, {
   pretendToBeVisual: true, virtualConsole: vc
 });
 
+/* ─── Zurueck vom PDF, seit 27.09.2026 ───
+   Zwei weitere Starts: einer mit frischem Vermerk (so, als kaeme man
+   gerade vom PDF zurueck) und einer mit einem alten. */
+const zuStart = alter => new JSDOM(roh, {
+  url: 'https://moji-app.at/', runScripts: 'dangerously',
+  pretendToBeVisual: true, virtualConsole: vc,
+  beforeParse(w){ w.localStorage.setItem('moji.pdf.zurueck', String(Date.now() - alter)); }
+});
+const rueck = zuStart(30 * 1000);
+const alt   = zuStart(11 * 60 * 1000);
+
 /* jsPDF hineinreichen: der CDN-Aufruf laeuft in jsdom nicht, aber ohne
    ihn liesse sich die Seite nicht bauen. */
 try {
@@ -281,6 +292,17 @@ dom.window.document.body.appendChild(s);
 
 setTimeout(() => {
   const E = dom.window.__E || [];
+  /* Die Rueckkehr vom PDF. */
+  const rw = rueck.window;
+  E.push({ n:'Mit frischem Vermerk gilt der Start als Rueckkehr vom PDF', ok: rw.eval('ZURUECK_VOM_PDF') === true, z:'' });
+  E.push({ n:'Der Vermerk gilt nur fuer diesen einen Start', ok: rw.localStorage.getItem('moji.pdf.zurueck') === null, z:'' });
+  rw.eval("ME = normalize({ id:'r', vorname:'Anna', nachname:'Muster', dob:'1994-03-14' }); enterApp();");
+  E.push({ n:'Und die App steht wieder auf der Exportseite', ok: rw.document.querySelector('#v-export').classList.contains('on'), z:'' });
+  rw.eval("enterApp();");
+  E.push({ n:'Ein spaeteres Anmelden landet wieder im Kalender', ok: rw.document.querySelector('#v-cal').classList.contains('on'), z:'' });
+  E.push({ n:'Ein alter Vermerk zaehlt nicht mehr', ok: alt.window.eval('ZURUECK_VOM_PDF') === false, z:'' });
+  E.push({ n:'Wird aber trotzdem weggeraeumt', ok: alt.window.localStorage.getItem('moji.pdf.zurueck') === null, z:'' });
+  E.push({ n:'Ohne Vermerk ist es ein normaler Start', ok: dom.window.eval('ZURUECK_VOM_PDF') === false, z:'' });
   /* Regeln, die jsdom nicht rechnet — aber dastehen muessen. */
   [['Abgegeben faerbt nur, wenn nicht gewaehlt', /\.mgrid \.chip\.fertig:not\(\.on\)\{/],
    ['Der Haken liegt in der Ecke der Kachel', /\.mgrid \.chip \.exhaken\{/],
@@ -298,6 +320,10 @@ setTimeout(() => {
    /* Seit 14.09.2026 wird vor jedem Export unterschrieben. */
    ['Der Knopf fuehrt zum Unterschreiben', /\$\('#ex-go'\)\.addEventListener\('click', sigAuf\)/.test(roh)],
    ['Die Unterschrift steht im PDF', /doc\.addImage\(SIG_BILD, 'PNG'/.test(roh)],
+   ['Vor dem Oeffnen des PDFs merkt sich die App die Rueckkehr', /pdfVermerken\(\);\s*\n\s*doc\.save\(name\);/.test(roh)],
+   ['Zurueck vom PDF: kein Vorspann', /if\(FASSUNG_NEU \|\| ZURUECK_VOM_PDF\) vorspannUeberspringen\(\);/.test(roh)],
+   ['Und kein Gruss', /afterLogin\(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF\)/.test(roh)],
+   ['Bleibt die Seite stehen, geht der Vermerk beim Wiedersehen', /const zurueck = \(\) => \{\s*\n\s*if\(document\.visibilityState !== 'visible'\) return;/.test(roh)],
    ['Mit dem Vermerk darunter',
     /doc\.text\('Elektronisch unterschrieben in der MOJI App'/.test(roh)],
    ['Sie wird nicht aufgehoben', /\n  SIG_BILD = null;\n  _busy = false/.test(roh)],
