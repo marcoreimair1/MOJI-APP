@@ -6589,7 +6589,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0130';
+const APP_STAND = '2026-09-27-0150';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8028,6 +8028,12 @@ function go(id){
      hat seine eigene Fuehrung unten. */
   const OHNE_LEISTE = ['v-login','v-onboard','v-zeitassi','v-pkask','v-erinask'];
   $('#tabbar').style.display = (ME && OHNE_LEISTE.indexOf(id) < 0) ? 'grid' : 'none';
+  /* Das Profilbild darin wird beim Abmelden versteckt — und muss mit
+     dem naechsten Profil zurueckkommen. Diese Zeile stand bis 21.09.2026
+     hier und ging beim Umzug in die Leiste verloren: wer sich ab- und
+     ohne Neuladen wieder anmeldete, hatte kein Profilbild mehr, und der
+     Gruss fand kein Ziel fuer seinen Flug. */
+  $('#avwrap').style.display = ME ? '' : 'none';
   /* Die Entscheidungen unten gehoeren zu Kalender und Export. */
   const inApp = (id === 'v-cal' || id === 'v-export');
   $('#fabbar').style.display = inApp ? 'flex' : 'none';

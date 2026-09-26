@@ -34,6 +34,23 @@ var heute = new Date();
 function imLaufenden(){ return CAL.y === heute.getFullYear() && CAL.m === heute.getMonth(); }
 function woanders(){ CAL.y = 2025; CAL.m = 2; renderCal(); }
 
+/* ── 0 · Nach Ab- und Wiederanmelden ist das Profilbild wieder da ──
+   doLogout() versteckt es; bis 27.09.2026 holte es nichts zurueck, wenn
+   man sich ohne Neuladen wieder anmeldete. Dann fehlte es in der Leiste,
+   und der Gruss fand kein Ziel fuer seinen Flug. doLogout() selbst geht
+   ins Netz, deshalb hier sein sichtbarer Teil von Hand. */
+ok('Angemeldet steht das Profilbild in der Leiste',
+   document.querySelector('#avwrap').style.display !== 'none');
+var echtME = ME;
+document.querySelector('#avwrap').style.display = 'none';
+ME = null; loginScreen();
+ok('Abgemeldet ist es weg', document.querySelector('#avwrap').style.display === 'none');
+ME = echtME; enterApp();
+ok('Wieder angemeldet ist es zurueck',
+   document.querySelector('#avwrap').style.display !== 'none',
+   document.querySelector('#avwrap').style.display);
+ok('Und die Leiste steht', document.querySelector('#tabbar').style.display === 'grid');
+
 /* ── 1 · Steht man schon auf dem Kalender, holt der Tipp den Monat ── */
 woanders();
 ok('Vorher Maerz 2025', CAL.y === 2025 && CAL.m === 2);

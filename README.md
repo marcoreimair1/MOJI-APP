@@ -642,6 +642,13 @@ Ausblenden auf Anfang.
   (`lichtBlitz`). Konfetti und Haken sind raus. Das erste Bild der Wellen ist unsichtbar:
   mit `both` stand es sonst schon während der Wartezeit als dicker Rahmen da.
 
+**Nach Ab- und Wiederanmelden fehlte das Profilbild** *(behoben 27. September 2026)*.
+`doLogout()` versteckt `#avwrap`; zurück holte es `go()` mit `ME ? 'grid' : 'none'`. Diese
+Zeile ging am 21. September beim Umzug in die Leiste verloren. Wer sich ohne Neuladen wieder
+anmeldete, hatte kein Profilbild — und der Gruß kein Ziel, er blendete also wie früher aus.
+Die Prüfung *Wieder angemeldet ist es zurück* in `test-kalender.js` spielt den Weg nach und
+schlägt ohne die Zeile an (gegengeprüft).
+
 **Kein Flug**, wenn die Leiste nicht zu sehen ist (`halloZiel()` gibt dann `null`): beim
 Abmelden, unter einem Blatt, oder bei *weniger Bewegung*. Dann blendet alles gemeinsam aus
 wie bisher. Ein Tippen auf den Gruß startet den Flug sofort (`grussEnde()` → `halloAbtreten()`).
