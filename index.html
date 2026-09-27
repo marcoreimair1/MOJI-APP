@@ -7297,7 +7297,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2200';
+const APP_STAND = '2026-09-27-2230';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7743,6 +7743,14 @@ function seitAusId(id){
    gerechnet wurde. */
 const AV_ZUFALL_BIS = 116;
 
+/* Fassung der Zustimmung zur Monats-Erinnerung. Am 27.09.2026 wurde sie
+   fuer alle bestehenden Profile eingeschaltet (Migration
+   20260927120000_monatsmail_alle.sql, die alten Antworten liegen in
+   mail_zustimmung_vorher). Wer seither selbst waehlt, schreibt
+   mailStand mit. Kommt ein Profil OHNE mailStand in die Datenbank —
+   eine alte App-Fassung, die den Stand von vorher im Speicher hielt —,
+   behaelt ein Ausloeser dort die Zustimmung, statt sie zu ueberschreiben. */
+const MAIL_STAND = 2;
 function normalize(p){
   if(!p.sched) p.sched = defaultSched();
   if(!p.sched.weeks || p.sched.weeks.length < 4){
@@ -8171,6 +8179,7 @@ function erinAskFertig(ja){
   if(ME){
     ME.mailOk = !!ja;
     ME.mailGefragt = true;
+    ME.mailStand = MAIL_STAND;
     save();
     try{ malErinnerung(); }catch(e){ console.warn(e); }
   }
@@ -8989,7 +8998,7 @@ $('#sw-mail').addEventListener('click', () => {
   OB.mailOk = an;
   /* Wer den Funnel laeuft, hat ein Konto — die Antwort gehoert sofort
      ins Profil, nicht erst ans Ende. */
-  if(ME){ ME.mailOk = an; ME.mailGefragt = true; save(); try{ malErinnerung(); }catch(e){} }
+  if(ME){ ME.mailOk = an; ME.mailGefragt = true; ME.mailStand = MAIL_STAND; save(); try{ malErinnerung(); }catch(e){} }
   if(an) obKlack($('#sw-mail'));
   obSchalterMalen();
   obSchalterPruef();
@@ -9082,6 +9091,7 @@ function sichereProfil(){
     ME.sched = sched; ME.months = months;
     if(typeof OB.mailOk === 'boolean') ME.mailOk = OB.mailOk;
     if(gefragt) ME.mailGefragt = true;
+    ME.mailStand = MAIL_STAND;
     normalize(ME);
   } else {
     ME = normalize({
@@ -9090,6 +9100,7 @@ function sichereProfil(){
       sched: sched, months: months, events: (ME && ME.events) || {},
       mailOk: !!OB.mailOk,
       mailGefragt: gefragt,
+      mailStand: MAIL_STAND,
       created: new Date().toISOString()
     });
     _funnelId = ME.id;
@@ -10773,6 +10784,7 @@ function erinUmschalten(){
     ME.mailOk = !ME.mailOk;
     /* Wer den Punkt im Menü selbst gefunden hat, braucht den Hinweis nicht mehr. */
     ME.mailGefragt = true;
+    ME.mailStand = MAIL_STAND;
     save();
     mi.classList.remove('erin-wechsel');
     malErinnerung();

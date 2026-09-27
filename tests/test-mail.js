@@ -76,12 +76,27 @@ const stueck = (von, bis) => mon.slice(mon.indexOf(von), mon.indexOf(bis));
 let fn = stueck('function textFassung(', 'Deno.serve(')
   .replace(/ as Record<string,string>/g, '')
   .replace(/: Map<string, any>/g, '')
+  .replace(/: Promise<Response>/g, '').replace(/: Response \| null/g, '')
+  .replace(/antwort!;/g, 'antwort;')
+  .replace(/: (unknown|Response)(?=[,)=\s])/g, '')
   .replace(/\): Tee\[\] \{/g, ') {')
   .replace(/: (string|number|any\[\]|Tee\[\]|Tee)(?=[,)=\s])/g, '');
 const LINK = 'https://moji-app.at/', LINK_TEE = 'https://moji-app.at/?tee';
 const MONATE = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 let bau;
-try{ bau = new Function('LINK', 'LINK_TEE', 'MONATE', fn + '; return { textFassung, htmlFassung, esc, wartendFuer, teeTeil };')(LINK, LINK_TEE, MONATE); }
+/* fetch und setTimeout kommen von aussen — so laesst sich der Versand
+   ohne Netz und ohne echtes Warten pruefen. */
+const NETZ = { antworten: [], aufrufe: 0, gewartet: [] };
+function falschesFetch(){
+  NETZ.aufrufe++;
+  const a = NETZ.antworten.shift() || { status: 200 };
+  return Promise.resolve({ status: a.status, ok: a.status >= 200 && a.status < 300,
+    headers: { get: k => (k === 'retry-after' && a.retry) ? String(a.retry) : null }, text: () => Promise.resolve('') });
+}
+function falschesWarten(f, ms){ NETZ.gewartet.push(ms); f(); }
+try{ bau = new Function('LINK', 'LINK_TEE', 'MONATE', 'fetch', 'setTimeout',
+       fn + '; return { textFassung, htmlFassung, esc, wartendFuer, teeTeil, sendeMitGeduld, PAUSE_MS, VERSUCHE, ZEIT_MS };')
+       (LINK, LINK_TEE, MONATE, falschesFetch, falschesWarten); }
 catch(e){ ok('Die Textfunktionen lassen sich ausfuehren', false, e.message); }
 if(bau){
   const h = bau.htmlFassung('<b>Ann</b> & "Co"', 'September');
@@ -143,6 +158,52 @@ ok('So viele wie in der App', fs.readdirSync(WURZEL).filter(f => /^av-\d+\.webp$
 ok('Die Liste kommt auch dann, wenn die Abfrage scheitert, nur leer',
    mon.includes("const tee = wartendFuer(r.user_id, teeReihen || [], person);"));
 
+/* ── 7b · Wirklich jede Mail kommt an ──
+   Am 01.09.2026 gingen 4 von 10 hinaus, alle in einer Sekunde: Resend
+   nimmt im freien Zugang 2 Anfragen pro Sekunde. */
+async function versandPruefen(){
+  if(!bau) return;
+  ok('Zwischen zwei Mails mindestens 0,65 s — unter 2 pro Sekunde', bau.PAUSE_MS >= 500 && bau.PAUSE_MS < 2000, bau.PAUSE_MS);
+  ok('Die Pause gilt auch nach einem Fehler, vor jeder Mail',
+     /const seit = Date\.now\(\) - zuletzt;\s*\n\s*if\(seit < PAUSE_MS\) await warte\(PAUSE_MS - seit\);\s*\n\s*zuletzt = Date\.now\(\);\s*\n\s*try\{/.test(mon));
+  const lauf = async (antworten) => {
+    NETZ.antworten = antworten.slice(); NETZ.aufrufe = 0; NETZ.gewartet = [];
+    const a = await bau.sendeMitGeduld('k', {});
+    return { status: a.status, aufrufe: NETZ.aufrufe, gewartet: NETZ.gewartet.slice() };
+  };
+  let r = await lauf([{ status: 200 }]);
+  ok('Klappt es sofort: ein Aufruf, kein Warten', r.aufrufe === 1 && r.gewartet.length === 0 && r.status === 200);
+  r = await lauf([{ status: 429, retry: 2 }, { status: 200 }]);
+  ok('„Zu schnell": wartet so lange, wie Resend sagt, und versucht es nochmal',
+     r.aufrufe === 2 && r.gewartet.join() === '2000' && r.status === 200, JSON.stringify(r));
+  r = await lauf([{ status: 429 }, { status: 503 }, { status: 200 }]);
+  ok('Ohne Angabe wartet es 1 s, dann 2 s', r.aufrufe === 3 && r.gewartet.join() === '1000,2000' && r.status === 200, JSON.stringify(r));
+  r = await lauf([{ status: 500 }, { status: 500 }, { status: 500 }, { status: 500 }, { status: 500 }, { status: 200 }]);
+  ok('Hoechstens fuenf Versuche, dann gibt es auf', r.aufrufe === 5 && r.status === 500 && r.gewartet.length === 4, JSON.stringify(r));
+  r = await lauf([{ status: 422 }]);
+  ok('Eine falsche Anfrage wird nicht wiederholt', r.aufrufe === 1 && r.status === 422);
+  r = await lauf([{ status: 429, retry: 600 }, { status: 200 }]);
+  ok('Hoechstens 20 s Wartezeit, auch wenn Resend mehr verlangt', r.gewartet.join() === '20000');
+  ok('Nach 100 s bleibt der Rest dem naechsten Lauf', bau.ZEIT_MS === 100000
+     && mon.includes('if(Date.now() > schluss){ bericht.vertagt++; continue; }'));
+  ok('Ins Protokoll nur, was wirklich hinausging',
+     /if\(!antwort\.ok\) throw new Error[^\n]*\n\s*await sb\.from\('mail_log'\)\.insert/.test(mon));
+  ok('Keine Mailadressen im Bericht', !/bericht\.fehler\.push\(mail/.test(mon));
+}
+
+/* ── 7c · Zeitplan und Zustimmung (Migration) ── */
+const mig = lies('supabase/migrations/20260927120000_monatsmail_alle.sql');
+ok('Am Ersten dreimal: 05:10, 06:10, 08:10 UTC', mig.includes("schedule := '10 5,6,8 1 * *'"));
+ok('Der Aufruf wartet 2 Minuten statt 5 Sekunden', mig.includes('timeout_milliseconds := 120000'));
+ok('Die alten Antworten werden gesichert, bevor alle an sind',
+   mig.indexOf('insert into public.mail_zustimmung_vorher') > 0
+   && mig.indexOf('insert into public.mail_zustimmung_vorher') < mig.indexOf('update public.records'));
+ok('Die Sicherung ist fuer niemanden lesbar', mig.includes('revoke all on public.mail_zustimmung_vorher from anon, authenticated;'));
+ok('Ein Ausloeser haelt die Zustimmung gegen alte App-Fassungen',
+   /if \(old\.data \? 'mailStand'\) and not \(new\.data \? 'mailStand'\) then/.test(mig));
+ok('Die Migration probiert beides selbst aus', mig.includes('alte Fassung haette die Zustimmung ueberschrieben')
+   && mig.includes('eine eigene Wahl wuerde nicht gelten'));
+
 /* ── 8 · In der App: ?tee oeffnet die Bubble-Tea-Seite ──
    Zwei Instanzen: eine mit ?tee, eine ohne. Hier wird index.html
    geprueft — die Datei aus dem Argument, falls alle.js eine mitgibt. */
@@ -179,6 +240,16 @@ ok('Nicht, wer schon abgegeben hat', mon.includes("if(p.exp && p.exp[expKey]){ b
 ok('Nicht zweimal im Monat', mon.includes(".eq('user_id', r.user_id).eq('lauf', lauf).maybeSingle();"));
 ok('Die Rolle wird weiter geprueft', mon.includes("return p.role === 'service_role';"));
 
+/* ── 10 · Die App schreibt mailStand bei jeder eigenen Wahl ── */
+const app = fs.readFileSync(APP, 'utf8');
+ok('Die Fassung der Zustimmung steht in der App', app.includes('const MAIL_STAND = 2;'));
+ok('An allen vier Stellen, an denen man waehlt, und beim Anlegen',
+   (app.match(/ME\.mailStand = MAIL_STAND;/g) || []).length === 4 && app.includes('mailStand: MAIL_STAND,'));
+ok('normalize erfindet ihn nicht — sonst wuerde ein alter Stand als eigene Wahl gelten',
+   !/function normalize\([\s\S]{0,4000}mailStand/.test(app));
+
+versandPruefen().then(ende);
+function ende(){
 let schlecht = 0;
 console.log('');
 E.forEach(e => {
@@ -188,3 +259,4 @@ E.forEach(e => {
 console.log('');
 console.log(E.length + ' Prüfungen, ' + (E.length - schlecht) + ' bestanden, ' + schlecht + ' gescheitert');
 process.exit(schlecht ? 1 : 0);
+}

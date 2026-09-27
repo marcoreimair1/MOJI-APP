@@ -206,6 +206,40 @@ ${teeHtml}  <tr><td class="m-leise" style="padding:22px 8px 0;font:400 12px/1.65
 `;
 }
 
+/* ─── Versand in Ruhe ──────────────────────────────────────────────
+   Resend nimmt im freien Zugang 2 Anfragen pro Sekunde an. Am
+   01.09.2026 gingen alle Mails ohne Pause hinaus — 4 von 10 kamen an,
+   alle in derselben Sekunde, der Rest bekam eine Absage. Jetzt:
+   zwischen zwei Mails mindestens PAUSE_MS, und bei "zu schnell" (429)
+   oder einem Fehler bei Resend (5xx) bis zu vier neue Versuche —
+   so lange, wie Resend im Kopf retry-after verlangt, sonst 1, 2, 4, 8 s.
+   Was dann noch scheitert, holt der naechste Lauf am selben Tag nach:
+   mail_log kennt nur, was wirklich hinausging. */
+const PAUSE_MS = 650;
+const VERSUCHE = 5;
+/* Supabase beendet eine Funktion im freien Zugang nach 150 s, der
+   Zeitplan wartet 120 s. Nach 100 s bleibt der Rest liegen — der
+   naechste Lauf am selben Tag holt ihn. */
+const ZEIT_MS = 100000;
+const warte = (ms: number) => new Promise(r => setTimeout(r, ms));
+function wartezeit(antwort: Response, versuch: number){
+  const s = Number(antwort.headers.get('retry-after'));
+  return Number.isFinite(s) && s > 0 ? Math.min(s * 1000, 20000) : 1000 * 2 ** versuch;
+}
+async function sendeMitGeduld(key: string, inhalt: unknown): Promise<Response> {
+  let antwort: Response | null = null;
+  for(let versuch = 0; versuch < VERSUCHE; versuch++){
+    antwort = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(inhalt)
+    });
+    if(antwort.status !== 429 && antwort.status < 500) return antwort;
+    if(versuch < VERSUCHE - 1) await warte(wartezeit(antwort, versuch));
+  }
+  return antwort!;
+}
+
 Deno.serve(async (req) => {
   /* ── Wer darf die Funktion aufrufen? ───────────────────────────
      Am Gateway ist "Verify JWT with legacy secret" eingeschaltet,
@@ -263,7 +297,9 @@ Deno.serve(async (req) => {
     .from('records').select('user_id, data');
   if(error) return new Response(error.message, { status: 500 });
 
-  const bericht = { gesendet: 0, uebersprungen: 0, fehler: [] as string[] };
+  const bericht = { gesendet: 0, uebersprungen: 0, vertagt: 0, fehler: [] as string[] };
+  let zuletzt = 0;
+  const schluss = Date.now() + ZEIT_MS;
 
   /* Die Bubble Teas: alle Paare und alle Mitglieder einmal holen. Geht
      das schief, kommt die Erinnerung trotzdem — nur ohne die Liste. */
@@ -290,23 +326,26 @@ Deno.serve(async (req) => {
     const vorname = (p.vorname || '').trim() || 'du';
     const tee = wartendFuer(r.user_id, teeReihen || [], person);
 
+    if(Date.now() > schluss){ bericht.vertagt++; continue; }
+    /* Abstand zur vorigen Mail — auch nach einem Fehler. */
+    const seit = Date.now() - zuletzt;
+    if(seit < PAUSE_MS) await warte(PAUSE_MS - seit);
+    zuletzt = Date.now();
     try{
-      const antwort = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          from: von, to: [mail],
-          reply_to: [antwortAn],
-          subject: betreff(monat),
-          text: textFassung(vorname, monat, tee),
-          html: htmlFassung(vorname, monat, tee)
-        })
+      const antwort = await sendeMitGeduld(key, {
+        from: von, to: [mail],
+        reply_to: [antwortAn],
+        subject: betreff(monat),
+        text: textFassung(vorname, monat, tee),
+        html: htmlFassung(vorname, monat, tee)
       });
-      if(!antwort.ok) throw new Error(await antwort.text());
+      if(!antwort.ok) throw new Error(antwort.status + ' ' + await antwort.text());
       await sb.from('mail_log').insert({ user_id: r.user_id, lauf: lauf, art: 'monat' });
       bericht.gesendet++;
     }catch(e){
-      bericht.fehler.push(mail + ': ' + String(e));
+      /* Ohne Adresse im Protokoll der Funktion — nur die Kennung. */
+      console.error('[monatsmail] nicht zugestellt', r.user_id, String(e));
+      bericht.fehler.push(r.user_id + ': ' + String(e));
     }
   }
 

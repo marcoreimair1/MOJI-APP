@@ -2589,6 +2589,31 @@ gleich die Bubble-Tea-Seite (`TEE_ZIEL`, einmalig, übersteht die Anmeldung, `?t
 danach aus der Adresse). Scheitert die Abfrage von `tee` oder `mitglieder`, kommt die
 Erinnerung trotzdem, nur ohne Liste. Geprüft in `tests/test-mail.js`.
 
+### 15.2c Alle an, und jede kommt an *(27. September 2026)*
+
+**Am 01.09.2026 gingen nur 4 von 10 Erinnerungen hinaus**, alle innerhalb einer Sekunde
+(`mail_log`, Lauf `2026-08`). Keiner der zehn hatte den August da schon abgegeben. Ursache:
+Resend nimmt im freien Zugang **2 Anfragen pro Sekunde** an; die Funktion schickte ohne Pause,
+der Rest bekam eine Absage und wurde nie wiederholt. Dazu wartete der Zeitplan (`pg_net`) ohne
+Angabe nur 5 Sekunden auf die Funktion. Seither:
+
+- **Pause und Geduld** (`monatsmail.ts`): zwischen zwei Mails mindestens 650 ms; bei 429 oder
+  5xx bis zu fünf Versuche, so lange gewartet, wie Resend im Kopf `retry-after` verlangt (höchstens
+  20 s), sonst 1, 2, 4, 8 s. Nach 100 s Laufzeit bleibt der Rest liegen (`vertagt` im Bericht).
+  Im Bericht stehen keine Mailadressen mehr, nur Kennungen.
+- **Drei Läufe am Ersten** (`10 5,6,8 1 * *`, UTC) mit `timeout_milliseconds := 120000`.
+  `mail_log` verhindert doppelte Mails — die späteren Läufe holen nur nach, was fehlte.
+- **Zustimmung für alle** auf Marcos Wunsch: vorher 10 ja, 8 ausdrücklich nein, 3 nie gefragt.
+  Die alten Antworten liegen in `mail_zustimmung_vorher` (für niemanden lesbar außer dem Dienst).
+  Abschalten geht weiter im Profilmenü.
+- **Alte App-Fassungen** schreiben die Zustimmung nicht zurück: die App schreibt bei jeder
+  eigenen Wahl `mailStand` (`MAIL_STAND = 2`) mit; kommt ein Profil ohne `mailStand` an, hält der
+  Auslöser `records_zustimmung_halten` Zustimmung und Stand von vorher. `normalize()` darf
+  `mailStand` nie selbst setzen — sonst gälte ein alter Stand als eigene Wahl.
+
+Migration: `20260927120000_monatsmail_alle.sql`, prüft sich selbst (auch den Auslöser, in
+einem zurückgerollten Teilschritt).
+
 ### 15.3 Funktion veröffentlichen *(erledigt)*
 
 Läuft als `monatsmail` unter
