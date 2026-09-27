@@ -776,6 +776,37 @@ wo es Stunden gibt.
 
 Geprüft in `tests/test-tag.js`.
 
+### Ganze und halbe Tage — nachgerechnet *(27. September 2026)*
+
+Gerechnet wird jeder Tag in `evalDay()`: *Ganzer Tag* nimmt alle geplanten Stunden, *Vormittag*
+nur die des Vormittags (der Nachmittag bleibt Arbeit), *Nachmittag* umgekehrt. Das Urlaubskonto
+zählt anteilig: Urlaubsstunden durch alle Stunden des Tages (`monthSums().dUrlaub`). Mit echten
+Fällen nachgerechnet (Mo–Fr 4 + 4 h, Sa nur 08–12):
+
+| Fall | vorher | jetzt |
+|---|---|---|
+| Mo *Vormittag* Urlaub | 4 h Urlaub, 4 h Arbeit, ½ Urlaubstag | gleich — richtig |
+| Sa *Vormittag* Urlaub | ein **ganzer** Urlaubstag, obwohl „halb" gewählt | am Samstag gibt es nur *Ganzer Tag*; Hinweis „nur ein Dienstblock (08:00–12:00)" |
+| Sa *Nachmittag* Urlaub | Eintrag im Kalender, zählt **nichts** | nicht wählbar |
+| So Urlaub / Krankenstand | Eintrag, zählt nichts | Kachel gesperrt: „Kein Dienst an diesem Tag" |
+| Feiertag, jeder Eintrag | vom Feiertag überdeckt, zählt nichts | nur *Eigener Vermerk* wählbar, Bilanz sagt es |
+| Mo Zeitausgleich −10 h | angezeigt −10, abgezogen 8 | Einlösen höchstens bis zu den geplanten Stunden |
+| So Zeitausgleich einlösen | Meldung erst beim Speichern | *Einlösen* gesperrt, *Sammeln* geht |
+| Mehrere Tage mit *Vormittag* | jeder Samstag darin wie oben falsch | **mehrere Tage sind immer ganze Tage** |
+
+- **Halbe Tage** nur, wo es zwei Dienstblöcke gibt (`shHalbGeht()`); gesperrte Arten über
+  `shGesperrt()`.
+- **Live mitgerechnet:** Im Tagesblatt steht unter den Einstellungen *So zählt der Tag* — Summe,
+  ein Balken und die Teile (Arbeit, Urlaub, Krankenstand, Vermerk, Zeitausgleich, Feiertag),
+  gerechnet von `evalDay` auf einer Kopie (`tagMit()`), also genau wie Kalender, Monatsübersicht
+  und PDF. Dazu, was auf das Zeitausgleich-Konto geht. Beim Zeitraum nennt die Zeile unter Von–Bis
+  die Stunden und beim Urlaub die Urlaubstage (`zrZaehlen()`; ein Samstag mit 4 h ist ein ganzer).
+- **Offen, nicht geändert:** Bei ungleichen Hälften (z. B. 5 h vormittags, 3 h nachmittags) zählt
+  ein halber Urlaubstag anteilig 0,625 Tage, nicht 0,5. Und am Feiertag zählt auch gesammelter
+  Zeitausgleich nicht — wer an einem Feiertag arbeitet, kann das nicht eintragen.
+
+Geprüft in `tests/test-tag.js` und `tests/test-zeitraum.js`.
+
 ### Die Monatsübersicht in der Karte *(27. September 2026)*
 
 Unter dem Kalender stand eine Zeile *Monatsdetails* mit einem dünnen grauen Balken; die Zahlen

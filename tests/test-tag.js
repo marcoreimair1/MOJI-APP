@@ -148,18 +148,94 @@ ok('Gespeichert wird er dort nie', ME.events['2026-09-27'] && ME.events['2026-09
 delete ME.events['2026-09-27'];
 
 vermerk(2026, 8, 26);                               /* Samstag, nur vormittags */
-ok('Samstag ganzer Tag: die 4 h vom Vormittag', !awS.disabled && / 4,00 h$/.test(awT.textContent), awT.textContent);
-tipp(awS);
-tipp(document.querySelector('#sh-scope [data-s="nm"]'));
-ok('Nur Nachmittag: gesperrt, und der Schalter geht aus', awS.disabled && SH.aw === false);
-ok('Mit dem passenden Grund', awT.textContent === 'Am Nachmittag hast du keinen Dienst', awT.textContent);
-tipp(document.querySelector('#sh-scope [data-s="vm"]'));
-ok('Zurueck auf Vormittag: wieder frei', !awS.disabled && / 4,00 h$/.test(awT.textContent));
+ok('Samstag: die 4 h des einen Dienstblocks', !awS.disabled && / 4,00 h$/.test(awT.textContent), awT.textContent);
 closeSheet();
 
 vermerk(2026, 9, 26);                               /* Nationalfeiertag, Montag */
 ok('Am Feiertag gesperrt', awS.disabled, awT.textContent);
 ok('Weil der Feiertag gilt', awT.textContent === 'Am Feiertag zählt nichts als Arbeitszeit', awT.textContent);
+closeSheet();
+
+/* ── 10 · Halbe Tage nur, wo es zwei Dienstbloecke gibt ──
+   Nachgerechnet am 27.09.2026: am Samstag (nur 08–12) war „Vormittag
+   Urlaub" ein ganzer Urlaubstag und „Nachmittag Urlaub" zaehlte nichts. */
+openSheet(2026, 8, 26); tipp(kachel('urlaub'));
+var umf = function(w){ return document.querySelector('#sh-scope [data-s="' + w + '"]'); };
+ok('Samstag: Vormittag und Nachmittag sind gesperrt', umf('vm').disabled && umf('nm').disabled && !umf('full').disabled);
+ok('Der Hinweis nennt den einen Block',
+   !document.querySelector('#sh-scope-h').hidden
+   && document.querySelector('#sh-scope-h').textContent === 'An diesem Tag hast du nur einen Dienstblock (08:00–12:00) — es zählt der ganze Tag.',
+   document.querySelector('#sh-scope-h').textContent);
+tipp(umf('nm'));
+ok('Ein Tipp auf Nachmittag aendert nichts', SH.scope === 'full');
+SH.scope = 'vm'; paintSheet();
+ok('Auch von aussen gesetzt wird es der ganze Tag', SH.scope === 'full');
+ok('Die Bilanz: 4 h Urlaub, nichts gearbeitet', /Urlaub 4,00 h/.test(document.querySelector('#sh-bil').textContent)
+   && !/Arbeit/.test(document.querySelector('#sh-bil').textContent), document.querySelector('#sh-bil').textContent);
+closeSheet();
+openSheet(2026, 8, 17); tipp(kachel('urlaub'));
+ok('Donnerstag mit zwei Bloecken: halbe Tage gehen', !umf('vm').disabled && !umf('nm').disabled
+   && document.querySelector('#sh-scope-h').hidden);
+tipp(umf('vm'));
+var bil = document.querySelector('#sh-bil').textContent;
+ok('Vormittag Urlaub: die Bilanz zeigt 4 h Arbeit und 4 h Urlaub', /Arbeit 4,00 h/.test(bil) && /Urlaub 4,00 h/.test(bil), bil);
+ok('Und oben die Summe des Tages', document.querySelector('.shbil-kopf b').textContent === '8,00 h');
+var kz = document.querySelector('#sh-konto').textContent;
+var kzJetzt = parseFloat((kz.match(/: ([0-9,]+) von/) || [0, '0'])[1].replace(',', '.'));
+var kzNach  = parseFloat((kz.match(/nach diesem Tag ([0-9,]+)/) || [0, '0'])[1].replace(',', '.'));
+ok('Das Urlaubskonto rechnet einen halben Tag', Math.abs(kzJetzt - kzNach - 0.5) < 0.001, kz);
+tipp(kachel('krank'));
+ok('Krankenstand am Vormittag: 4 h Krankenstand, 4 h Arbeit', /Krankenstand 4,00 h/.test(document.querySelector('#sh-bil').textContent)
+   && /Arbeit 4,00 h/.test(document.querySelector('#sh-bil').textContent));
+tipp(kachel('eigen'));
+tipp(umf('full'));
+ok('Vermerk ganzer Tag: 8 h Vermerk', /Vermerk 8,00 h/.test(document.querySelector('#sh-bil').textContent));
+tipp(awS);
+ok('Als Arbeitszeit: 8 h Arbeit, kein Vermerk mehr', /Arbeit 8,00 h/.test(document.querySelector('#sh-bil').textContent)
+   && document.querySelector('#sh-bil').textContent.indexOf('Vermerk 8') < 0, document.querySelector('#sh-bil').textContent);
+closeSheet();
+
+/* ── 11 · Was an einem Tag nichts zaehlen kann, ist nicht waehlbar ── */
+openSheet(2026, 8, 27);                             /* Sonntag */
+ok('Sonntag: Urlaub und Krankenstand gesperrt', kachel('urlaub').disabled && kachel('krank').disabled);
+ok('Mit Grund in der Kachel', kachel('urlaub').querySelector('small').textContent === 'Kein Dienst an diesem Tag');
+ok('Zeitausgleich und Vermerk gehen', !kachel('zeit').disabled && !kachel('eigen').disabled);
+tipp(kachel('urlaub'));
+ok('Ein Tipp auf die gesperrte Kachel waehlt nichts', SH.type === null);
+tipp(kachel('eigen'));
+ok('Vermerk am Sonntag: die Bilanz sagt, dass nichts zaehlt',
+   /Kein Dienst geplant/.test(document.querySelector('#sh-bil').textContent));
+ok('Und es gibt keinen Umfang', document.querySelector('#sh-scopewrap').style.display === 'none');
+tipp(kachel('zeit'));
+ok('Zeitausgleich am Sonntag: Einloesen gesperrt, Sammeln gewaehlt',
+   document.querySelector('#sh-zadir [data-dir="minus"]').disabled && SH.zaDir === 'plus');
+ok('Sammeln zaehlt als Arbeit und aufs Konto', /Arbeit 1,00 h/.test(document.querySelector('#sh-bil').textContent)
+   && document.querySelector('#sh-bil').textContent.indexOf('+1,00 h auf dein Zeitausgleich-Konto') >= 0, document.querySelector('#sh-bil').textContent);
+closeSheet();
+openSheet(2026, 9, 26);                             /* Nationalfeiertag */
+ok('Feiertag: nur der Vermerk ist waehlbar', kachel('urlaub').disabled && kachel('krank').disabled
+   && kachel('zeit').disabled && !kachel('eigen').disabled);
+tipp(kachel('eigen'));
+ok('Die Bilanz zeigt den Feiertag und sagt, dass der Eintrag nichts aendert',
+   /Feiertag 8,00 h/.test(document.querySelector('#sh-bil').textContent)
+   && /ein Eintrag ändert an diesem Tag nichts/.test(document.querySelector('#sh-bil').textContent));
+closeSheet();
+
+/* ── 12 · Einloesen hoechstens, was geplant ist ──
+   Vorher liess sich −10 h einstellen, abgezogen wurden 8. */
+openSheet(2026, 8, 17); tipp(kachel('zeit'));
+tipp(document.querySelector('#sh-zadir [data-dir="minus"]'));
+zaSetz(10);
+ok('Einloesen bleibt bei den 8 geplanten Stunden', SH.zaH === 8, SH.zaH);
+ok('Plus ist dann aus', document.querySelector('#sh-zaplus').disabled);
+ok('Die Bilanz: 8 h aus dem Konto, keine Arbeit', /8,00 h aus deinem Zeitausgleich-Konto/.test(document.querySelector('#sh-bil').textContent)
+   && !/Arbeit/.test(document.querySelector('#sh-bil').textContent), document.querySelector('#sh-bil').textContent);
+tipp(document.querySelector('#sh-zadir [data-dir="plus"]'));
+zaSetz(10);
+ok('Sammeln darf mehr', SH.zaH === 10 && !document.querySelector('#sh-zaplus').disabled);
+ok('Und rechnet 18 h Arbeit', /Arbeit 18,00 h/.test(document.querySelector('#sh-bil').textContent));
+tipp(document.querySelector('#sh-zadir [data-dir="minus"]'));
+ok('Zurueck auf Einloesen: wieder hoechstens 8', SH.zaH === 8, SH.zaH);
 closeSheet();
 
 window.__WEITER = function(){
@@ -183,7 +259,7 @@ setTimeout(() => {
    ['Die nicht gewaehlten treten zurueck, statt zu verschwinden', /#sh-opts\.gewaehlt \.sho:not\(\.on\)\{opacity:\.48\}/],
    ['Die alten Zeilen, die weggeklappt wurden, sind weg', !/\.opt\.weg\{/.test(roh)],
    ['Andruecken ueber scale', /\.sho:active\{scale:\.96\}/],
-   ['Der Umfang nutzt denselben Umschalter wie der Zeitraum', /#q-scope::before,#sh-scope::before\{/],
+   ['Der Umfang hat einen Schieber', /#sh-scope::before\{/],
    ['Schliessen gleitet nach unten weg', /#sheet\.zu \.sheet-card\{animation:shRaus/],
    ['Nach einem Wurf mit dem Finger sofort', /karte\.classList\.contains\('weg'\)\)\)\{\s*\n\s*bl\.classList\.remove\('on', 'zu', 'frisch'\)/],
    ['Die Farbe kommt aus den Marken der Fassung', /getPropertyValue\('--c-' \+ SH\.type\)/],

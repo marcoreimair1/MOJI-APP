@@ -1467,6 +1467,25 @@ h1.dis i{font-style:italic;color:var(--butter)}
    sagt den Grund. */
 .toggle:disabled{opacity:.38;cursor:not-allowed}
 .shaw{display:flex;align-items:center;gap:11px;margin:-4px 0 14px;font-size:12.5px;color:var(--tx-2)}
+/* ─── Tagesbilanz im Tagesblatt ─── live, was der Tag zaehlt. */
+.shbil{margin-top:14px;padding:12px 13px 11px;border-radius:15px;border:1px solid var(--line-2);
+  background:rgba(var(--s-tief),.22);animation:shEin .3s var(--ease) both}
+.shbil-kopf{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.shbil-kopf span{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--tx-3)}
+.shbil-kopf b{font-family:var(--font-dis);font-weight:400;font-size:16px;color:var(--tx);font-variant-numeric:tabular-nums}
+.shbil-balken{display:flex;gap:3px;height:8px}
+.shbil-balken i{min-width:6px;border-radius:99px;transition:flex .4s var(--ease-out)}
+.shbil-teile{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px;font-size:12px;color:var(--tx-2)}
+.shbil-teile span::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;
+  background:var(--f);vertical-align:.05em}
+.shbil-teile b{font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums}
+.shbil-leer,.shbil-zusatz{margin:0;font-size:12px;line-height:1.5;color:var(--tx-3)}
+.shbil-zusatz{margin-top:7px}
+.shhinweis{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--tx-3)}
+#sh-scope button:disabled{opacity:.35;cursor:not-allowed}
+#sh-opts .sho.zu,#sh-opts.gewaehlt .sho.zu{opacity:.32;cursor:not-allowed}
+.sho.zu:active{scale:1}
+.zadir button:disabled,.zabtn:disabled{opacity:.35;cursor:not-allowed}
 .shaw.aus{color:var(--tx-3)}
 .toggle.on::after{left:21px;background:var(--butter)}
 
@@ -1922,16 +1941,16 @@ body.zrmodus #v-cal .card{border-color:var(--zrf,var(--line));
 /* Der Umfang ist ein Umschalter mit einem Schieber in der Farbe der
    Leistung. Vorher drei einzelne Kacheln, und „Nur Nachmittag" brach am
    Handy auf zwei Zeilen um. */
-#q-scope,#sh-scope{position:relative;gap:0;padding:3px;border-radius:14px;
+#sh-scope{position:relative;gap:0;padding:3px;border-radius:14px;
   border:1px solid var(--line-2);background:rgba(var(--s-tief),.3)}
-#q-scope::before,#sh-scope::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;
+#sh-scope::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;
   width:calc((100% - 6px) / 3);border-radius:11px;
   background:var(--zrf-zart,rgba(var(--marke-rgb),.14));
   box-shadow:inset 0 0 0 1px var(--zrf-schwach,rgba(var(--marke-rgb),.4));
   transform:translateX(calc(100% * var(--i, 0)));transition:transform .45s var(--ease-out)}
-#q-scope button,#sh-scope button{position:relative;z-index:1;padding:10px 4px;border:0;border-radius:11px;
+#sh-scope button{position:relative;z-index:1;padding:10px 4px;border:0;border-radius:11px;
   background:transparent;font-size:12px;white-space:nowrap;transition:color .24s var(--ease)}
-#q-scope button.on,#sh-scope button.on{background:transparent;color:var(--zrf-tx,var(--butter))}
+#sh-scope button.on{background:transparent;color:var(--zrf-tx,var(--butter))}
 body.zrmodus #zr-ok{background:linear-gradient(120deg,var(--zrf-hell),var(--zrf));
   border-color:var(--zrf);color:var(--f-3);
   box-shadow:0 12px 34px -12px var(--zrf-schwach)}
@@ -6411,13 +6430,9 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
             <button class="zrs leer" id="zrs-bis" type="button"><u>Bis</u><b id="zrs-bis-b">—</b><em class="zrs-x" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></em></button>
           </div>
           <p class="zrp-sum" id="zr-sum">—</p>
-          <div class="zrp-teil" id="zrp-umfang">
-            <div class="scope" id="q-scope" style="margin:0">
-              <button data-s="full" class="on">Ganzer Tag</button>
-              <button data-s="vm">Vormittag</button>
-              <button data-s="nm">Nachmittag</button>
-            </div>
-          </div>
+          <!-- Kein Umfang: mehrere Tage sind immer ganze Tage. Halbe Tage
+               traegt man am Tag selbst ein — dort weiss das Blatt, ob es
+               zwei Dienstbloecke gibt. -->
           <div class="zrp-teil" id="q-textwrap" style="display:none">
             <input type="text" id="q-text" placeholder="Vermerk, z. B. Schulung">
           </div>
@@ -6992,6 +7007,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         <button data-s="vm">Vormittag</button>
         <button data-s="nm">Nachmittag</button>
       </div>
+      <p class="shhinweis" id="sh-scope-h" hidden></p>
     </div>
     <!-- Zeitausgleich: erst die Richtung, dann die Menge. Rot heißt einlösen,
          grün heißt sammeln. Die Zahl ist bewusst kein Eingabefeld — sie wird
@@ -7020,6 +7036,9 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
       <small class="shlab">Vermerk</small>
       <textarea id="sh-text" placeholder="z. B. Schulung, Behördenweg, Pflegefreistellung …"></textarea>
     </div>
+    <!-- Was der Tag mit diesem Eintrag zaehlt — live, aus derselben
+         Rechnung wie Kalender, Monatsuebersicht und PDF (evalDay). -->
+    <div class="shbil" id="sh-bil" style="display:none"></div>
     <div class="sheet-actions">
       <button class="btn btn-p" id="sh-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg><span id="sh-save-t">Art wählen</span></button>
       <button class="btn btn-g" id="sh-del">Zurücksetzen</button>
@@ -7302,7 +7321,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2330';
+const APP_STAND = '2026-09-28-0000';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14457,6 +14476,8 @@ function openSheet(y, m, d){
   SH._geplant = geplant;
   SH._plan = { vm: r25(plan.vm), nm: r25(plan.nm) };
   SH._feiertag = !!hol;
+  SH._planText = plan.cfg ? { vm: plan.cfg.vmOn && plan.vm > 0 ? plan.cfg.vmFrom + '–' + plan.cfg.vmTo : '',
+                              nm: plan.cfg.nmOn && plan.nm > 0 ? plan.cfg.nmFrom + '–' + plan.cfg.nmTo : '' } : { vm:'', nm:'' };
 
   /* Kopf: das Kalenderblatt mit Wochentag und Tag, daneben ausgeschrieben
      und darunter der Dienstplan des Tages. Das Jahr nur, wenn es nicht
@@ -14477,12 +14498,17 @@ function openSheet(y, m, d){
   $('#sh-holiday').style.display = hol ? 'flex' : 'none';
   if(hol) $('#sh-holiday-t').innerHTML = '<b>' + hol + '</b> — gesetzlicher Feiertag, wird automatisch gezählt.';
 
-  $('#sh-opts').innerHTML = ['urlaub','krank','zeit','eigen'].map(t =>
-    '<button class="sho'+(SH.type===t?' on':'')+'" data-t="'+t+'" aria-pressed="'+(SH.type===t)+'">'
-    + '<span class="sho-i">'+ICONS[t]+'</span>'
-    + '<span class="sho-t"><b>'+SHO_NAME[t]+'</b><small>'+SHO_SATZ[t]+'</small></span>'
-    + '<span class="sho-haken" aria-hidden="true">'+SHO_HAKEN+'</span>'
-    + '</button>').join('');
+  $('#sh-opts').innerHTML = ['urlaub','krank','zeit','eigen'].map(t => {
+    /* Was an diesem Tag nichts zaehlen kann, ist nicht waehlbar — ausser
+       es steht schon so da, dann laesst es sich noch zuruecksetzen. */
+    const grund = SH.type === t ? '' : shGesperrt(t);
+    return '<button class="sho'+(SH.type===t?' on':'')+(grund?' zu':'')+'" data-t="'+t+'" aria-pressed="'+(SH.type===t)+'"'
+      + (grund ? ' disabled' : '') + '>'
+      + '<span class="sho-i">'+ICONS[t]+'</span>'
+      + '<span class="sho-t"><b>'+SHO_NAME[t]+'</b><small>'+(grund || SHO_SATZ[t])+'</small></span>'
+      + '<span class="sho-haken" aria-hidden="true">'+SHO_HAKEN+'</span>'
+      + '</button>';
+  }).join('');
   _shArt = undefined;
   paintSheet();
   if(window.__sheetReset) window.__sheetReset();   /* unverschoben beginnen */
@@ -14594,13 +14620,28 @@ function paintSheet(){
     }
     _shArt = SH.type;
   }
-  $('#sh-scope').style.setProperty('--i', Math.max(0, ['full', 'vm', 'nm'].indexOf(SH.scope)));
   /* Kurz, damit es neben „Abbrechen" passt — welche Art, sagt die Farbe. */
   $('#sh-save-t').textContent = !SH.type ? 'Art wählen' : SH.hatte ? 'Speichern' : 'Eintragen';
   $('#sh-del').textContent = SH.hatte ? 'Zurücksetzen' : 'Abbrechen';
-  /* Beim Zeitausgleich entscheidet die Zahl, nicht Vormittag oder Nachmittag. */
-  zeigen('#sh-scopewrap', !!SH.type && !za);
-  $$('#sh-scope button').forEach(b => b.classList.toggle('on', b.dataset.s === SH.scope));
+  /* Beim Zeitausgleich entscheidet die Zahl, nicht Vormittag oder Nachmittag.
+     Ohne Dienst und am Feiertag gibt es keinen Umfang. Halbe Tage nur,
+     wo es zwei Dienstbloecke gibt — sonst ist der halbe der ganze Tag. */
+  const geplant = SH._plan ? SH._plan.vm + SH._plan.nm : 0;
+  zeigen('#sh-scopewrap', !!SH.type && !za && geplant > 0 && !SH._feiertag);
+  const halb = shHalbGeht();
+  if(!halb) SH.scope = 'full';
+  $$('#sh-scope button').forEach(b => {
+    b.classList.toggle('on', b.dataset.s === SH.scope);
+    b.disabled = !halb && b.dataset.s !== 'full';
+  });
+  $('#sh-scope').style.setProperty('--i', Math.max(0, ['full', 'vm', 'nm'].indexOf(SH.scope)));
+  const hin = $('#sh-scope-h');
+  hin.hidden = halb || geplant <= 0;
+  if(!halb && geplant > 0){
+    const block = SH._planText.vm || SH._planText.nm;
+    hin.textContent = 'An diesem Tag hast du nur einen Dienstblock' + (block ? ' (' + block + ')' : '')
+      + ' — es zählt der ganze Tag.';
+  }
   zeigen('#sh-textwrap', SH.type === 'eigen');
   $('#sh-text').value = SH.text;
   /* Als Arbeitszeit zaehlen geht nur, wo laut Dienstplan gearbeitet
@@ -14621,8 +14662,21 @@ function paintSheet(){
 
   malKontingent();
   zeigen('#sh-zawrap', za);
-  if(za) malZa();
-  $('#sh-save').disabled = !SH.type || (za && SH.zaH <= 0);
+  if(za){
+    /* Einloesen geht nur, wo Dienst ist, und hoechstens so viel, wie
+       geplant ist — evalDay zieht nie mehr ab. Vorher liess sich −10 h
+       einstellen, abgezogen wurden 8. */
+    const minusGeht = geplant > 0 && !SH._feiertag;
+    if(!minusGeht && SH.zaDir === 'minus') SH.zaDir = 'plus';
+    if(SH.zaDir === 'minus' && SH.zaH > geplant) SH.zaH = r25(geplant);
+    const mb = $('#sh-zadir [data-dir="minus"]');
+    mb.disabled = !minusGeht;
+    mb.title = minusGeht ? '' : 'An diesem Tag hast du keinen Dienst — nichts einzulösen';
+    $('#sh-zaplus').disabled = SH.zaDir === 'minus' && SH.zaH >= geplant;
+    malZa();
+  }
+  malBilanz();
+  $('#sh-save').disabled = !SH.type || (za && SH.zaH <= 0) || (!!SH.type && !SH.hatte && !!shGesperrt(SH.type));
 }
 
 /* Richtung, Menge und die beiden Tagesknöpfe. Rot steht für eingelöst,
@@ -14651,6 +14705,71 @@ function malZa(){
 /* Schließen: die Karte geht nach unten weg, erst dann ist das Blatt zu.
    Kam sie schon mit dem Finger nach unten geworfen (.weg), ist sie
    bereits draußen — dann sofort. */
+/* ─── Was an einem Tag gehen kann ─────────────────────────────────
+   Nachgerechnet am 27.09.2026: Urlaub und Krankenstand an einem Tag
+   ohne Dienst zaehlten nichts, am Feiertag gilt ohnehin der Feiertag
+   (evalDay steigt dort vor jedem Eintrag aus). Solche Eintraege standen
+   im Kalender, ohne etwas zu bewirken. */
+function shGesperrt(t){
+  const geplant = SH._plan ? SH._plan.vm + SH._plan.nm : 0;
+  if(SH._feiertag && t !== 'eigen') return 'Am Feiertag gilt der Feiertag';
+  if(geplant <= 0 && (t === 'urlaub' || t === 'krank')) return 'Kein Dienst an diesem Tag';
+  return '';
+}
+/* Halbe Tage gibt es nur, wo es zwei Dienstbloecke gibt. Am Samstag mit
+   nur einem Vormittag war „Vormittag Urlaub" in Wahrheit der ganze Tag
+   (ein ganzer Urlaubstag weg), und „Nachmittag Urlaub" zaehlte nichts. */
+function shHalbGeht(){
+  return !!SH._plan && SH._plan.vm > 0 && SH._plan.nm > 0 && !SH._feiertag;
+}
+/* Der Eintrag, so wie ihn Speichern schreiben wuerde. */
+function shEintrag(){
+  if(!SH.type) return null;
+  if(SH.type === 'zeit') return { t:'zeit', za: r25(SH.zaDir === 'minus' ? -SH.zaH : SH.zaH) };
+  return { t:SH.type, s:SH.scope, text:SH.type === 'eigen' ? (SH.text || '').trim() : '',
+           aw:SH.type === 'eigen' ? (SH.aw && shAwStunden() > 0) : false };
+}
+/* Der Tag mit diesem Eintrag — gerechnet von evalDay auf einer Kopie,
+   also genau so, wie ihn Kalender, Monatsuebersicht und PDF sehen. */
+function tagMit(y, m, d, ev){
+  const p = Object.assign({}, ME, { events: Object.assign({}, ME.events) });
+  const k = key(y, m, d);
+  if(ev) p.events[k] = ev; else delete p.events[k];
+  return evalDay(p, y, m, d);
+}
+const BIL_TEILE = [
+  ['work',   'arbeit', 'Arbeit'],
+  ['urlaub', 'urlaub', 'Urlaub'],
+  ['krank',  'krank',  'Krankenstand'],
+  ['sonst',  'eigen',  'Vermerk'],
+  ['zeit',   'zeit',   'Zeitausgleich'],
+  ['feier',  'feier',  'Feiertag']
+];
+function malBilanz(){
+  const el = $('#sh-bil'); if(!el || !ME) return;
+  const ev = shEintrag();
+  if(!ev){ el.style.display = 'none'; return; }
+  const r = tagMit(SH.y, SH.m, SH.d, ev);
+  const da = BIL_TEILE.filter(t => r[t[0]] > 0.004);
+  const summe = da.reduce((a, t) => a + r[t[0]], 0);
+  let h = '<div class="shbil-kopf"><span>So zählt der Tag</span><b>' + fmtH(summe) + ' h</b></div>';
+  if(!da.length){
+    h += '<p class="shbil-leer">Kein Dienst geplant — an diesem Tag zählen keine Stunden.</p>';
+  } else {
+    h += '<div class="shbil-balken">' + da.map(t => '<i style="flex:' + r[t[0]].toFixed(2)
+      + ';background:' + MX_FARBE[t[1]][0] + '"></i>').join('') + '</div>'
+      + '<div class="shbil-teile">' + da.map(t => '<span style="--f:' + MX_FARBE[t[1]][0] + '">'
+      + t[2] + ' <b>' + fmtH(r[t[0]]) + ' h</b></span>').join('') + '</div>';
+  }
+  /* Was nicht in die Stunden passt, steht darunter in Worten. */
+  const extra = [];
+  if(r.za > 0.004) extra.push('+' + fmtH(r.za) + ' h auf dein Zeitausgleich-Konto');
+  if(r.za < -0.004) extra.push(fmtH(-r.za) + ' h aus deinem Zeitausgleich-Konto');
+  if(SH._feiertag) extra.push('Feiertag — ein Eintrag ändert an diesem Tag nichts.');
+  if(extra.length) h += '<p class="shbil-zusatz">' + extra.join(' · ') + '</p>';
+  el.innerHTML = h;
+  el.style.display = 'block';
+}
 /* Wie viele Stunden ein Vermerk als Arbeitszeit zaehlen wuerde: die
    geplanten im gewaehlten Umfang. Am Feiertag keine — dort gilt der
    Feiertag, nicht der Vermerk. */
@@ -14658,10 +14777,10 @@ function shAwStunden(){
   if(SH._feiertag || !SH._plan) return 0;
   return SH.scope === 'vm' ? SH._plan.vm : SH.scope === 'nm' ? SH._plan.nm : SH._plan.vm + SH._plan.nm;
 }
+/* Eine Tageshaelfte ohne Dienst gibt es hier nicht mehr — halbe Tage
+   sind nur waehlbar, wo beide Haelften Dienst haben (shHalbGeht). */
 function shAwGrund(){
   if(SH._feiertag) return 'Am Feiertag zählt nichts als Arbeitszeit';
-  if(SH.scope === 'vm' && SH._plan && SH._plan.vm + SH._plan.nm > 0) return 'Am Vormittag hast du keinen Dienst';
-  if(SH.scope === 'nm' && SH._plan && SH._plan.vm + SH._plan.nm > 0) return 'Am Nachmittag hast du keinen Dienst';
   return 'An diesem Tag hast du keinen Dienst';
 }
 function closeSheet(){
@@ -14812,21 +14931,26 @@ window.__mailReset  = wireSheetDrag('mail-grab', 'lg-mailstep', () => blattZu('l
 window.__codeReset  = wireSheetDrag('code-grab', 'lg-codestep', () => blattZu('lg-codestep', true),
                                     null, '.blatt-karte', '.blatt-grund');
 $('#sh-opts').addEventListener('click', e => {
-  const b = e.target.closest('[data-t]'); if(!b) return;
+  const b = e.target.closest('[data-t]'); if(!b || b.disabled) return;
   /* Ein Tipp auf eine andere Art wechselt, nochmal auf die gewählte nimmt sie zurück. */
   SH.type = SH.type === b.dataset.t ? null : b.dataset.t;
   paintSheet();
 });
 $('#sh-scope').addEventListener('click', e => {
-  const b = e.target.closest('[data-s]'); if(!b) return;
+  const b = e.target.closest('[data-s]'); if(!b || b.disabled) return;
   SH.scope = b.dataset.s; paintSheet();
 });
 $('#sh-text').addEventListener('input', e => SH.text = e.target.value);
 /* Die Menge lässt sich nur über diese beiden Knöpfe verstellen, immer in
-   Viertelstunden, und nie unter eine Viertelstunde. */
-function zaSetz(v){ SH.zaH = Math.max(ZA_SCHRITT, Math.min(24, r25(v))); paintSheet(); }
+   Viertelstunden, nie unter eine Viertelstunde — und beim Einlösen nie
+   über die Stunden, die an dem Tag geplant sind. */
+function zaSetz(v){
+  const oben = SH.zaDir === 'minus' ? Math.max(ZA_SCHRITT, SH._geplant || 0) : 24;
+  SH.zaH = Math.max(ZA_SCHRITT, Math.min(oben, r25(v)));
+  paintSheet();
+}
 $('#sh-zadir').addEventListener('click', e => {
-  const b = e.target.closest('[data-dir]'); if(!b) return;
+  const b = e.target.closest('[data-dir]'); if(!b || b.disabled) return;
   SH.zaDir = b.dataset.dir; paintSheet();
 });
 $('#sh-zaminus').addEventListener('click', () => zaSetz(SH.zaH - ZA_SCHRITT));
@@ -15006,13 +15130,34 @@ function qEach(fn){
    schon belegt sind. Sonntage, Feiertage und dienstfreie Tage zählen
    nicht, sie werden beim Eintragen übersprungen. */
 function zrZaehlen(){
-  const r = qRange(); let tage = 0, belegt = 0;
-  if(r) for(const d = new Date(r[0]); d <= r[1]; d.setDate(d.getDate() + 1)){
+  const r = qRange(); let tage = 0, belegt = 0, stunden = 0;
+  if(!r) return { tage: 0, belegt: 0, stunden: 0, urlaubTage: 0 };
+  /* Auf einer Kopie mit den Eintraegen, die „Eintragen" schreiben wuerde —
+     gerechnet von evalDay, wie spaeter im Kalender. */
+  const p = Object.assign({}, ME, { events: Object.assign({}, ME.events),
+                                    konten: Object.assign({}, ME.konten) });
+  const feld = Q.type === 'urlaub' ? 'urlaub' : Q.type === 'krank' ? 'krank' : 'sonst';
+  const tageListe = [];
+  for(const d = new Date(r[0]); d <= r[1]; d.setDate(d.getDate() + 1)){
     if(!qTouched(d)) continue;
+    const k = key(d.getFullYear(), d.getMonth(), d.getDate());
     tage++;
-    if(ME.events[key(d.getFullYear(), d.getMonth(), d.getDate())]) belegt++;
+    if(ME.events[k]) belegt++;
+    p.events[k] = { t:Q.type, s:'full', text:'', aw:false };
+    tageListe.push(new Date(d));
   }
-  return { tage: tage, belegt: belegt };
+  /* Urlaubstage je Tag anteilig, wie monthSums und damit das Konto:
+     Urlaubsstunden durch alle Stunden des Tages. Direkt gerechnet, nicht
+     als Differenz des Kontos — das zaehlt erst ab seinem Startjahr. */
+  let urlaubTage = 0;
+  tageListe.forEach(d => {
+    const r = evalDay(p, d.getFullYear(), d.getMonth(), d.getDate());
+    stunden += r[feld];
+    const tag = r.work + r.urlaub + r.krank + r.feier + r.sonst + r.zeit;
+    if(tag > 0) urlaubTage += r.urlaub / tag;
+  });
+  urlaubTage = r05(urlaubTage);
+  return { tage: tage, belegt: belegt, stunden: r25(stunden), urlaubTage: urlaubTage };
 }
 /* Ein Tag im Von-bis-Feld: kurz, das Jahr nur, wenn es nicht das laufende ist. */
 function zrTag(d){
@@ -15050,8 +15195,13 @@ function qSummary(){
   } else if(!Q.to){
     el.innerHTML = '<i>Nur dieser eine Tag? Dann gleich eintragen.</i>';
   } else {
+    /* Live mitgerechnet: die Stunden, beim Urlaub auch die Urlaubstage
+       (ein Samstag mit vier Stunden ist ein ganzer Urlaubstag). */
+    const art = Q.type === 'urlaub' ? 'Urlaub' : Q.type === 'krank' ? 'Krankenstand' : 'Vermerk';
     el.innerHTML = '<b>' + z.tage + (z.tage === 1 ? ' Arbeitstag' : ' Arbeitstage') + '</b>'
-      + (z.belegt ? ' <i>· ' + z.belegt + ' schon belegt, ' + (z.belegt === 1 ? 'wird' : 'werden') + ' ersetzt</i>' : '')
+      + ' · ' + fmtH(z.stunden) + ' h ' + art
+      + (Q.type === 'urlaub' ? ' · <b>' + fmtTage(z.urlaubTage) + (Math.abs(z.urlaubTage - 1) < 0.001 ? ' Urlaubstag' : ' Urlaubstage') + '</b>' : '')
+      + (z.belegt ? '<br><i>' + z.belegt + ' schon belegt, ' + (z.belegt === 1 ? 'wird' : 'werden') + ' ersetzt</i>' : '')
       + '<br><i>Sonntage, Feiertage und freie Tage zählen nicht.</i>';
   }
   const ok = $('#zr-ok');
@@ -15094,7 +15244,6 @@ function zrModus(){ return document.body.classList.contains('zrmodus'); }
 function zrAn(art){
   if(!ME) return;
   Q.type = art; Q.scope = 'full'; Q.from = Q.to = null;
-  $$('#q-scope button').forEach(x => x.classList.toggle('on', x.dataset.s === 'full'));
   const feld = $('#q-text'); if(feld) feld.value = '';
   zrkAuf(false);
   $('#zrk').classList.add('weg');
@@ -15183,7 +15332,6 @@ function zrMalen(){
   /* Als Schrift auf hellem Grund ist die Farbe zu blass — dort dunkler. */
   document.body.style.setProperty('--zrf-tx',
     document.documentElement.dataset.theme === 'dark' ? T.color : mischSchwarz(T.color, .38));
-  $('#q-scope').style.setProperty('--i', Math.max(0, ['full', 'vm', 'nm'].indexOf(Q.scope)));
 
   /* Rechts der Ist-Stand — den gibt es nur beim Urlaub. */
   const ist = $('#zrp-ist');
@@ -15206,13 +15354,11 @@ function zrMalen(){
     ist.hidden = false;
   } else ist.hidden = true;
 
-  /* Umfang: bei Krankenstand gilt immer der ganze Tag. */
-  const mitUmfang = Q.type !== 'krank';
-  $('#zrp-umfang').style.display = mitUmfang ? 'block' : 'none';
-  if(!mitUmfang){
-    Q.scope = 'full';
-    $$('#q-scope button').forEach(x => x.classList.toggle('on', x.dataset.s === 'full'));
-  }
+  /* Mehrere Tage sind immer ganze Tage (nachgerechnet am 27.09.2026:
+     mit halbem Umfang war ein Samstag mit nur einem Dienstblock bei
+     „Vormittag" ein ganzer Urlaubstag und bei „Nachmittag" ein Eintrag
+     ohne Wirkung). Halbe Tage gibt es im Tagesblatt. */
+  Q.scope = 'full';
   $('#q-textwrap').style.display = Q.type === 'eigen' ? 'block' : 'none';
   qSummary();
 }
@@ -15230,12 +15376,6 @@ $('#zrs-von').addEventListener('click', () => {
 $('#zrs-bis').addEventListener('click', () => {
   if(!Q.to) return;
   Q.to = null; renderCal(); zrMalen();
-});
-$('#q-scope').addEventListener('click', e => {
-  const b = e.target.closest('[data-s]'); if(!b) return;
-  Q.scope = b.dataset.s;
-  $$('#q-scope button').forEach(x => x.classList.toggle('on', x.dataset.s === Q.scope));
-  zrMalen();
 });
 let _qBusy = false;
 /* Erfolg zeigen, Fenster schliessen, betroffene Tage im Kalender aufblitzen lassen */
@@ -15259,7 +15399,7 @@ $('#zr-ok').addEventListener('click', () => {
   qEach(d => {
     if(!qTouched(d)) return false;
     const k = key(d.getFullYear(), d.getMonth(), d.getDate());
-    ME.events[k] = { t:Q.type, s:Q.scope, text:Q.type === 'eigen' ? $('#q-text').value.trim() : '', aw:false, ser:ser };
+    ME.events[k] = { t:Q.type, s:'full', text:Q.type === 'eigen' ? $('#q-text').value.trim() : '', aw:false, ser:ser };
     hit.push(k); return true;
   });
   if(!hit.length){ toast('In diesem Zeitraum liegt kein Arbeitstag'); return; }

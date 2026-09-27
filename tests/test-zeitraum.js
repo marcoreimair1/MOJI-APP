@@ -146,18 +146,22 @@ tipp(document.querySelector('#zrs-von'));
 ok('Ein Tipp auf Von faengt ganz neu an', !Q.from && !Q.to);
 ok('Dann ist Eintragen wieder aus', document.querySelector('#zr-ok').disabled);
 
-/* ── 7 · Der Umfang ist ein Umschalter ── */
-tipp(document.querySelector('#q-scope [data-s="vm"]'));
-ok('Vormittag gewaehlt', Q.scope === 'vm');
-ok('Der Schieber steht auf dem zweiten Feld',
-   document.querySelector('#q-scope').style.getPropertyValue('--i') === '1');
-ok('Die Beschriftung passt auf eine Zeile — ohne „Nur"',
-   document.querySelector('#q-scope').textContent.indexOf('Nur') < 0);
-tipp(document.querySelector('#q-scope [data-s="full"]'));
+/* ── 7 · Mehrere Tage sind immer ganze Tage ──
+   Nachgerechnet am 27.09.2026: mit halbem Umfang war ein Samstag mit nur
+   einem Dienstblock bei „Vormittag" ein ganzer Urlaubstag und bei
+   „Nachmittag" ein Eintrag ohne Wirkung. */
+ok('Beim Zeitraum gibt es keinen Umfang mehr', !document.querySelector('#q-scope') && !document.querySelector('#zrp-umfang'));
+ok('Der Umfang ist immer der ganze Tag', Q.scope === 'full');
+tipp(tag(10)); tipp(tag(21));
+var sum = document.querySelector('#zr-sum').textContent;
+ok('Live mitgerechnet: 10. bis 21. Maerz sind 84 h Urlaub', /11 Arbeitstage · 84,00 h Urlaub/.test(sum), sum);
+ok('Und 11 Urlaubstage — der Samstag mit 4 h ist ein ganzer', /11 Urlaubstage/.test(sum), sum);
+tipp(document.querySelector('#zrs-von'));
 
 /* ── 8 · Eintragen ── */
 tipp(tag(10)); tipp(tag(12));
 tipp(document.querySelector('#zr-ok'));
+ok('Eingetragen wird immer der ganze Tag', ['2025-03-10','2025-03-11','2025-03-12'].every(function(k){ return ME.events[k].s === 'full'; }));
 var drei = ['2025-03-10','2025-03-11','2025-03-12'];
 ok('Drei Urlaubstage stehen im Profil',
    drei.every(function(k){ return ME.events[k] && ME.events[k].t === 'urlaub'; }));
@@ -181,7 +185,8 @@ ok('Der Knopf heisst jetzt Abbrechen', document.querySelector('#zr-weg').textCon
 
 /* ── 10 · Krankenstand und Vermerk ── */
 zrAn('krank');
-ok('Beim Krankenstand gibt es keinen Umfang', document.querySelector('#zrp-umfang').style.display === 'none');
+var sumK = (tipp(tag(10)), tipp(tag(11)), document.querySelector('#zr-sum').textContent);
+ok('Beim Krankenstand die Stunden, ohne Urlaubstage', /2 Arbeitstage · 16,00 h Krankenstand/.test(sumK) && !/Urlaubstag/.test(sumK), sumK);
 ok('Und kein Urlaubskonto oben', document.querySelector('#zrp-ist').hidden);
 zrAus();
 zrAn('eigen');
@@ -208,7 +213,7 @@ const E = dom.window.__E || [];
  ['Das Band wischt mit clip-path, nicht mit scaleX', /@keyframes zrBand\{from\{clip-path:inset\(0 100% 0 0/],
  ['Die Tage im Band haben keinen eigenen Kasten',
   /body\.zrmodus \.cell\.zr-mid\{background:transparent;border-color:transparent\}/],
- ['Der Umfang hat einen Schieber', /#q-scope::before,#sh-scope::before\{/],
+ ['Kein Umfang-Schalter mehr im Zeitraum', !roh.includes('id="q-scope"') && !roh.includes('#q-scope')],
  ['Andruecken ueber scale, nicht transform', /\.zrk:active\{scale:\.985\}/],
  ['Weniger Bewegung: Kachel und Wahl ruhig',
   /prefers-reduced-motion:reduce\)\{\s*\n\s*\.zrk::before,\.zrk-arten i\{animation:none\}/],
