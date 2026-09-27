@@ -1801,71 +1801,163 @@ body.sigmodus .exhbtn{display:none}
 .sig-neu:active,.sig-zu:active{transform:scale(.93)}
 .sig-neu[hidden]{display:none}
 
-/* ─── Zeitraum: Kachel, Feld und Leiste ───────────────────────────────
-   Die Kachel oben ist ruhig grau, nur das Plus ist golden. Ein Tipp klappt
-   die drei Arten aus; ist eine gewählt, fällt die Kachel zusammen und der
-   Kalender rückt um genau ihre Höhe nach oben. */
-.zrk{position:relative;height:52px;margin:0 0 11px;border-radius:15px;overflow:hidden;
-  border:1px solid var(--line-2);background:rgba(var(--s-tief),.35);
-  transition:height .38s var(--ease),opacity .26s var(--ease),
-             margin .38s var(--ease),border-color .26s}
-/* Ist eine Art gewählt, fällt die Leiste zusammen und der Kalender rückt nach. */
+/* ─── Zeitraum: Kachel, Wahl und Spur ─────────────────────────────────
+   Bis 27.09.2026 stand hier eine graue Pille „Zeitraum eintragen". Viele
+   erkannten nicht, was dahinter steckt — das Wort sagt nicht, dass Urlaub
+   und Krankenstand hier hineingehören. Jetzt trägt die Kachel die drei
+   Arten schon als Zeichen und sagt in Worten, was sie tut. Ein Tipp klappt
+   darunter die Wahl auf: jede Art mit einem Satz dazu, und unten steht,
+   wie es weitergeht. Die Kachel bleibt 52 px hoch, so hoch wie der Kopf im
+   Export — so beginnt die Karte in beiden Ansichten auf derselben Höhe. */
+.zrk-halt{position:relative;z-index:9}
+.zrk{position:relative;height:52px;margin:0 0 11px;border-radius:16px;overflow:hidden;
+  border:1px solid rgba(var(--marke-rgb),.2);
+  background:linear-gradient(115deg,rgba(var(--marke-rgb),.11),rgba(var(--s-hoch),.5) 58%,rgba(var(--c-eigen-rgb),.07));
+  box-shadow:0 12px 30px -22px rgba(var(--marke-rgb),.6);
+  transition:height .38s var(--ease),opacity .26s var(--ease),margin .38s var(--ease),
+             border-color .26s,box-shadow .3s var(--ease),scale .2s var(--ease)}
+.zrk:active{scale:.985}
+.zrk.auf{border-color:rgba(var(--marke-rgb),.38)}
+/* Ist eine Art gewählt, fällt die Kachel zusammen und der Kalender rückt nach. */
 .zrk.weg{height:0;opacity:0;margin-bottom:0;border-width:0;pointer-events:none}
-.zrk-kopf{position:absolute;inset:0;display:flex;align-items:center;gap:10px;
-  padding:0 14px 0 7px;text-align:left;font-size:12.5px;font-weight:600;
-  color:var(--tx-2);transition:color .2s var(--ease)}
-.zrk-kopf .qi{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;
+/* Ein Glanz wandert ab und zu darüber — er sagt „hier geht etwas". */
+.zrk::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.22) 48%,transparent 66%);
+  transform:translateX(-110%);animation:zrkGlanz 9s 2.4s var(--ease) infinite}
+@keyframes zrkGlanz{0%{transform:translateX(-110%)}14%,100%{transform:translateX(110%)}}
+.zrk.auf::before,.zrk.weg::before{animation:none}
+.zrk-kopf{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:11px;
+  padding:0 9px 0 10px;text-align:left}
+/* Die drei Arten als Zeichen, leicht übereinander — man sieht sofort,
+   worum es geht, noch bevor man liest. */
+.zrk-arten{display:flex;flex:none;padding-left:2px}
+.zrk-arten i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  margin-left:-8px;box-shadow:0 0 0 2px rgb(var(--s-hoch));
+  animation:zrkWink 7s var(--ease) infinite}
+.zrk-arten i:first-child{margin-left:0}
+.zrk-arten i svg{width:14px;height:14px}
+.zrk-arten [data-zi=urlaub]{color:var(--c-urlaub);
+  background:linear-gradient(rgba(var(--c-urlaub-rgb-f),.24),rgba(var(--c-urlaub-rgb-f),.24)),rgb(var(--s-hoch))}
+.zrk-arten [data-zi=krank]{color:var(--c-krank);animation-delay:.12s;
+  background:linear-gradient(rgba(var(--c-krank-rgb-f),.24),rgba(var(--c-krank-rgb-f),.24)),rgb(var(--s-hoch))}
+.zrk-arten [data-zi=eigen]{color:var(--c-eigen);animation-delay:.24s;
+  background:linear-gradient(rgba(var(--c-eigen-rgb-f),.24),rgba(var(--c-eigen-rgb-f),.24)),rgb(var(--s-hoch))}
+@keyframes zrkWink{0%,82%,100%{transform:none}88%{transform:translateY(-3px)}94%{transform:none}}
+.zrk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.zrk-txt b{font-size:13.5px;font-weight:650;letter-spacing:-.01em;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zrk-txt small{font-size:11px;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zrk-kopf .qi{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;
   background:linear-gradient(120deg,var(--butter-2),var(--butter));color:var(--on-primary);
-  transition:transform .44s var(--ease)}
+  box-shadow:0 6px 16px -8px rgba(var(--marke-rgb),.9);
+  transition:transform .44s var(--ease-out),scale .2s var(--ease)}
 .zrk-kopf .qi svg{width:14px;height:14px;stroke-width:2.6}
+.zrk-kopf:active .qi{scale:.9}
 .zrk.auf .zrk-kopf .qi{transform:rotate(135deg)}
-/* Die Beschriftung weicht nach rechts, die drei Kacheln kommen an ihre
-   Stelle — die Leiste behält dabei ihre Höhe, es verschiebt sich nichts. */
-.zrk-txt{transition:opacity .22s var(--ease),transform .38s var(--ease-out)}
-.zrk.auf .zrk-txt{opacity:0;transform:translateX(18px)}
-.zrk-opts{position:absolute;left:45px;right:7px;top:0;bottom:0;z-index:2;
-  display:flex;align-items:center;gap:6px;
-  opacity:0;pointer-events:none;transform:translateX(12px);
-  transition:opacity .26s var(--ease),transform .4s var(--ease-out)}
-.zrk.auf .zrk-opts{opacity:1;pointer-events:auto;transform:none}
-.zrk-opts button{flex:1;min-width:0;height:38px;border-radius:11px;border:1px solid var(--line-2);
-  font-size:11px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;transition:.18s var(--ease)}
-.zrk-opts button:active{transform:scale(.96)}
-.zrk-opts [data-zt=urlaub]{color:var(--c-urlaub);border-color:rgba(var(--c-urlaub-rgb),.38);
-  background:rgba(var(--marke-rgb),.10)}
-.zrk-opts [data-zt=krank]{color:var(--c-krank);border-color:rgba(var(--c-krank-rgb),.38);
-  background:rgba(255,142,110,.10)}
-.zrk-opts [data-zt=eigen]{color:var(--c-eigen);border-color:rgba(var(--c-eigen-rgb),.38);
-  background:rgba(121,232,198,.10)}
-/* Die drei laufen kurz nacheinander ein. */
-.zrk.auf .zrk-opts button{animation:zoIn .36s var(--ease-out) both}
-.zrk.auf .zrk-opts button:nth-child(2){animation-delay:.05s}
-.zrk.auf .zrk-opts button:nth-child(3){animation-delay:.1s}
-@keyframes zoIn{from{opacity:0;transform:translateX(10px) scale(.96)}to{opacity:1;transform:none}}
+
+/* Die Wahl klappt unter der Kachel auf und legt sich über den Kalender —
+   es verschiebt sich nichts. Sie wächst aus der Kachel heraus. */
+.zrk-wahl{position:absolute;left:0;right:0;top:58px;padding:7px;border-radius:20px;
+  border:1px solid var(--line-2);background:rgba(var(--s-hoch),.94);
+  backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);
+  box-shadow:0 28px 60px -24px rgba(0,0,0,.45),0 0 0 1px rgba(var(--marke-rgb),.06);
+  transform-origin:50% -24px;opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(-12px) scale(.94);
+  transition:opacity .2s var(--ease),transform .26s var(--ease),visibility 0s .26s}
+.zrk.auf + .zrk-wahl{opacity:1;visibility:visible;pointer-events:auto;transform:none;
+  transition:opacity .3s var(--ease),transform .6s var(--ease-out),visibility 0s}
+.zrk-opts{display:flex;flex-direction:column;gap:2px}
+.zo{display:flex;align-items:center;gap:12px;width:100%;padding:10px 10px 10px 9px;
+  border-radius:14px;text-align:left;transition:background .2s var(--ease),scale .2s var(--ease)}
+.zo:active{scale:.98}
+.zo-i{width:40px;height:40px;border-radius:13px;flex:none;display:grid;place-items:center}
+.zo-i svg{width:19px;height:19px}
+.zo-t{flex:1;min-width:0}
+.zo-t b{display:block;font-size:14.5px;font-weight:650;letter-spacing:-.01em;color:var(--tx)}
+.zo-t small{display:block;font-size:11.5px;line-height:1.35;color:var(--tx-3);margin-top:2px}
+.zo-pf{flex:none;width:16px;height:16px;color:var(--tx-3);transition:transform .25s var(--ease)}
+.zo[data-zt=urlaub] .zo-i{color:var(--c-urlaub);background:rgba(var(--c-urlaub-rgb-f),.16)}
+.zo[data-zt=krank]  .zo-i{color:var(--c-krank); background:rgba(var(--c-krank-rgb-f),.16)}
+.zo[data-zt=eigen]  .zo-i{color:var(--c-eigen); background:rgba(var(--c-eigen-rgb-f),.16)}
+.zo[data-zt=urlaub]:active{background:rgba(var(--c-urlaub-rgb-f),.12)}
+.zo[data-zt=krank]:active{background:rgba(var(--c-krank-rgb-f),.12)}
+.zo[data-zt=eigen]:active{background:rgba(var(--c-eigen-rgb-f),.12)}
 @media (hover:hover) and (pointer:fine){
-  .zrk-kopf:hover{color:var(--butter)}
-  .zrk-opts [data-zt=urlaub]:hover{background:rgba(var(--c-urlaub-rgb-f),.19)}
-  .zrk-opts [data-zt=krank]:hover{background:rgba(var(--c-krank-rgb-f),.19)}
-  .zrk-opts [data-zt=eigen]:hover{background:rgba(var(--c-eigen-rgb-f),.19)}
+  .zo[data-zt=urlaub]:hover{background:rgba(var(--c-urlaub-rgb-f),.1)}
+  .zo[data-zt=krank]:hover{background:rgba(var(--c-krank-rgb-f),.1)}
+  .zo[data-zt=eigen]:hover{background:rgba(var(--c-eigen-rgb-f),.1)}
+  .zo:hover .zo-pf{transform:translateX(3px)}
+}
+/* Die drei Zeilen steigen kurz nacheinander herauf. */
+.zrk.auf + .zrk-wahl .zo,.zrk.auf + .zrk-wahl .zrk-wie{animation:zoIn .5s var(--ease-out) both}
+.zrk.auf + .zrk-wahl .zo:nth-child(2){animation-delay:.05s}
+.zrk.auf + .zrk-wahl .zo:nth-child(3){animation-delay:.1s}
+.zrk.auf + .zrk-wahl .zrk-wie{animation-delay:.16s}
+@keyframes zoIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* Wie es weitergeht — drei echte Schritte, deshalb nummeriert. */
+.zrk-wie{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px 10px;
+  margin:5px 4px 2px;padding:10px 4px 5px;border-top:1px solid var(--line-2);
+  font-size:11px;color:var(--tx-3)}
+.zrk-wie span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.zrk-wie em{font-style:normal;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;
+  font-size:9.5px;font-weight:700;color:var(--butter);background:rgba(var(--marke-rgb),.13)}
+/* Solange die Wahl offen ist, tritt der Kalender zurück. */
+#v-cal .card{transition:border-color .4s var(--ease),box-shadow .4s var(--ease),opacity .3s var(--ease)}
+#v-cal.zrk-offen .card{opacity:.42}
+@media (prefers-reduced-motion:reduce){
+  .zrk::before,.zrk-arten i{animation:none}
+  .zrk.auf + .zrk-wahl,.zrk-wahl{transition:opacity .2s,visibility 0s}
+  .zrk.auf + .zrk-wahl .zo,.zrk.auf + .zrk-wahl .zrk-wie{animation:none}
 }
 
 /* Das Feld unter dem Kalender, an der Stelle der Monatsdetails. */
 /* Der Kalender nimmt die Farbe der Leistung an. */
-#v-cal .card{transition:border-color .4s var(--ease),box-shadow .4s var(--ease)}
 body.zrmodus #v-cal .card{border-color:var(--zrf,var(--line));
   box-shadow:0 0 0 1px var(--zrf-schwach,transparent),0 22px 60px -34px var(--zrf-schwach,transparent),var(--shadow)}
-/* Der gewählte Umfang und der Eintragen-Knopf ebenso. */
-body.zrmodus #q-scope button{transition:.24s var(--ease)}
-body.zrmodus #q-scope button.on{background:var(--zrf-zart);border-color:var(--zrf-schwach);
-  color:var(--zrf)}
+/* Der Umfang ist ein Umschalter mit einem Schieber in der Farbe der
+   Leistung. Vorher drei einzelne Kacheln, und „Nur Nachmittag" brach am
+   Handy auf zwei Zeilen um. */
+#q-scope{position:relative;gap:0;padding:3px;border-radius:14px;
+  border:1px solid var(--line-2);background:rgba(var(--s-tief),.3)}
+#q-scope::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;
+  width:calc((100% - 6px) / 3);border-radius:11px;
+  background:var(--zrf-zart,rgba(var(--marke-rgb),.14));
+  box-shadow:inset 0 0 0 1px var(--zrf-schwach,rgba(var(--marke-rgb),.4));
+  transform:translateX(calc(100% * var(--i, 0)));transition:transform .45s var(--ease-out)}
+#q-scope button{position:relative;z-index:1;padding:10px 4px;border:0;border-radius:11px;
+  background:transparent;font-size:12px;white-space:nowrap;transition:color .24s var(--ease)}
+#q-scope button.on{background:transparent;color:var(--zrf-tx,var(--butter))}
 body.zrmodus #zr-ok{background:linear-gradient(120deg,var(--zrf-hell),var(--zrf));
   border-color:var(--zrf);color:var(--f-3);
   box-shadow:0 12px 34px -12px var(--zrf-schwach)}
 body.zrmodus #zr-ok:hover{box-shadow:0 18px 40px -12px var(--zrf-schwach)}
-/* Auch die Spur im Kalender folgt der Leistung. */
-body.zrmodus .cell.zr-mid{background:var(--zrf-zart);border-color:var(--zrf-schwach)}
-body.zrmodus .cell.zr-mid .num{color:var(--zrf)}
+/* Auch die Spur im Kalender folgt der Leistung. Die Tage dazwischen
+   liegen auf einem durchgehenden Band (.zr-band, von zrBand() gelegt),
+   statt jeder in seinem eigenen Kasten — so liest sich der Zeitraum als
+   ein Stück, wie in jedem Buchungskalender. */
+body.zrmodus .cell.zr-mid{background:transparent;border-color:transparent}
+body.zrmodus .cell.zr-mid .num{color:var(--zrf-tx)}
+#cal-grid{position:relative}
+.zr-band{position:absolute;pointer-events:none;border-radius:14px;
+  background:var(--zrf-zart);box-shadow:inset 0 0 0 1px var(--zrf-schwach)}
+@media(max-width:520px){.zr-band{border-radius:11px}}
+/* Das Band wischt vom ersten Tag zum letzten, Woche für Woche. */
+.zr-band.neu{animation:zrBand .55s var(--ease-out) both}
+@keyframes zrBand{from{clip-path:inset(0 100% 0 0 round 12px)}to{clip-path:inset(0 0 0 0 round 12px)}}
+/* Der gerade getippte Tag setzt sich mit einem kleinen Nachfedern. */
+body.zrmodus .cell.zr-neu{animation:zrSetz .5s var(--ease-out) both}
+@keyframes zrSetz{0%{transform:scale(.84)}55%{transform:scale(1.07)}100%{transform:none}}
+/* Beim Einstieg läuft eine Welle schräg über die wählbaren Tage — sie
+   zeigt ohne Worte, dass man jetzt in den Kalender tippt. */
+#cal-grid.zr-welle .cell:not(.pad):not(.zr-off){animation:zrWelle 1s var(--ease) both;
+  animation-delay:var(--w,0ms)}
+@keyframes zrWelle{
+  0%,100%{transform:none}
+  38%{transform:translateY(-3px) scale(1.05);border-color:var(--zrf);background:var(--zrf-zart)}
+}
+@media (prefers-reduced-motion:reduce){
+  .zr-band.neu,body.zrmodus .cell.zr-neu,#cal-grid.zr-welle .cell{animation:none}
+}
 body.zrmodus .cell.zr-edge{background:linear-gradient(140deg,var(--zrf-hell),var(--zrf));
   border-color:var(--zrf);box-shadow:0 8px 20px -10px var(--zrf-schwach)}
 body.zrmodus .cell.zr-edge .num{color:var(--f-3)}
@@ -1998,8 +2090,42 @@ body.zrmodus .spacer{display:none}
 .zrp-i svg{width:16px;height:16px}
 .zrp-t b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
 .zrp-t small{display:block;font-size:10.5px;color:var(--tx-3);margin-top:1px}
-.zrp-sum{margin:11px 0 0;padding:11px 12px;border-radius:13px;
-  border:1px dashed var(--line-2);font-size:12px;line-height:1.5;color:var(--tx-2)}
+/* Von und Bis wie in einem Buchungskalender: zwei Felder, das gerade
+   gefragte leuchtet in der Farbe der Leistung. Ein Tipp auf ein
+   ausgefülltes Feld nimmt den Tag wieder heraus. */
+.zrp-spann{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:7px}
+.zrs{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;
+  padding:10px 12px 11px;border-radius:14px;border:1px solid var(--line-2);
+  background:rgba(var(--s-tief),.3);text-align:left;
+  transition:border-color .3s var(--ease),background .3s var(--ease),box-shadow .3s var(--ease),scale .2s var(--ease)}
+.zrs.voll:active{scale:.97}
+.zrs u{text-decoration:none;font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--tx-3)}
+.zrs b{display:block;max-width:100%;font-family:var(--font-dis);font-weight:400;font-size:17px;line-height:1.15;
+  letter-spacing:-.01em;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zrs.leer b{font-family:var(--font-ui);font-size:12.5px;font-weight:500;color:var(--tx-3)}
+.zrs.dran{border-color:var(--zrf-schwach);background:var(--zrf-zart);box-shadow:0 0 0 3px var(--zrf-zart)}
+.zrs.dran u,.zrs.dran.leer b{color:var(--zrf-tx)}
+/* Der Punkt im gefragten Feld atmet — hier kommt der nächste Tipp hin. */
+.zrs.dran::after{content:"";position:absolute;top:11px;right:11px;width:7px;height:7px;border-radius:50%;
+  background:var(--zrf);animation:zrsPunkt 1.6s ease-in-out infinite}
+@keyframes zrsPunkt{0%,100%{box-shadow:0 0 0 0 var(--zrf-schwach)}50%{box-shadow:0 0 0 6px transparent}}
+.zrs-x{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;display:none;
+  place-items:center;color:var(--tx-3);background:rgba(var(--tx-rgb),.07)}
+.zrs-x svg{width:9px;height:9px}
+.zrs.voll .zrs-x{display:grid}
+.zrs b.neu{animation:zrsNeu .5s var(--ease-out) both}
+@keyframes zrsNeu{from{opacity:0;transform:translateY(6px);filter:blur(4px)}}
+.zrs-pfeil{display:grid;place-items:center;color:var(--tx-3)}
+.zrs-pfeil svg{width:15px;height:15px}
+/* Im Kopf des Kalenders steht, was als Nächstes zu tun ist — dort, wo
+   man ohnehin hinschaut, statt nur klein unter dem Kalender. */
+.calhead .ct small.zr-schritt{display:flex;align-items:center;gap:6px;color:var(--zrf-tx);font-weight:600;white-space:nowrap}
+.calhead .ct small.zr-schritt::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;
+  background:var(--zrf);animation:zrsPunkt 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  .zrs.dran::after,.calhead .ct small.zr-schritt::before{animation:none}
+}
+.zrp-sum{margin:10px 0 0;padding:0 2px;font-size:12px;line-height:1.5;color:var(--tx-2);text-align:center}
 .zrp-sum b{color:var(--tx);font-weight:600}
 .zrp-sum i{font-style:normal;color:var(--tx-3)}
 .zrp-teil{margin-top:12px}
@@ -6170,17 +6296,25 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
     <section class="view pt" id="v-cal">
       <!-- Eine schmale Zeile statt der Klappkarte. Der Inhalt liegt jetzt im
            Blatt #qsheet — so verschiebt sich der Kalender beim Öffnen nie. -->
-      <!-- Ruhige graue Kachel. Ein Tipp klappt die drei Arten aus; ist eine
-           gewählt, verschwindet sie und der Kalender rückt nach oben. -->
-      <div class="zrk" id="zrk">
-        <button class="zrk-kopf" id="qopen" aria-expanded="false">
-          <span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
-          <span class="zrk-txt">Zeitraum eintragen</span>
-        </button>
-        <div class="zrk-opts" id="zrk-opts">
-          <button data-zt="urlaub">Urlaub</button>
-          <button data-zt="krank">Krankenstand</button>
-          <button data-zt="eigen">Eigener Text</button>
+      <!-- Die Kachel zeigt die drei Arten schon als Zeichen und sagt, was sie
+           tut. Ein Tipp klappt darunter die Wahl auf; ist eine Art gewählt,
+           verschwindet die Kachel und der Kalender rückt nach oben. Die
+           Zeichen setzt das Skript aus ICONS ein (data-zi). -->
+      <div class="zrk-halt">
+        <div class="zrk" id="zrk">
+          <button class="zrk-kopf" id="qopen" aria-expanded="false" aria-controls="zrk-wahl">
+            <span class="zrk-arten" aria-hidden="true"><i data-zi="urlaub"></i><i data-zi="krank"></i><i data-zi="eigen"></i></span>
+            <span class="zrk-txt"><b>Urlaub, Krankenstand &amp; mehr</b><small>Einen oder mehrere Tage eintragen</small></span>
+            <span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          </button>
+        </div>
+        <div class="zrk-wahl" id="zrk-wahl">
+          <div class="zrk-opts" id="zrk-opts">
+            <button class="zo" data-zt="urlaub"><span class="zo-i" data-zi="urlaub"></span><span class="zo-t"><b>Urlaub</b><small id="zo-urlaub">Ganze oder halbe Tage, vom Urlaub abgezogen</small></span><svg class="zo-pf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button class="zo" data-zt="krank"><span class="zo-i" data-zi="krank"></span><span class="zo-t"><b>Krankenstand</b><small>Ganze Tage, ohne Abzug vom Urlaub</small></span><svg class="zo-pf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <button class="zo" data-zt="eigen"><span class="zo-i" data-zi="eigen"></span><span class="zo-t"><b>Eigener Vermerk</b><small>Freier Text, z.&nbsp;B. Schulung oder Kurs</small></span><svg class="zo-pf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <p class="zrk-wie"><span><em>1</em>Art wählen</span><span><em>2</em>Von und bis antippen</span><span><em>3</em>Eintragen</span></p>
         </div>
       </div>
 
@@ -6201,12 +6335,17 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         <!-- Während eines Zeitraums steht hier, worum es geht — statt der
              Monatsdetails, die so lange weichen. -->
         <div class="zrp" id="zrp" hidden>
+          <div class="zrp-spann">
+            <button class="zrs leer dran" id="zrs-von" type="button"><u>Von</u><b id="zrs-von-b">Tag antippen</b><em class="zrs-x" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></em></button>
+            <span class="zrs-pfeil" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 6l6 6-6 6"/></svg></span>
+            <button class="zrs leer" id="zrs-bis" type="button"><u>Bis</u><b id="zrs-bis-b">—</b><em class="zrs-x" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></em></button>
+          </div>
           <p class="zrp-sum" id="zr-sum">—</p>
           <div class="zrp-teil" id="zrp-umfang">
             <div class="scope" id="q-scope" style="margin:0">
               <button data-s="full" class="on">Ganzer Tag</button>
-              <button data-s="vm">Nur Vormittag</button>
-              <button data-s="nm">Nur Nachmittag</button>
+              <button data-s="vm">Vormittag</button>
+              <button data-s="nm">Nachmittag</button>
             </div>
           </div>
           <div class="zrp-teil" id="q-textwrap" style="display:none">
@@ -6329,8 +6468,8 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
 
   <nav class="fabbar" id="fabbar" style="display:none">
     <!-- Während eines Zeitraums stehen hier die beiden Entscheidungen. -->
-    <button class="btn btn-p fb-z" id="zr-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>Eintragen</button>
-    <button class="btn btn-g fb-z" id="zr-weg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>Eintrag verwerfen</button>
+    <button class="btn btn-p fb-z" id="zr-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg><span id="zr-ok-t">Eintragen</span></button>
+    <button class="btn btn-g fb-z" id="zr-weg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>Abbrechen</button>
     <!-- Beim Unterschreiben steht hier ein einziger, breiter Knopf. -->
     <button class="btn btn-p fb-s" id="sig-ok" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5c3-1 4.5-9 6.5-9s1 5.5 3 5.5 3-3 6.5-3"/></svg>Signieren</button>
   </nav>
@@ -7099,7 +7238,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1600';
+const APP_STAND = '2026-09-27-1800';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -13807,7 +13946,8 @@ function renderCal(){
   if(p) p.disabled = vorDemStart(m === 0 ? y - 1 : y, m === 0 ? 11 : m - 1);
   /* Ohne Firmennamen — der brach die Zeile um und stand am Handy zweizeilig */
   $('#cal-title').innerHTML = MONTHS[m] + ' <i>' + y + '</i>'
-    + '<small>Kalender von ' + esc(ME.vorname) + '</small>';
+    + (zrModus() ? '<small class="zr-schritt">' + zrSchritt() + '</small>'
+                 : '<small>Kalender von ' + esc(ME.vorname) + '</small>');
   const rows = monthRows(ME, y, m);
   /* Fällt der Geburtstag in diesen Monat? Nur fürs Auge — evalDay bleibt unberührt. */
   const geb = gebInMonat(m);
@@ -13850,6 +13990,7 @@ function renderCal(){
   const trail = (7 - ((lead + rows.length) % 7)) % 7;
   for(let i = 0; i < trail; i++) html += '<div class="cell pad"></div>';
   $('#cal-grid').innerHTML = html;
+  if(zrModus()) zrBand();
 
   MSUM = monthSums(rows);
   malBalken();
@@ -14086,10 +14227,12 @@ $('#cal-grid').addEventListener('click', e => {
   if(zrModus()){
     const dt = new Date(CAL.y, CAL.m, +c.dataset.d);
     if(!Q.from || (Q.from && Q.to)){ Q.from = dt; Q.to = null; }
-    else if(+dt < +Q.from){ Q.to = Q.from; Q.from = dt; }
-    else Q.to = dt;
+    else if(+dt < +Q.from){ Q.to = Q.from; Q.from = dt; _zrBandNeu = true; }
+    else { Q.to = dt; _zrBandNeu = true; }
     renderCal();
     zrMalen();
+    const neu = $('#cal-grid .cell[data-d="' + dt.getDate() + '"]');
+    if(neu) neu.classList.add('zr-neu');
     return;
   }
   openSheet(CAL.y, CAL.m, +c.dataset.d);
@@ -14697,44 +14840,94 @@ function qEach(fn){
   for(const d = new Date(r[0]); d <= r[1]; d.setDate(d.getDate()+1)) if(fn(new Date(d))) n++;
   return n;
 }
-/* Von–bis unter dem Kalender. Sonntage, Feiertage und dienstfreie Tage
-   werden übersprungen, deshalb steht die Zahl der Arbeitstage dabei. */
+/* Wie viele Arbeitstage der gewählte Zeitraum trifft und wie viele davon
+   schon belegt sind. Sonntage, Feiertage und dienstfreie Tage zählen
+   nicht, sie werden beim Eintragen übersprungen. */
+function zrZaehlen(){
+  const r = qRange(); let tage = 0, belegt = 0;
+  if(r) for(const d = new Date(r[0]); d <= r[1]; d.setDate(d.getDate() + 1)){
+    if(!qTouched(d)) continue;
+    tage++;
+    if(ME.events[key(d.getFullYear(), d.getMonth(), d.getDate())]) belegt++;
+  }
+  return { tage: tage, belegt: belegt };
+}
+/* Ein Tag im Von-bis-Feld: kurz, das Jahr nur, wenn es nicht das laufende ist. */
+function zrTag(d){
+  return DOWSHORT[d.getDay()] + ', ' + d.getDate() + '. ' + MSHORT[d.getMonth()]
+    + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+}
+/* Was als Nächstes zu tun ist — steht im Kopf des Kalenders. */
+function zrSchritt(){
+  if(!Q.from) return 'Ersten Tag antippen';
+  if(!Q.to) return 'Letzten Tag antippen';
+  const n = zrZaehlen().tage;
+  return n + (n === 1 ? ' Arbeitstag' : ' Arbeitstage') + ' gewählt';
+}
+function zrFeld(id, text, leer, dran){
+  const f = $('#' + id), b = $('#' + id + '-b');
+  if(b.textContent !== text){
+    b.textContent = text;
+    b.classList.remove('neu'); void b.offsetWidth; b.classList.add('neu');
+  }
+  f.classList.toggle('leer', leer);
+  f.classList.toggle('voll', !leer);
+  f.classList.toggle('dran', dran);
+  f.setAttribute('aria-label', (id === 'zrs-von' ? 'Von: ' : 'Bis: ') + text
+    + (leer ? '' : '. Antippen nimmt den Tag wieder heraus.'));
+}
+/* Von, Bis und die Zeile darunter. Dazu der Eintragen-Knopf: er nennt die
+   Zahl der Tage und bleibt aus, bis ein Tag gewählt ist. */
 function qSummary(){
   const el = $('#zr-sum'); if(!el) return;
+  zrFeld('zrs-von', Q.from ? zrTag(Q.from) : 'Tag antippen', !Q.from, !Q.from);
+  zrFeld('zrs-bis', Q.to ? zrTag(Q.to) : (Q.from ? 'Tag antippen' : '—'), !Q.to, !!Q.from && !Q.to);
+  const z = zrZaehlen();
   if(!Q.from){
-    el.innerHTML = '<i>Ersten Tag im Kalender antippen, dann den letzten.</i>';
-    return;
+    el.innerHTML = '<i>Tippe im Kalender auf den ersten Tag.</i>';
+  } else if(!Q.to){
+    el.innerHTML = '<i>Nur dieser eine Tag? Dann gleich eintragen.</i>';
+  } else {
+    el.innerHTML = '<b>' + z.tage + (z.tage === 1 ? ' Arbeitstag' : ' Arbeitstage') + '</b>'
+      + (z.belegt ? ' <i>· ' + z.belegt + ' schon belegt, ' + (z.belegt === 1 ? 'wird' : 'werden') + ' ersetzt</i>' : '')
+      + '<br><i>Sonntage, Feiertage und freie Tage zählen nicht.</i>';
   }
-  if(!Q.to){
-    el.innerHTML = '<b>ab ' + fmtDay(Q.from) + '</b><br><i>Jetzt den letzten Tag antippen.</i>';
-    return;
-  }
-  let days = 0, taken = 0;
-  for(const d = new Date(Q.from); d <= Q.to; d.setDate(d.getDate() + 1)){
-    if(!qTouched(d)) continue;
-    days++;
-    if(ME.events[key(d.getFullYear(), d.getMonth(), d.getDate())]) taken++;
-  }
-  el.innerHTML = '<b>' + fmtDay(Q.from) + ' – ' + fmtDay(Q.to) + '</b><br>'
-    + '<i>' + days + (days === 1 ? ' Arbeitstag' : ' Arbeitstage')
-    + (taken ? ' · ' + taken + ' bereits belegt' : '') + '</i>';
+  const ok = $('#zr-ok');
+  ok.disabled = !Q.from;
+  $('#zr-ok-t').textContent = !Q.from || !z.tage ? 'Eintragen'
+    : (z.tage === 1 ? '1 Tag eintragen' : z.tage + ' Tage eintragen');
 }
 function qRange(){
   if(!Q.from) return null;
   return [new Date(Q.from), new Date(Q.to || Q.from)];
 }
+$$('[data-zi]').forEach(e => { e.innerHTML = ICONS[e.dataset.zi] || ''; });
 $('#qopen').addEventListener('click', () => zrkAuf());
 /* ─── Der Ablauf: Kachel → Art → Tage → Eintragen ────────────────────
-   Die Kachel klappt die drei Arten aus. Ist eine gewählt, fällt sie
+   Die Kachel klappt die Wahl auf. Ist eine Art gewählt, fällt sie
    zusammen, der Kalender rückt nach oben, die Monatsdetails weichen dem
-   Feld mit Art, Umfang und Vermerk, und unten stehen die zwei
+   Feld mit Von, Bis, Umfang und Vermerk, und unten stehen die zwei
    Entscheidungen. */
 function zrkAuf(an){
   const k = $('#zrk'); if(!k) return;
   const auf = (an === undefined) ? !k.classList.contains('auf') : !!an;
   k.classList.toggle('auf', auf);
+  $('#v-cal').classList.toggle('zrk-offen', auf);
   $('#qopen').setAttribute('aria-expanded', auf ? 'true' : 'false');
+  /* Beim Urlaub steht gleich dabei, wie viel noch offen ist. */
+  if(auf && ME){
+    const st = kontenRechnen(ME) || {};
+    $('#zo-urlaub').textContent = 'Ganze oder halbe Tage · ' + fmtTage(st.urlaub || 0)
+      + (Math.abs((st.urlaub || 0) - 1) < 0.001 ? ' Tag' : ' Tage') + ' offen';
+  }
 }
+/* Ein Tipp daneben oder Escape schließt die Wahl wieder. */
+document.addEventListener('pointerdown', e => {
+  if($('#zrk').classList.contains('auf') && !e.target.closest('.zrk-halt')) zrkAuf(false);
+}, true);
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && $('#zrk').classList.contains('auf')) zrkAuf(false);
+});
 function zrModus(){ return document.body.classList.contains('zrmodus'); }
 function zrAn(art){
   if(!ME) return;
@@ -14748,13 +14941,54 @@ function zrAn(art){
   $('#mbar').style.display = 'none';
   document.body.classList.add('zrmodus');
   zrMalen();
+  renderCal();
+  zrWelle();
 }
+/* Eine Welle schräg über die wählbaren Tage: von oben links nach unten
+   rechts, jede Zelle nach Zeile und Spalte verzögert. */
+function zrWelle(){
+  const g = $('#cal-grid');
+  if(!g) return;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+  Array.from(g.children).forEach((c, i) => c.style.setProperty('--w', (220 + ((i % 7) + Math.floor(i / 7)) * 45) + 'ms'));
+  g.classList.remove('zr-welle'); void g.offsetWidth; g.classList.add('zr-welle');
+  clearTimeout(zrWelle._t);
+  zrWelle._t = setTimeout(() => g.classList.remove('zr-welle'), 1800);
+}
+/* Das Band unter den gewählten Tagen: je Kalenderwoche ein Stück, vom
+   ersten bis zum letzten gewählten Tag dieser Zeile. Gemessen wird an den
+   Zellen selbst, darum nach jedem Zeichnen und bei jeder Größenänderung. */
+let _zrBandNeu = false;
+function zrBand(){
+  const g = $('#cal-grid'); if(!g) return;
+  g.querySelectorAll('.zr-band').forEach(b => b.remove());
+  const neu = _zrBandNeu; _zrBandNeu = false;
+  if(!zrModus() || !Q.from || !Q.to) return;
+  const reihen = [];
+  g.querySelectorAll('.cell.zr-edge, .cell.zr-mid').forEach(c => {
+    const r = reihen[reihen.length - 1];
+    if(r && r.oben === c.offsetTop) r.bis = c;
+    else reihen.push({ oben: c.offsetTop, von: c, bis: c });
+  });
+  reihen.forEach((r, i) => {
+    if(r.von === r.bis && reihen.length === 1) return;
+    const b = document.createElement('i');
+    b.className = 'zr-band' + (neu ? ' neu' : '');
+    b.setAttribute('aria-hidden', 'true');
+    b.style.cssText = 'left:' + r.von.offsetLeft + 'px;top:' + r.oben + 'px;width:'
+      + (r.bis.offsetLeft + r.bis.offsetWidth - r.von.offsetLeft) + 'px;height:' + r.von.offsetHeight + 'px'
+      + (neu ? ';animation-delay:' + (i * 110) + 'ms' : '');
+    g.prepend(b);
+  });
+}
+addEventListener('resize', () => { if(zrModus()) zrBand(); });
 function zrAus(){
   document.body.classList.remove('zrmodus');
   document.body.style.removeProperty('--zrf');
   document.body.style.removeProperty('--zrf-hell');
   document.body.style.removeProperty('--zrf-schwach');
   document.body.style.removeProperty('--zrf-zart');
+  document.body.style.removeProperty('--zrf-tx');
   /* Erst weggleiten lassen, dann aushängen — sonst springt es. */
   const zp = $('#zrp');
   zp.classList.add('zu');
@@ -14767,6 +15001,7 @@ function zrAus(){
   $('#zrk').classList.remove('weg');
   zrkAuf(false);
   Q.from = Q.to = null;
+  $('#zr-ok').disabled = false;
   renderCal();
 }
 function zrMalen(){
@@ -14775,14 +15010,18 @@ function zrMalen(){
   $('#zrp-i').innerHTML = ICONS[Q.type] || '';
   $('#zrp-i').style.color = T.color;
   $('#zrp-i').style.background = rgba(T.color, .14);
-  $('#zrp-b').textContent = T.label + ' eintragen';
-  $('#zrp-s').textContent = 'Tage im Kalender antippen';
+  $('#zrp-b').textContent = (Q.type === 'eigen' ? 'Vermerk' : T.label) + ' eintragen';
+  $('#zrp-s').textContent = zrSchritt();
   /* Kalenderrand, gewählter Umfang und der Eintragen-Knopf tragen die Farbe
      der Leistung — so wirkt die ganze Ansicht aus einem Guss. */
   document.body.style.setProperty('--zrf', T.color);
   document.body.style.setProperty('--zrf-hell', mischWeiss(T.color, .34));
   document.body.style.setProperty('--zrf-schwach', rgba(T.color, .3));
   document.body.style.setProperty('--zrf-zart', rgba(T.color, .13));
+  /* Als Schrift auf hellem Grund ist die Farbe zu blass — dort dunkler. */
+  document.body.style.setProperty('--zrf-tx',
+    document.documentElement.dataset.theme === 'dark' ? T.color : mischSchwarz(T.color, .38));
+  $('#q-scope').style.setProperty('--i', Math.max(0, ['full', 'vm', 'nm'].indexOf(Q.scope)));
 
   /* Rechts der Ist-Stand — den gibt es nur beim Urlaub. */
   const ist = $('#zrp-ist');
@@ -14819,7 +15058,17 @@ $('#zrk-opts').addEventListener('click', e => {
   const b = e.target.closest('[data-zt]'); if(!b) return;
   zrAn(b.dataset.zt);
 });
-$('#zr-weg').addEventListener('click', () => { zrAus(); toast('Verworfen'); });
+$('#zr-weg').addEventListener('click', () => { zrAus(); toast('Abgebrochen'); });
+/* Ein Tipp auf ein ausgefülltes Feld nimmt den Tag wieder heraus: Von
+   fängt ganz von vorn an, Bis fragt nur das Ende neu. */
+$('#zrs-von').addEventListener('click', () => {
+  if(!Q.from) return;
+  Q.from = Q.to = null; renderCal(); zrMalen();
+});
+$('#zrs-bis').addEventListener('click', () => {
+  if(!Q.to) return;
+  Q.to = null; renderCal(); zrMalen();
+});
 $('#q-scope').addEventListener('click', e => {
   const b = e.target.closest('[data-s]'); if(!b) return;
   Q.scope = b.dataset.s;

@@ -711,6 +711,42 @@ so breit wie der Schirm sind. Vorher lief `ktFlug()`: der echte Stapel per `scro
 höchstens 1,35 s durchgezogen — zu schnell und flach. Der Titel verschwimmt weiter während der
 Fahrt, angekommen geht der Schein auf und die Karte stupst an.
 
+### Mehrere Tage eintragen *(27. September 2026, früher „Zeitraum eintragen")*
+
+Über dem Kalender stand eine graue Pille **„Zeitraum eintragen"**. Viele erkannten nicht, was
+dahinter steckt: das Wort sagt nicht, dass hier Urlaub und Krankenstand hineingehören, und die
+Pille sah aus wie ein Suchfeld. Neu gebaut:
+
+- **Die Kachel sagt, was sie tut.** Links die drei Arten als Zeichen (Sonne, Kreuz, Stift,
+  leicht übereinander, `.zrk-arten`, gefüllt aus `ICONS` über `data-zi`), daneben
+  *Urlaub, Krankenstand & mehr* / *Einen oder mehrere Tage eintragen*. Ein Glanz wandert alle
+  neun Sekunden darüber, die Zeichen nicken ab und zu. Höhe bleibt 52 px wie der Kopf im Export.
+- **Die Wahl erklärt jede Art.** Ein Tipp klappt darunter ein Blatt auf (`.zrk-wahl`), das sich
+  über den Kalender legt statt ihn zu schieben und aus der Kachel herauswächst: *Urlaub* (mit den
+  offenen Tagen), *Krankenstand* (ohne Abzug vom Urlaub), *Eigener Vermerk* (z. B. Schulung).
+  Darunter die drei Schritte. Der Kalender tritt so lange zurück; ein Tipp daneben oder Escape
+  schließt.
+- **Der Kalender zeigt, dass er jetzt die Auswahl ist.** Beim Einstieg läuft eine Welle schräg
+  über die wählbaren Tage (`zrWelle()`). Im Kopf, wo sonst *Kalender von …* steht, steht der
+  nächste Schritt mit atmendem Punkt: *Ersten Tag antippen* → *Letzten Tag antippen* →
+  *11 Arbeitstage gewählt* (`zrSchritt()`).
+- **Von und Bis wie in einem Buchungskalender** (`.zrp-spann`): das gefragte Feld leuchtet in
+  der Farbe der Art. Ein Tipp auf ein ausgefülltes Feld nimmt den Tag wieder heraus — Von fängt
+  neu an, Bis fragt nur das Ende. Darunter die Zahl der Arbeitstage und wie viele davon schon
+  belegt sind und ersetzt werden.
+- **Ein Band statt einzelner Kästen.** Die gewählten Tage liegen auf einem durchgehenden Band je
+  Kalenderwoche (`zrBand()`, an den Zellen gemessen, bei jeder Größenänderung neu). Wird das Ende
+  gesetzt, wischt es vom ersten zum letzten Tag (`clip-path`), Woche für Woche.
+- **Der Knopf nennt die Zahl:** *1 Tag eintragen*, *11 Tage eintragen*. Er bleibt aus, bis ein Tag
+  gewählt ist. Daneben heißt es jetzt *Abbrechen* statt *Eintrag verwerfen*.
+- **Umfang als Umschalter** mit Schieber in der Farbe der Art: *Ganzer Tag | Vormittag |
+  Nachmittag* — vorher brach *Nur Nachmittag* am Handy auf zwei Zeilen um.
+- Schrift in der Farbe der Art ist im Hellen dunkler gemischt (`--zrf-tx`), sonst wäre das Gelb
+  des Urlaubs kaum lesbar.
+
+Das Rechnen ist unverändert: Sonntage, Feiertage und dienstfreie Tage werden übersprungen, alle
+Tage bekommen eine gemeinsame Serien-Kennung. Geprüft in `tests/test-zeitraum.js`.
+
 ### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
 
 Der Vorspann spricht jetzt dieselbe Sprache wie Gruß, Abschied und Registrierung:
@@ -2189,8 +2225,8 @@ Ein Stufenaufstieg meldet sich mit einem roten Punkt am Profilbild.
 | Aufgabe | Weg |
 |---|---|
 | Einzelnen Tag markieren | Im Kalender auf den Tag tippen |
-| Längeren Urlaub eintragen | Oben *Zeitraum eintragen* → ersten und letzten Tag antippen → Art → *Eintragen* |
-| Halben Tag | Im Tagesdialog oder im Zeitraum *Nur Vormittag* / *Nur Nachmittag* |
+| Längeren Urlaub eintragen | Oben *Urlaub, Krankenstand & mehr* → Art → ersten und letzten Tag antippen → *… Tage eintragen* |
+| Halben Tag | Im Tagesdialog, oder beim Eintragen mehrerer Tage *Vormittag* / *Nachmittag* |
 | Eintrag entfernen | Tag antippen → *Zurücksetzen*, oder Zeitraum → *Einträge entfernen* |
 | Dienstzeiten ändern | Avatar oben rechts → *Dienstzeiten bearbeiten* |
 | Erinnerungsmail ein/aus | Avatar → *Monats-Erinnerung* |

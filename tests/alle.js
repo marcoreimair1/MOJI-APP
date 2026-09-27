@@ -30,7 +30,8 @@ const REIHEN = [
   ['test-vorspann',     'Vorspann, Übergabe an den Gruß, Kopfleiste'],
   ['test-menue',        'Profilmenü, Wischgeste, Fassungswechsel'],
   ['test-kalender',     'Kalender neu laden und das Osterei'],
-  ['test-jahr',         'Jahresrückblick: Rechnen, Banner, Kapitel, Bühne']
+  ['test-jahr',         'Jahresrückblick: Rechnen, Banner, Kapitel, Bühne'],
+  ['test-zeitraum',     'Mehrere Tage eintragen: Kachel, Wahl, Von–Bis, Band']
 ];
 
 const DATEI = process.argv[2] || path.join(__dirname, '..', 'index.html');
