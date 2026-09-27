@@ -603,8 +603,15 @@ Rahmen mit `aspect-ratio` auf die Bildhöhe und wurde zur runden Pille — daher
 Holo-Folie mit `color-dodge` wusch die Teilkarte aus; dort mischt sie jetzt mit `soft-light`. Bedienung wie Stories: rechts weiter, links zurück, halten
 pausiert, das letzte Kapitel läuft nicht von selbst weiter.
 
-**Gestaltung:** jedes Kapitel ein lebender Verlauf aus der Stufenfarbe und zwei Nachbartönen
-(`jrPalette()`, `jrDreh()` im Farbkreis), feines Korn darüber, Kapitel öffnen sich als Kreis vom
+**Gestaltung:** jedes Kapitel ein lebender Verlauf in **festen Farben aus der MOJI-Palette**
+(`JR_STIMMUNG`): Violett für Eröffnung, Stunden, Stufe und Abschluss, Limette/Mint für Buddy und
+Abzeichen. Bis 27.09. hing der Hintergrund an der Stufenfarbe — Marco wollte das MOJI-Violett.
+Nur die Stufenkarten tragen weiter ihre Stufenfarbe, die Teilkarte ist fest violett mit der
+Stufe als farbigem Punkt. Das Stufen-Kapitel ist eine **Fahrt**: alle Karten bis zur aktuellen
+wischen langsam vorbei (`jrStufenFahrt()`, Stellung je Bild, nur `scale` mit Übergang), jede
+erreichte bekommt im Vorbeifahren ihren Haken, die aktuelle wird zur Holo-Karte. Die
+**Abzeichen** sind Münzen: eine große dreht sich herein, die kleinen fliegen aus ihr heraus
+(`jrMuenzenFlug()` misst den Weg). Feines Korn darüber, Kapitel öffnen sich als Kreis vom
 Finger (`jrBlende()`), Zahlen rollen Ziffer für Ziffer mit Metallglanz, jede Ziffernspalte so
 breit wie ihre Zielziffer. Alle Klassen tragen `jr-`.
 

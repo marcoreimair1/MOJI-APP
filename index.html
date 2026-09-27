@@ -2984,12 +2984,12 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
    Spalte schmaler als die Ziffer, und die Rundung der 0 wurde an der
    Kante abgeschnitten. Jetzt misst die Spalte die ganze Ziffer, dazu
    Luft oben und unten; zusammengerueckt wird ueber den Rand. */
-.jr-rz{display:inline-flex;justify-content:center;height:1.12em;overflow:hidden;margin-inline:-.018em}
+.jr-rz{display:inline-flex;justify-content:center;height:1.12em;overflow:hidden;margin-inline:-.036em}
 .jr-rz-s{display:flex;flex-direction:column;align-items:center;transform:translateY(0)}
 .jr-rz-s b{display:block;width:max-content;height:1.12em;line-height:1.12em;font-weight:inherit}
 .an .jr-rz-s{transition:transform 1.9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--v,0s) + var(--i) * 110ms);
   transform:translateY(calc(var(--d) * -1.12em))}
-.jr-rz-z{display:inline-block}
+.jr-rz-z{display:inline-block;margin-inline:-.02em}
 
 /* Eroeffnung */
 .jr-open{align-items:center;text-align:center}
@@ -3008,7 +3008,9 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 @keyframes jrSchein{from{opacity:0;transform:scale(.5)}to{opacity:1}}
 @keyframes jrAtmen{to{transform:scale(1.1);opacity:.7}}
 .jr-jahr{font-family:var(--font-dis);font-weight:700;font-size:min(34vw,150px);letter-spacing:-.05em;line-height:.9;margin:0}
-.jr-jahr .jr-wk{padding-bottom:.06em}
+/* Luft links und rechts: eng gesetzt ragte die 6 ueber die Kante der
+   Huelle, die beim Aufsteigen abschneidet. */
+.jr-jahr .jr-wk{padding:0 .09em .06em}
 
 /* Stunden */
 .jr-std .jr-zahl{font-size:min(30vw,128px)}
@@ -3056,32 +3058,89 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-glanzpunkt{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:overlay;
   background:radial-gradient(45% 35% at var(--gx,50%) var(--gy,30%), rgba(255,255,255,.75), transparent 70%)}
 
-/* Die Stufenleiter: jede erreichte Stufe mit gruenem Haken. */
-/* Zwei Spalten: bei drei wurden die Namen abgeschnitten. */
-.jr-leiter{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;max-width:340px}
-.jr-sc{position:relative;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 6px;border-radius:12px;
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);opacity:0;min-width:0;text-align:left}
-.jr-sc i{flex:none;width:20px;height:20px;border-radius:7px;background:var(--c);color:#fff;font-style:normal;
-  font:700 10.5px/20px var(--font-ui);text-align:center;box-shadow:0 0 0 1px rgba(255,255,255,.35) inset}
-.jr-sc small{flex:1;min-width:0;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}
-.jr-sc em{flex:none;width:16px;height:16px;border-radius:50%;background:#34C759;color:#fff;display:grid;place-items:center;
-  transform:scale(0);box-shadow:0 0 0 2px rgba(255,255,255,.25)}
-.jr-sc em svg{width:11px;height:11px}
-.an .jr-sc{animation:jrSc .6s var(--ease-out) forwards;animation-delay:calc(.6s + var(--i) * 90ms)}
-.an .jr-sc em{animation:jrHaken .45s cubic-bezier(.34,1.6,.5,1) forwards;animation-delay:calc(.85s + var(--i) * 90ms)}
-@keyframes jrSc{from{opacity:0;transform:translateY(10px) scale(.92);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
-@keyframes jrHaken{to{transform:none}}
-.jr-holo.klein{width:min(40vw,164px);margin:4px 0 6px;padding:7px;border-radius:18px}
-.jr-holo.klein .jr-band{padding:3px 4px 6px}
-.jr-holo.klein .jr-band b{font-size:13px}
-.jr-holo.klein .jr-wer{padding-top:6px}
-.jr-holo.klein .jr-wer b{font-size:13px}
-.jr-holo.klein .jr-fach{padding:6px 8px;font-size:8px}
-.jr-holo.klein .jr-fach b{font-size:11.5px;white-space:nowrap}
-.an .jr-holo.klein{animation-delay:var(--ab,.5s)}
 .jr-spruch{font-family:var(--font-dis);font-weight:500;font-size:19px;letter-spacing:-.01em;line-height:1.25;margin:0;
   max-width:24ch;text-wrap:balance}
 .jr-stufe .jr-spruch, .jr-buddy .jr-spruch{margin-inline:auto;text-align:center}
+
+/* ─── Die Fahrt durch die Stufenkarten ───
+   Jede Karte in ihrer Stufenfarbe. Stellung, Groesse und Neigung setzt
+   jrStufenFahrt() in jedem Bild; erreichte Karten bekommen im
+   Vorbeifahren ihren gruenen Haken. Die aktuelle waechst am Ende und
+   wird zur Holo-Karte (.ziel). Spruch und Text kommen erst danach. */
+.jr-fahrt{position:relative;width:100%;height:250px;perspective:900px;margin:10px 0 4px}
+.jr-lks{position:absolute;left:50%;top:10px;width:0;height:0;transform-style:preserve-3d}
+.jr-lk{--rx:0deg;--ry:0deg;position:absolute;left:-74px;top:0;width:148px;aspect-ratio:5/7.2;border-radius:18px;padding:7px;
+  display:flex;flex-direction:column;color:#fff;text-align:left;overflow:hidden;will-change:transform,opacity;
+  background:linear-gradient(165deg,var(--k1),var(--k2));
+  box-shadow:0 26px 44px -22px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.22) inset;
+  /* Nur scale bekommt einen Uebergang — Stellung und Deckkraft kommen in
+     jedem Bild aus jrStufenFahrt(), ein Uebergang liefe ihnen nach. */
+  transition:scale .9s var(--ease-out)}
+.jr-lk-band{display:flex;justify-content:space-between;align-items:baseline;padding:2px 4px 6px;gap:6px}
+.jr-lk-band b{font-family:var(--font-dis);font-weight:600;font-size:13px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-lk-band span{font-size:9px;opacity:.72;letter-spacing:.06em;white-space:nowrap}
+.jr-lk-fenster{border-radius:12px;overflow:hidden;aspect-ratio:1;background:#fff}
+.jr-lk-fenster img{width:100%;height:100%;object-fit:cover;object-position:center 86%;display:block}
+.jr-lk-fuss{margin-top:auto;padding:6px 4px 2px;font-size:10px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-lk .jr-folie, .jr-lk .jr-glanzpunkt{opacity:0;transition:opacity .8s var(--ease-blend)}
+.jr-lk-haken{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:#34C759;color:#fff;
+  display:grid;place-items:center;transform:scale(0);box-shadow:0 0 0 3px rgba(255,255,255,.9),0 6px 12px -4px rgba(0,0,0,.4);
+  transition:transform .45s cubic-bezier(.34,1.7,.5,1)}
+.jr-lk-haken svg{width:15px;height:15px}
+.jr-lk.erreicht .jr-lk-haken{transform:none}
+.jr-lk.vorbei{animation:jrVorbei .7s var(--ease-blend) forwards}
+@keyframes jrVorbei{to{opacity:.38}}
+.jr-lk.ziel{transform:rotateX(var(--rx)) rotateY(var(--ry));scale:1.2}
+.jr-lk.ziel .jr-folie{opacity:.22}
+.jr-lk.ziel .jr-glanzpunkt{opacity:.6}
+.jr-fahrt{opacity:0}
+.an .jr-fahrt{animation:jrRuhig .7s .35s var(--ease-out) forwards}
+.jr-nach{opacity:0}
+.jr-stufe.fertig .jr-nach, .fertig .jr-nach{animation:jrRuhig .9s var(--ease-out) forwards;animation-delay:var(--v,0s)}
+
+/* ─── Die Abzeichen als Muenzen ───
+   Die grosse Medaille dreht sich wie eine Muenze herein, ihr Rand
+   schimmert rundum, ein Hof leuchtet dahinter. Die kleinen fliegen aus
+   ihr heraus (Weg aus jrMuenzenFlug: --dx, --dy) und drehen sich auf. */
+.jr-abz-kin{align-items:center;text-align:center;gap:16px}
+.jr-held{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;perspective:700px}
+.jr-held::before{content:"";position:absolute;left:50%;top:64px;width:260px;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+  background:radial-gradient(circle,rgba(151,230,110,.55),rgba(96,224,166,.18) 45%,transparent 68%);opacity:0}
+.an .jr-held::before{animation:jrSchein 1.6s .9s var(--ease-out) forwards, jrAtmen 3.6s 2.5s ease-in-out infinite alternate}
+.jr-muenze{position:relative;width:62px;height:62px;border-radius:50%;flex:none;transform-style:preserve-3d}
+.jr-muenze.gross{width:128px;height:128px}
+.jr-m-rand{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,#F7FFE3,#97E66E,#2E7D32,#E9FFC9,#60E0A6,#1E6B3A,#F7FFE3);
+  box-shadow:0 18px 30px -14px rgba(0,0,0,.6);animation:jrRand 7s linear infinite}
+@keyframes jrRand{to{transform:rotate(360deg)}}
+.jr-m-gesicht{position:absolute;inset:9%;border-radius:50%;display:grid;place-items:center;color:#10401C;
+  background:radial-gradient(circle at 34% 28%,#ffffff,#E6FFD4 26%,#97E66E 60%,#3A8A33);
+  box-shadow:inset 0 3px 6px rgba(255,255,255,.8),inset 0 -8px 14px rgba(10,50,20,.35)}
+.jr-m-gesicht svg{width:46%;height:46%;filter:drop-shadow(0 1px 0 rgba(255,255,255,.7))}
+.jr-m-glanz{position:absolute;inset:9%;border-radius:50%;overflow:hidden;pointer-events:none}
+.jr-m-glanz::after{content:"";position:absolute;inset:-20%;transform:translateX(-130%) rotate(18deg);
+  background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.75) 50%,transparent 70%)}
+.jr-muenze.gross{opacity:0}
+.an .jr-muenze.gross{animation:jrMuenzeDreh 1.6s .5s cubic-bezier(.2,.8,.25,1) forwards, jrWiege 5s 2.2s ease-in-out infinite}
+@keyframes jrMuenzeDreh{0%{opacity:0;transform:rotateY(-540deg) scale(.35);filter:blur(8px)}
+  55%{opacity:1;filter:none}100%{opacity:1;transform:rotateY(0) scale(1)}}
+@keyframes jrWiege{0%,100%{transform:rotateY(0)}30%{transform:rotateY(14deg)}70%{transform:rotateY(-14deg)}}
+.an .jr-muenze.gross .jr-m-glanz::after{animation:jrMGlanz 4.2s 2s var(--ease-blend) infinite}
+@keyframes jrMGlanz{0%,10%{transform:translateX(-130%) rotate(18deg)}45%,100%{transform:translateX(130%) rotate(18deg)}}
+.jr-held-wert .jr-zahl{font-size:58px;justify-content:center}
+.jr-held small{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.82}
+.jr-muenzen{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 10px;max-width:340px}
+.jr-mz{width:100px;display:flex;flex-direction:column;align-items:center;gap:5px;perspective:500px}
+.jr-mz .jr-muenze{opacity:0}
+.an .jr-mz .jr-muenze{animation:jrAusflug 1s cubic-bezier(.2,.9,.3,1.15) forwards;animation-delay:calc(2.3s + var(--i) * .16s)}
+@keyframes jrAusflug{0%{opacity:0;transform:translate(var(--dx,0),var(--dy,-120px)) scale(.25) rotateY(200deg)}
+  45%{opacity:1}100%{opacity:1;transform:none}}
+.an .jr-mz .jr-m-glanz::after{animation:jrMGlanz 3.6s calc(3.4s + var(--i) * .2s) var(--ease-blend) infinite}
+.jr-mz b{font-family:var(--font-dis);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1;opacity:0}
+.jr-mz small{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:0;line-height:1.3}
+.an .jr-mz b{animation:jrRuhig .7s var(--ease-out) forwards;animation-delay:calc(2.8s + var(--i) * .16s)}
+.an .jr-mz small{animation:jrMzText .7s var(--ease-out) forwards;animation-delay:calc(2.9s + var(--i) * .16s)}
+@keyframes jrMzText{from{opacity:0;transform:translateY(8px)}to{opacity:.8;transform:none}}
 
 /* Bubble-Tea-Buddy */
 .jr-buddy{align-items:center;text-align:center}
@@ -3111,27 +3170,10 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-buddy-zahl .jr-einheit{font-size:17px;margin:0 0 8px;text-align:left;max-width:9em;line-height:1.15}
 .jr-buddy .jr-pille{align-self:center}
 
-/* Abzeichen */
-.jr-abz-kin{gap:12px}
-.jr-abz{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.jr-med{position:relative;overflow:hidden;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:6px;
-  background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.2);opacity:0}
-.jr-med.gross{grid-column:1 / -1;flex-direction:row;align-items:center;gap:14px;padding:14px}
-.an .jr-med{animation:jrMed .8s var(--ease-out) forwards;animation-delay:calc(.9s + var(--i) * 150ms)}
-@keyframes jrMed{0%{opacity:0;transform:scale(.7) translateY(14px);filter:blur(8px)}
-  70%{opacity:1;transform:scale(1.03);filter:none}100%{opacity:1;transform:none}}
-.jr-med::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-130%);
-  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 48%,transparent 66%)}
-.an .jr-med::after{animation:jrMedGlanz 1.1s var(--ease-blend) forwards;animation-delay:calc(2.4s + var(--i) * 120ms)}
-@keyframes jrMedGlanz{to{transform:translateX(130%)}}
-.jr-ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--jr-tiefk);
-  background:radial-gradient(circle at 35% 30%,#fff,var(--jr-glanz) 60%,var(--jr-a));
+.jr-ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;color:#3B0A6E;
+  background:radial-gradient(circle at 35% 30%,#fff,#EBD5F9 55%,#C643FE);
   box-shadow:0 0 0 2px rgba(255,255,255,.55),0 8px 16px -8px rgba(0,0,0,.5)}
-.jr-med.gross .jr-ico{width:58px;height:58px}
 .jr-ico svg{width:52%;height:52%}
-.jr-med b{font-family:var(--font-dis);font-weight:700;font-size:24px;letter-spacing:-.03em;line-height:1}
-.jr-med.gross b{font-size:34px}
-.jr-med small{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;opacity:.78;line-height:1.3}
 .jr-flamme path{transform-origin:50% 90%;animation:jrFlackern 1.6s ease-in-out infinite alternate}
 @keyframes jrFlackern{0%{transform:scale(1,1) rotate(-2deg)}50%{transform:scale(.94,1.06) rotate(1deg)}100%{transform:scale(1.03,.96) rotate(2deg)}}
 
@@ -3143,11 +3185,12 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
    aspect-ratio allein gab dem Inhalt nach. */
 .jr-holo.jr-share{aspect-ratio:4/5;width:min(84vw,330px);height:calc(min(84vw,330px) * 1.25);
   padding:16px;gap:10px;border-radius:26px;overflow:hidden;isolation:isolate;
+  /* Festes MOJI-Violett mit einem Hauch Mint — nicht mehr die Stufenfarbe. */
   background:
-    radial-gradient(60% 45% at 0% 0%, var(--jr-warm), transparent 70%),
-    radial-gradient(65% 55% at 100% 100%, var(--jr-kuehl), transparent 72%),
+    radial-gradient(60% 45% at 0% 0%, #E4A4FF, transparent 70%),
+    radial-gradient(70% 55% at 100% 100%, rgba(96,224,166,.55), transparent 70%),
     radial-gradient(50% 40% at 85% 10%, rgba(255,255,255,.18), transparent 70%),
-    linear-gradient(160deg,var(--jr-a) 0%,var(--jr-b) 45%,var(--jr-tiefk) 100%);
+    linear-gradient(160deg,#C643FE 0%,#8E1AD6 48%,#2E0A52 100%);
   box-shadow:0 50px 90px -40px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.28) inset}
 /* Die Folie schimmert hier weich (soft-light) — mit color-dodge hellte sie
    die ganze Karte auf und nahm ihr die Farbe. */
@@ -3156,7 +3199,11 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-share::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.1;mix-blend-mode:overlay;background-image:var(--jr-korn)}
 .jr-share .jr-glanzpunkt{opacity:.3}
 .jr-sh-kopf{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
-.jr-sh-lvl{padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);letter-spacing:.1em}
+.jr-sh-lvl{padding:4px 9px 4px 22px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);letter-spacing:.1em;
+  position:relative}
+/* Die Stufe traegt ihre Farbe als Punkt — die Karte selbst bleibt violett. */
+.jr-sh-lvl::before{content:"";position:absolute;left:8px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;
+  background:var(--lv,#fff);box-shadow:0 0 0 2px rgba(255,255,255,.5)}
 .jr-sh-wer{display:flex;align-items:center;gap:11px}
 .jr-sh-wer img{width:46px;height:46px;border-radius:13px;object-fit:cover;object-position:center 86%;background:#fff;flex:none;
   box-shadow:0 8px 16px -8px rgba(0,0,0,.5)}
@@ -3165,7 +3212,7 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jr-sh-wer small{display:block;font-size:10.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jr-sh-held b{display:block;font-family:var(--font-dis);font-weight:700;font-size:48px;letter-spacing:-.03em;line-height:1;
-  background:linear-gradient(100deg,#fff 0 30%,var(--jr-glanz) 50%,#fff 70% 100%);background-size:260% 100%;
+  background:linear-gradient(100deg,#fff 0 30%,#F1DDFF 50%,#fff 70% 100%);background-size:260% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:jrHeld 5s 1.4s var(--ease-blend) infinite}
 @keyframes jrHeld{0%,15%{background-position:100% 0}60%,100%{background-position:0 0}}
 .jr-sh-held small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.78}
@@ -3207,16 +3254,16 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 @media (prefers-reduced-motion:reduce){
   .jr-kap{animation:none}
   .jr-banner::after{animation:none}
-  .jr-ruhig,.jr-zz,.jr-av img,.jr-av::before,.jr-holo,.jr-paar img,.jr-med,.jr-paar::before{
+  .jr-ruhig,.jr-zz,.jr-av img,.jr-av::before,.jr-holo,.jr-paar img,.jr-paar::before,
+  .jr-fahrt,.jr-nach,.jr-muenze,.jr-mz .jr-muenze,.jr-mz b,.jr-mz small,.jr-held::before{
     opacity:1!important;animation:none!important;filter:none!important}
-  .jr-av img,.jr-holo,.jr-paar img,.jr-med{transform:none!important}
+  .jr-av img,.jr-holo,.jr-paar img,.jr-mz .jr-muenze,.jr-muenze.gross{transform:none!important}
+  .jr-m-rand,.jr-m-glanz::after{animation:none!important}
   .jr-wk > span{transform:none!important;animation:none!important}
   .jr-rz-s{transition:none!important}
   .jr-saeulen span{transform:none!important;animation:none!important}
   .jr-metall{animation:none!important;background-position:50% 0}
-  .jr-med::after,.jr-flamme path,.jr-sh-held b{animation:none!important}
-  .jr-sc{opacity:1!important;animation:none!important;filter:none!important}
-  .jr-sc em{transform:none!important;animation:none!important}
+  .jr-flamme path,.jr-sh-held b{animation:none!important}
 }
 
 /* ─── Stufe, Karte, Rangliste ───────────────────────────────────────────
@@ -7053,7 +7100,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1300';
+const APP_STAND = '2026-09-27-1500';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -12257,9 +12304,7 @@ function jrAbzeichen(d){
   if(d.samstage) a.push({ w:String(d.samstage), t:ein(d.samstage, 'Samstag gearbeitet', 'Samstage gearbeitet'), i:'samstag' });
   if(d.zaPlus > 0) a.push({ w:'+' + fmtH(d.zaPlus).replace(/,00$/, '') + ' h', t:'Zeitausgleich gesammelt', i:'plus' });
   a.push({ w:String(d.dabei), t:ein(d.dabei, 'Monat mit MOJI', 'Monate mit MOJI'), i:'stern' });
-  let wahl = a.slice(0, 6);
-  if(wahl.length > 1 && (wahl.length - 1) % 2) wahl = wahl.slice(0, wahl.length - 1);
-  return wahl;
+  return a.slice(0, 6);
 }
 
 /* ─── Bausteine der Kapitel ─── */
@@ -12269,7 +12314,9 @@ const jrRollen = (t, v) => [...t].map((c, i) => /\d/.test(c)
   ? '<span class="jr-rz"><span class="jr-rz-s" style="--d:' + c + ';--i:' + i + ';--v:' + v + 's">'
     + '0123456789'.split('').map(n => '<b class="jr-metall" style="--mz:' + (v + 1.9 + i * .07).toFixed(2) + 's">' + n + '</b>').join('')
     + '</span></span>'
-  : '<span class="jr-rz-z jr-metall" style="--mz:' + (v + 1.9).toFixed(2) + 's">' + esc(c) + '</span>').join('');
+  /* Ein Leerzeichen allein in einem Kaestchen faellt auf null Breite
+     zusammen — aus "23 Tage" wurde "23Tage". Darum ein festes. */
+  : '<span class="jr-rz-z jr-metall" style="--mz:' + (v + 1.9).toFixed(2) + 's">' + (c === ' ' ? '&nbsp;' : esc(c)) + '</span>').join('');
 
 /* Ein Spruch je Stufe — unter der Karte im Stufen-Kapitel. */
 const JR_STUFE_SPRUCH = [
@@ -12314,19 +12361,33 @@ const JR_HAKEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 
 /* Die Kapitel, die es fuer dieses Jahr gibt. Jedes traegt seine
    Stimmung (vier Farben fuer den Verlauf) und wie lange es steht. */
+/* Feste Farben je Kapitel, aus der MOJI-Palette (App-Symbol): Violett
+   traegt Eroeffnung, Stunden, Stufe und Abschluss, Limette und Mint den
+   Bubble-Tea-Buddy und die Abzeichen. Seit 27.09.2026 nicht mehr von der
+   Stufe abhaengig — nur die Stufenkarten selbst tragen ihre Farbe.
+   Je Kapitel: vier Toene fuer den Verlauf und ein Glanz fuer die Zahlen. */
+const JR_STIMMUNG = {
+  auf:   { st:['#1B0630', '#5B12A8', '#C643FE', '#7B5CFF'], gl:'#F1DDFF' },
+  std:   { st:['#200735', '#8A1FD8', '#DC8AFF', '#C643FE'], gl:'#F6E6FF' },
+  stufe: { st:['#120522', '#4A148C', '#9B3BF0', '#6A4BFF'], gl:'#EFE2FF' },
+  buddy: { st:['#052117', '#137A4E', '#60E0A6', '#97E66E'], gl:'#E2FFF0' },
+  abz:   { st:['#071A0E', '#1D6630', '#97E66E', '#60E0A6'], gl:'#EDFFD9' },
+  ende:  { st:['#23063C', '#8E1AD6', '#C643FE', '#60E0A6'], gl:'#F1DDFF' }
+};
 function jrKapitel(d){
-  const p = d.p, nr = d.stufe, r = rang(nr), av = avDatei(avNummer());
+  const nr = d.stufe, r = rang(nr), av = avDatei(avNummer());
   const k = [];
-  k.push({ id:'auf', dauer:6.5, st:[p.nacht, p.dunkel, p.b, p.kuehl], html:
+  const mit = (id, o) => Object.assign({ id:id, st:JR_STIMMUNG[id].st, gl:JR_STIMMUNG[id].gl }, o);
+  k.push(mit('auf', { dauer:6.5, html:
     '<div class="jr-kin jr-open">'
     + '<div class="jr-av"><img src="' + av + '" alt=""></div>'
     + '<p class="jr-kick">' + jrZeichen('Dein Jahr', .7) + '</p>'
     + '<h2 class="jr-jahr"><span class="jr-wk"><span class="jr-metall" style="--i:0;--v:1s;--mz:1.8s">' + d.y + '</span></span></h2>'
     + '<p class="jr-klein jr-ruhig" style="--v:1.9s;margin-inline:auto">Zwölf Monate, zusammengefasst — mit allem, was du '
-    + d.y + ' in MOJI geschafft hast.</p></div>' });
+    + d.y + ' in MOJI geschafft hast.</p></div>' }));
   if(d.work > 0){
     const max = Math.max(1, ...d.monate.map(x => x ? x.work : 0));
-    k.push({ id:'std', dauer:7.5, st:[p.dunkel, p.b, p.warm, p.nacht], html:
+    k.push(mit('std', { dauer:7.5, html:
       '<div class="jr-kin jr-std">'
       + '<p class="jr-kick">' + jrWoerter('Du hast ' + (d.y === new Date().getFullYear() ? 'dieses Jahr' : d.y), .3) + '</p>'
       + '<div class="jr-zahl">' + jrRollen(jrTausend(d.work), .9) + '</div>'
@@ -12338,31 +12399,34 @@ function jrKapitel(d){
       + '<div class="jr-monatz jr-ruhig" style="--v:2.6s">' + 'JFMAMJJASOND'.split('').map(m => '<span>' + m + '</span>').join('') + '</div>'
       + (d.top ? '<span class="jr-pille jr-ruhig" style="--v:3.4s"><i></i>Stärkster Monat: ' + MONTHS[d.top.m] + ', '
           + jrTausend(d.top.work) + ' Stunden</span>' : '')
-      + '</div>' });
+      + '</div>' }));
   }
-  /* Die Stufe: erst alle erreichten mit gruenem Haken, dann die
-     aktuelle als Holo-Karte, darunter ihr Spruch. */
-  const frueher = [];
-  for(let n = 1; n < nr; n++) frueher.push(n);
-  const kartenAb = (.6 + frueher.length * .09 + .25).toFixed(2);
-  k.push({ id:'stufe', dauer:Math.max(8, 5.5 + frueher.length * .3), holo:true, st:[p.nacht, p.kuehl, p.b, p.dunkel], html:
+  /* Die Stufe: alle Karten bis zur aktuellen wischen langsam vorbei
+     (jrStufenFahrt), jede erreichte bekommt im Vorbeifahren ihren Haken.
+     Die aktuelle bleibt stehen, waechst und wird zur Holo-Karte — dann
+     erst kommen Spruch und Text. */
+  const fahrt = nr > 1 ? Math.min(6000, 1300 + (nr - 1) * 430) : 0;
+  const karte = n => {
+    const pl = jrPalette(n), rr = rang(n);
+    return '<div class="jr-lk' + (n === nr ? ' aktuell' : '') + '" style="--k1:' + pl.hochk + ';--k2:' + pl.tiefk + '">'
+      + '<div class="jr-lk-band"><b>' + esc(rr.n) + '</b><span>' + n + ' / ' + RAENGE.length + '</span></div>'
+      + '<div class="jr-lk-fenster"><img src="' + av + '" alt="" loading="lazy"></div>'
+      + '<div class="jr-lk-fuss">' + (n === nr && gespartMin() ? fmtDauer(gespartMin()) + ' gespart' : 'Stufe ' + n) + '</div>'
+      + (n < nr ? '<em class="jr-lk-haken">' + JR_HAKEN + '</em>' : '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>')
+      + '</div>';
+  };
+  const lks = []; for(let n = 1; n <= nr; n++) lks.push(karte(n));
+  k.push(mit('stufe', { dauer:(700 + fahrt) / 1000 + 4.5, fahrt:fahrt, html:
     '<div class="jr-kin jr-stufe">'
     + '<p class="jr-kick">' + jrWoerter(d.aufstiege ? 'Du bist aufgestiegen' : 'Deine Stufe', .2) + '</p>'
-    + (frueher.length ? '<div class="jr-leiter">' + frueher.map((n, i) => '<span class="jr-sc" style="--c:' + rang(n).a + ';--i:' + i + '">'
-        + '<i>' + n + '</i><small>' + esc(rang(n).n) + '</small><em>' + JR_HAKEN + '</em></span>').join('') + '</div>' : '')
-    + '<div class="jr-holo klein" id="jr-holo" style="--ab:' + kartenAb + 's">'
-    +   '<div class="jr-band"><b>' + esc(r.n) + '</b><span>' + nr + ' / ' + RAENGE.length + '</span></div>'
-    +   '<div class="jr-fenster"><img src="' + av + '" alt=""></div>'
-    +   '<div class="jr-wer"><b>' + esc(ME.vorname + ' ' + ME.nachname) + '</b><small>' + esc(EMPLOYER) + '</small></div>'
-    +   '<div class="jr-fach"><span>Zeit gespart</span><b>' + (gespartMin() ? fmtDauer(gespartMin()) : 'noch nichts') + '</b></div>'
-    +   '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>'
-    + '</div>'
-    + '<p class="jr-spruch jr-ruhig" style="--v:' + (+kartenAb + 1.1).toFixed(2) + 's">' + esc(JR_STUFE_SPRUCH[nr - 1]) + '</p>'
-    + '<p class="jr-klein jr-ruhig" style="--v:' + (+kartenAb + 1.5).toFixed(2) + 's;margin-inline:auto">Stufe ' + nr
-    + (d.aufstiege ? ' · ' + (d.aufstiege === 1 ? 'eine Stufe' : d.aufstiege + ' Stufen') + ' höher als im Jänner' : '') + '</p></div>' });
+    + '<div class="jr-fahrt"><div class="jr-lks">' + lks.join('') + '</div></div>'
+    + '<p class="jr-spruch jr-nach" style="--v:.35s">' + esc(JR_STUFE_SPRUCH[nr - 1]) + '</p>'
+    + '<p class="jr-klein jr-nach" style="--v:.75s;margin-inline:auto">Stufe ' + nr + ' · ' + esc(r.n)
+    + (d.aufstiege ? ' · ' + (d.aufstiege === 1 ? 'eine Stufe' : d.aufstiege + ' Stufen') + ' höher als im Jänner' : '') + '</p></div>',
+    an:schicht => jrStufenFahrt(schicht, fahrt) }));
   if(d.tee && d.tee.buddy){
     const b = d.tee.buddy;
-    k.push({ id:'buddy', dauer:8.5, st:[p.dunkel, p.warm, p.b, p.nacht], html:
+    k.push(mit('buddy', { dauer:8.5, html:
       '<div class="jr-kin jr-buddy">'
       + '<p class="jr-kick">' + jrWoerter('Dein Bubble-Tea-Buddy', .2) + '</p>'
       + '<div class="jr-paar"><img class="jr-ich" src="' + av + '" alt="">'
@@ -12373,25 +12437,35 @@ function jrKapitel(d){
       +   '<p class="jr-einheit jr-ruhig" style="--v:2.5s">' + (b.punkte === 1 ? 'Bubble Tea' : 'Bubble Teas') + ' zwischen euch</p></div>'
       + '<p class="jr-spruch jr-ruhig" style="--v:3.1s">' + esc(jrTeeSpruch(b.punkte, b.name)) + '</p>'
       + '<span class="jr-pille jr-ruhig" style="--v:3.6s"><i style="background:' + b.tee.f + '"></i>Tee-Stufe ' + b.lvl + ' · ' + esc(b.tee.n) + '</span>'
-      + '</div>' });
+      + '</div>' }));
   }
+  /* Abzeichen: eine grosse Medaille dreht sich wie eine Muenze herein,
+     die uebrigen fliegen als kleine Muenzen aus ihr heraus an ihren
+     Platz (jrMuenzenFlug) und drehen sich dabei auf. */
   const abz = jrAbzeichen(d);
   if(abz.length >= 2){
-    k.push({ id:'abz', dauer:8.5, st:[p.nacht, p.b, p.kuehl, p.dunkel], html:
+    const muenze = (a, gross) => '<div class="jr-muenze' + (gross ? ' gross' : '') + '"><span class="jr-m-rand"></span>'
+      + '<span class="jr-m-gesicht">' + JR_ICO[a.i] + '</span><span class="jr-m-glanz"></span></div>';
+    const held = abz[0], rest = abz.slice(1);
+    k.push(mit('abz', { dauer:9, html:
       '<div class="jr-kin jr-abz-kin">'
       + '<p class="jr-kick">' + jrWoerter('Deine Abzeichen ' + d.y, .2) + '</p>'
-      + '<div class="jr-abz">' + abz.map((a, i) => '<div class="jr-med' + (i === 0 ? ' gross' : '') + '" style="--i:' + i + '">'
-          + '<span class="jr-ico">' + JR_ICO[a.i] + '</span><span><b>' + esc(a.w) + '</b><br><small>' + esc(a.t) + '</small></span></div>').join('')
-      + '</div></div>' });
+      + '<div class="jr-held">' + muenze(held, true)
+      +   '<div class="jr-held-wert"><div class="jr-zahl">' + jrRollen(held.w, 1.5) + '</div></div>'
+      +   '<small class="jr-ruhig" style="--v:1.9s">' + esc(held.t) + '</small></div>'
+      + '<div class="jr-muenzen">' + rest.map((a, i) => '<div class="jr-mz" style="--i:' + i + '">' + muenze(a, false)
+          + '<b>' + esc(a.w) + '</b><small>' + esc(a.t) + '</small></div>').join('') + '</div>'
+      + '</div>',
+      an:schicht => jrMuenzenFlug(schicht) }));
   }
   /* Die Abschlusskarte im Format 4:5 — genau so, wie sie geteilt wird. */
   const kach = jrKacheln(d), bu = d.tee && d.tee.buddy;
-  const abz0 = jrAbzeichen(d)[0];
-  k.push({ id:'ende', dauer:0, holo:true, ende:true, st:[p.b, p.tief, p.warm, p.dunkel], html:
+  const abz0 = abz[0];
+  k.push(mit('ende', { dauer:0, holo:true, ende:true, html:
     '<div class="jr-kin jr-ende">'
     + '<p class="jr-kick">' + jrWoerter('Das war dein ' + d.y, .2) + '</p>'
     + '<div class="jr-holo jr-share" id="jr-holo">'
-    +   '<div class="jr-sh-kopf"><span>MOJI · ' + d.y + '</span><span class="jr-sh-lvl">LVL ' + nr + '</span></div>'
+    +   '<div class="jr-sh-kopf"><span>MOJI · ' + d.y + '</span><span class="jr-sh-lvl" style="--lv:' + r.a + '">LVL ' + nr + '</span></div>'
     +   '<div class="jr-sh-wer"><img src="' + av + '" alt=""><span><b>' + esc(ME.vorname + ' ' + ME.nachname) + '</b>'
     +     '<small>' + esc(r.n) + ' · ' + esc(EMPLOYER) + '</small></span></div>'
     +   '<div class="jr-sh-held"><b>' + jrTausend(d.work) + '</b><small>Stunden gearbeitet</small></div>'
@@ -12408,8 +12482,60 @@ function jrKapitel(d){
     + '<div class="jr-knoepfe jr-ruhig" style="--v:1.6s"><button class="jr-haupt" type="button" id="jr-teilen">Teilen</button>'
     +   '<button class="jr-neben" type="button" id="jr-nochmal">Nochmal</button></div>'
     + '<p class="jr-klein jr-ruhig" style="--v:2s;margin-inline:auto">Auf ein gutes ' + (d.y + 1) + '.</p>'
-    + '</div>', kacheln:kach });
+    + '</div>', kacheln:kach }));
   return k;
+}
+/* Die Fahrt durch die Stufenkarten. p ist die Karte in der Mitte, als
+   Kommazahl: 0 ist Stufe 1, nr-1 die aktuelle. Jede Karte steht je nach
+   Abstand zur Mitte kleiner, schraeg und blasser da. Gerechnet in jedem
+   Bild, Zeit ueber kurve() — langsam los, gleitend, sanft stehen. */
+function jrStufenFahrt(schicht, dauer){
+  const karten = $$('.jr-lk', schicht);
+  if(!karten.length) return;
+  const letzte = karten.length - 1, abstand = 112;
+  const setze = p => karten.forEach((el, i) => {
+    const off = i - p, a = Math.abs(off);
+    const s = 1 - Math.min(a, 2.2) * .13, ry = Math.max(-42, Math.min(42, -off * 32));
+    el.style.transform = 'translateX(' + (off * abstand).toFixed(1) + 'px) rotateY(' + ry.toFixed(1) + 'deg) scale(' + s.toFixed(3) + ')';
+    el.style.opacity = Math.max(0, 1 - Math.max(0, a - 1.4) * .7).toFixed(3);
+    el.style.zIndex = String(100 - Math.round(a * 10));
+    if(i < letzte) el.classList.toggle('erreicht', p >= i + .4);
+  });
+  const fertig = () => {
+    setze(letzte);
+    const z = karten[letzte];
+    karten.forEach((el, i) => { if(i < letzte) el.classList.add('vorbei'); });
+    z.style.transform = '';
+    z.id = 'jr-holo';
+    z.classList.add('ziel', 'lebt');
+    schicht.classList.add('fertig');
+    if(JR.schicht === schicht) jrHolo();
+  };
+  setze(0);
+  if(!dauer || JR.still){ fertig(); return; }
+  const zeit = kurve(.42, 0, .18, 1);
+  setTimeout(() => {
+    const t0 = performance.now();
+    const bild = t => {
+      if(JR.schicht !== schicht || !schicht.isConnected) return;
+      const u = Math.min(1, (t - t0) / dauer);
+      setze(zeit(u) * letzte);
+      if(u < 1) requestAnimationFrame(bild); else fertig();
+    };
+    requestAnimationFrame(bild);
+  }, 700);
+}
+/* Die kleinen Muenzen fliegen aus der grossen heraus: ihr Weg ist der
+   Abstand zwischen den Mittelpunkten, gemessen, sobald sie stehen. */
+function jrMuenzenFlug(schicht){
+  const held = $('.jr-held .jr-muenze', schicht);
+  if(!held) return;
+  const h = held.getBoundingClientRect(), hx = h.left + h.width / 2, hy = h.top + h.height / 2;
+  $$('.jr-mz', schicht).forEach(m => {
+    const r = $('.jr-muenze', m).getBoundingClientRect();
+    m.style.setProperty('--dx', (hx - (r.left + r.width / 2)).toFixed(1) + 'px');
+    m.style.setProperty('--dy', (hy - (r.top + r.height / 2)).toFixed(1) + 'px');
+  });
 }
 
 /* ─── Die Buehne ─── */
@@ -12499,6 +12625,7 @@ function jrSchicht(i){
   const d = document.createElement('div');
   d.className = 'jr-kap';
   ['--m1', '--m2', '--m3', '--m4'].forEach((v, j) => d.style.setProperty(v, k.st[j]));
+  if(k.gl) d.style.setProperty('--jr-glanz', k.gl);
   d.innerHTML = k.html;
   JR.el.insertBefore(d, $('#jr-fort', JR.el));
   $$('.jr-rz', d).forEach(z => {
@@ -12540,6 +12667,7 @@ function jrZeige(i, ort){
   jrFort();
   const k = JR.kap[i];
   if(k.holo) jrHolo();
+  if(k.an) requestAnimationFrame(() => { try{ k.an(neu); }catch(e){ console.warn(e); } });
   if(k.ende){
     $('#jr-teilen', neu).addEventListener('click', e => { e.stopPropagation(); jrTeilen(); });
     $('#jr-nochmal', neu).addEventListener('click', e => { e.stopPropagation(); jrZeige(0, { x:e.clientX, y:e.clientY }); });
@@ -12622,9 +12750,10 @@ async function jrBild(){
 
   /* Grund: Verlauf der Stufe mit zwei Nachbartoenen */
   const lg = c.createLinearGradient(0, 0, B * .45, H);
-  lg.addColorStop(0, p.a); lg.addColorStop(.45, p.b); lg.addColorStop(1, p.tiefk);
+  /* Festes MOJI-Violett mit einem Hauch Mint, wie die Karte auf dem Schirm. */
+  lg.addColorStop(0, '#C643FE'); lg.addColorStop(.48, '#8E1AD6'); lg.addColorStop(1, '#2E0A52');
   c.fillStyle = lg; c.fillRect(0, 0, B, H);
-  [[p.warm, 0, 0, .7], [p.kuehl, 1, 1, .78], ['rgba(255,255,255,.22)', .85, .1, .5]].forEach(([f, fx, fy, fr]) => {
+  [['#E4A4FF', 0, 0, .7], ['rgba(96,224,166,.55)', 1, 1, .78], ['rgba(255,255,255,.22)', .85, .1, .5]].forEach(([f, fx, fy, fr]) => {
     const g = c.createRadialGradient(B * fx, H * fy, 0, B * fx, H * fy, B * fr);
     g.addColorStop(0, f); g.addColorStop(1, 'rgba(0,0,0,0)');
     c.globalAlpha = .9; c.fillStyle = g; c.fillRect(0, 0, B, H); c.globalAlpha = 1;
@@ -12651,9 +12780,11 @@ async function jrBild(){
   schrift('700', 10.5, UI); c.textAlign = 'left';
   if('letterSpacing' in c) c.letterSpacing = Math.round(1.6 * S) + 'px';
   c.fillText('MOJI · ' + d.y, x(P), x(P + 12));
-  const lvl = 'LVL ' + d.stufe; const lw = c.measureText(lvl).width + x(20);
+  const lvl = 'LVL ' + d.stufe; const lw = c.measureText(lvl).width + x(34);
   c.fillStyle = 'rgba(255,255,255,.2)'; rrect(x(330 - P) - lw, x(P - 2), lw, x(20), x(10)); c.fill();
-  c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(lvl, x(330 - P) - lw / 2, x(P + 12));
+  /* Die Stufe als farbiger Punkt, die Karte bleibt violett. */
+  c.fillStyle = r.a; c.beginPath(); c.arc(x(330 - P) - lw + x(12), x(P + 8), x(4), 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(lvl, x(330 - P) - lw / 2 + x(7), x(P + 12));
   if('letterSpacing' in c) c.letterSpacing = '0px';
   /* Wer */
   const ich = await lade(avDatei(avNummer()));
@@ -12666,7 +12797,7 @@ async function jrBild(){
   schrift('700', 54, DIS);
   const zahl = jrTausend(d.work), zw = c.measureText(zahl).width;
   const mg = c.createLinearGradient(x(P), 0, x(P) + zw, 0);
-  mg.addColorStop(0, '#ffffff'); mg.addColorStop(.5, p.glanz); mg.addColorStop(1, '#ffffff');
+  mg.addColorStop(0, '#ffffff'); mg.addColorStop(.5, '#F1DDFF'); mg.addColorStop(1, '#ffffff');
   c.fillStyle = mg; c.fillText(zahl, x(P - 1), x(152));
   c.fillStyle = 'rgba(255,255,255,.78)'; schrift('700', 10.5, UI);
   if('letterSpacing' in c) c.letterSpacing = Math.round(1.2 * S) + 'px';

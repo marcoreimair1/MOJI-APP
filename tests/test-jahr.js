@@ -110,7 +110,7 @@ dA.tee = t26;
 const abz = jrAbzeichen(dA);
 ok('Die laengste Serie steht oben', abz[0].t === 'Längste Tagesserie' && abz[0].w === '5 Tage', abz[0].t);
 ok('Hoechstens sechs', abz.length <= 6, abz.length);
-ok('Das Raster geht auf: eins gross, darunter paarweise', abz.length === 1 || (abz.length - 1) % 2 === 0, abz.length);
+ok('Mindestens zwei, damit es ein Kapitel gibt', abz.length >= 2, abz.length);
 ok('Brueckentage sind dabei', abz.some(a => a.t === 'Brückentage genutzt' && a.w === '2'));
 ok('Kein Wort ueber Krankheit', !abz.some(a => a.t.toLowerCase().indexOf('krank') > -1));
 
@@ -125,20 +125,48 @@ const kach = jrKapitel(dA).find(k => k.ende).kacheln;
 ok('Die Abschlusskarte traegt sechs Kacheln', kach.length === 6, kach.length);
 ok('Mit Urlaub und Abgegeben vorn', kach[0].t === 'Urlaubstage' && kach[1].t === 'Abgegeben' && kach[1].w === '2/12', kach[1].w);
 ok('Und der laengsten Serie', kach.some(k => k.t === 'Längste Serie' && k.w === '5 T.'));
-/* Die Stufe: alle erreichten mit Haken, dann die aktuelle */
+/* Die Stufe: alle Karten wischen vorbei bis zur aktuellen */
 const dS = jrDaten(2025, heute); dS.p = jrPalette(4); dS.stufe = 4; dS.aufstiege = 2;
-const hS = jrKapitel(dS).find(k => k.id === 'stufe').html;
-const tS = document.createElement('div'); tS.innerHTML = hS;
-ok('Drei erreichte Stufen vor der vierten', tS.querySelectorAll('.jr-leiter .jr-sc').length === 3, tS.querySelectorAll('.jr-sc').length);
-ok('Jede mit gruenem Haken', tS.querySelectorAll('.jr-sc em svg').length === 3);
-ok('In ihrer Farbe', tS.querySelector('.jr-sc').getAttribute('style').indexOf(rang(1).a) > -1);
-ok('Dann die aktuelle Karte', tS.querySelector('.jr-holo .jr-band b').textContent === rang(4).n);
-ok('Die Karte kommt nach der Leiter', parseFloat(tS.querySelector('.jr-holo').style.getPropertyValue('--ab')) > .6 + 3 * .09);
-ok('Darunter ihr Spruch', tS.querySelector('.jr-spruch').textContent === JR_STUFE_SPRUCH[3], tS.querySelector('.jr-spruch').textContent);
+const kS = jrKapitel(dS).find(k => k.id === 'stufe');
+const tS = document.createElement('div'); tS.innerHTML = kS.html;
+ok('Vier Stufenkarten fuer Stufe 4', tS.querySelectorAll('.jr-fahrt .jr-lk').length === 4, tS.querySelectorAll('.jr-lk').length);
+ok('Die drei erreichten tragen einen gruenen Haken', tS.querySelectorAll('.jr-lk .jr-lk-haken svg').length === 3);
+ok('Jede in ihrer Stufenfarbe', tS.querySelector('.jr-lk').getAttribute('style').indexOf(jrPalette(1).hochk) > -1);
+ok('Die letzte ist die aktuelle, mit Holo-Folie', tS.querySelector('.jr-lk:last-child').classList.contains('aktuell')
+   && !!tS.querySelector('.jr-lk:last-child .jr-folie') && tS.querySelector('.jr-lk:last-child .jr-lk-band b').textContent === rang(4).n);
+ok('Die Fahrt dauert je Karte ein Stueck', kS.fahrt === 1300 + 3 * 430, kS.fahrt);
+ok('Das Kapitel steht lang genug fuer Fahrt und Text', kS.dauer >= (700 + kS.fahrt) / 1000 + 4, kS.dauer);
+ok('Spruch und Text kommen erst nach der Fahrt', !!tS.querySelector('.jr-spruch.jr-nach') && tS.querySelector('.jr-spruch').textContent === JR_STUFE_SPRUCH[3]);
 ok('Zwoelf Sprueche fuer zwoelf Stufen', JR_STUFE_SPRUCH.length === RAENGE.length);
+/* Am Ende der Fahrt: die aktuelle wird zur Holo-Karte */
+const schS = document.createElement('div'); schS.innerHTML = kS.html; document.body.appendChild(schS);
+JR.still = false; jrStufenFahrt(schS, 0);
+const lkS = schS.querySelectorAll('.jr-lk');
+ok('Ohne Fahrt steht sofort die aktuelle in der Mitte', lkS[3].id === 'jr-holo' && lkS[3].classList.contains('ziel') && lkS[3].classList.contains('lebt'));
+ok('Die vorigen sind erreicht und treten zurueck', lkS[0].classList.contains('erreicht') && lkS[2].classList.contains('vorbei'));
+ok('Dann kommt der Text', schS.classList.contains('fertig'));
+schS.remove();
 dS.stufe = 1; dS.aufstiege = 0;
-const t1 = document.createElement('div'); t1.innerHTML = jrKapitel(dS).find(k => k.id === 'stufe').html;
-ok('Auf Stufe 1 gibt es keine Leiter', !t1.querySelector('.jr-leiter'));
+const k1 = jrKapitel(dS).find(k => k.id === 'stufe');
+const t1 = document.createElement('div'); t1.innerHTML = k1.html;
+ok('Auf Stufe 1 eine Karte, keine Fahrt', k1.fahrt === 0 && t1.querySelectorAll('.jr-lk').length === 1, t1.querySelectorAll('.jr-lk').length);
+/* Feste Farben: nicht mehr von der Stufe abhaengig */
+dS.stufe = 12;
+const f12 = jrKapitel(dS).map(k => k.st.join());
+dS.stufe = 2;
+const f2 = jrKapitel(dS).map(k => k.st.join());
+ok('Die Kapitelfarben haengen nicht an der Stufe', f12.join('|') === f2.join('|'));
+ok('Violett fuer die Eroeffnung', JR_STIMMUNG.auf.st.indexOf('#C643FE') > -1);
+ok('Gruen fuer Buddy und Abzeichen', JR_STIMMUNG.buddy.st.indexOf('#60E0A6') > -1 && JR_STIMMUNG.abz.st.indexOf('#97E66E') > -1);
+/* Abzeichen als Muenzen */
+dA.p = jrPalette(dA.stufe);
+const kA = jrKapitel(dA).find(k => k.id === 'abz');
+const tA = document.createElement('div'); tA.innerHTML = kA.html; document.body.appendChild(tA);
+ok('Eine grosse Medaille vorn', !!tA.querySelector('.jr-held .jr-muenze.gross .jr-m-rand'));
+ok('Die uebrigen als kleine Muenzen', tA.querySelectorAll('.jr-muenzen .jr-mz .jr-muenze').length === jrAbzeichen(dA).length - 1);
+jrMuenzenFlug(tA);
+ok('Ihr Flug aus der grossen wird gemessen', tA.querySelector('.jr-mz').style.getPropertyValue('--dx') !== '');
+tA.remove();
 /* Der Buddy bekommt seinen Spruch */
 dA.tee = t26;
 const tB = document.createElement('div'); tB.innerHTML = jrKapitel(dA).find(k => k.id === 'buddy').html;
@@ -235,7 +263,17 @@ setTimeout(() => {
    ['Auf der Leinwand echte Farben', /async function jrBild\(\)\{[\s\S]{0,900}getPropertyValue\('--font-dis'\)/.test(roh)],
    ['Das Teilbild ist ein JPEG, kein 3-MB-PNG', /'moji-jahr-' \+ d\.y \+ '\.jpg', \{ type:'image\/jpeg' \}\) : null\), 'image\/jpeg', \.92\)/.test(roh)],
    ['Die Folie waescht die Teilkarte nicht aus', /\.jr-share \.jr-folie\{mix-blend-mode:soft-light;opacity:\.6\}/.test(roh)],
-   ['Die Stufenleiter hat zwei Spalten', /\.jr-leiter\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(roh)],
+   ['Keine Stufenfarben mehr im Kapitelhintergrund', fn('jrKapitel').length > 0 && !/p\.nacht|p\.kuehl|p\.warm/.test(fn('jrKapitel'))],
+   ['Die Teilkarte ist fest violett', /\.jr-holo\.jr-share\{[\s\S]{0,500}linear-gradient\(160deg,#C643FE 0%,#8E1AD6 48%,#2E0A52 100%\)/.test(roh)
+    && /lg\.addColorStop\(0, '#C643FE'\)/.test(roh)],
+   ['Die Stufe traegt sie als Punkt', /\.jr-sh-lvl::before\{[\s\S]{0,200}background:var\(--lv,#fff\)/.test(roh)],
+   ['Kein Uebergang auf der Deckkraft, die jedes Bild neu kommt', /\.jr-lk\{[\s\S]{0,700}transition:scale \.9s var\(--ease-out\)\}/.test(roh)
+    && /\.jr-lk\.vorbei\{animation:jrVorbei/.test(roh)],
+   ['Die 6 in 2026 hat Luft', /\.jr-jahr \.jr-wk\{padding:0 \.09em \.06em\}/.test(roh)],
+   ['Leerzeichen im Rollzaehler bleiben stehen', /\(c === ' ' \? '&nbsp;' : esc\(c\)\)/.test(roh)],
+   ['Die Stunden-Ziffern stehen so eng wie die Jahreszahl', /\.jr-rz\{[^}]*margin-inline:-\.036em\}/.test(roh)],
+   ['Die grosse Medaille dreht sich herein', /@keyframes jrMuenzeDreh\{0%\{opacity:0;transform:rotateY\(-540deg\)/.test(roh)],
+   ['Die kleinen fliegen aus ihr heraus', /@keyframes jrAusflug\{0%\{opacity:0;transform:translate\(var\(--dx,0\),var\(--dy,-120px\)\)/.test(roh)],
    ['Das Teilbild ist 4:5', /const B = 1080, H = 1350, S = B \/ 330/.test(roh) && /\.jr-holo\.jr-share\{aspect-ratio:4\/5;/.test(roh)],
    ['Das Profilbild ist ein weiches Viereck wie ueberall', /\.jr-av img\{[^}]*border-radius:27%/.test(roh)],
    ['Das Profilbild bleibt quadratisch, auch in der Spalte', /\.jr-av\{[^}]*flex:none;width:132px;height:132px;min-height:0/.test(roh)],
