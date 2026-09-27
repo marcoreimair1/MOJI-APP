@@ -166,7 +166,8 @@ ME.events['2025-02-12'] = { t:'krank',  s:'full', text:'', aw:false };
 renderCal();
 ok('Mit Urlaub und Krankheit: drei Kacheln, Sonstiges fehlt',
    kacheln().join(',') === 'Arbeit,Urlaub,Krankheit', kacheln().join(','));
-ok('Drei nebeneinander', document.querySelector('#mb-leg').className === 'mleg n3');
+ok('Keine Anordnung nach Anzahl mehr — immer dieselbe Reihe',
+   !/\bn\d\b/.test(document.querySelector('#mb-leg').className), document.querySelector('#mb-leg').className);
 ok('Und drei Stuecke im Balken', document.querySelectorAll('#mb-bar span').length === 3);
 ok('Urlaub zeigt seine Stunden',
    document.querySelectorAll('#mb-leg .ml i')[1].textContent === '16,00 h',
@@ -176,7 +177,9 @@ ok('Oben stehen Tage ausgeschrieben und die Stunden',
    document.querySelector('#mb-v').textContent);
 ME.events['2025-02-13'] = { t:'eigen', s:'vm', text:'Kurs', aw:false };
 renderCal();
-ok('Ab vier Arten stehen sie zwei und zwei', document.querySelector('#mb-leg').className === 'mleg n4');
+ok('Vier Arten, vier Kacheln in derselben Reihe',
+   kacheln().length === 4 && !/\bn\d\b/.test(document.querySelector('#mb-leg').className));
+ok('Die Reihe merkt sich, ob rechts noch etwas liegt', typeof mlegRand === 'function');
 ['2025-02-10','2025-02-11','2025-02-12','2025-02-13'].forEach(function(k){ delete ME.events[k]; });
 renderCal();
 ok('Wieder weg, wenn die Eintraege weg sind', kacheln().join(',') === 'Arbeit');
@@ -225,15 +228,19 @@ setTimeout(() => {
    ['Jedes Mal neu gewuerfelt',
     /von \+ Math\.random\(\) \* \(bis - von\)/],
    ['Das erste Mal kommt frueher',       /planen\(true\);/],
-   ['Vier Kacheln in einer Reihe erst ab 400 px Kartenbreite',
-    /@container \(min-width:400px\)\{ \.mleg\.n4\{--sp:4\}/],
+   /* 27.09.2026: "immer so angezeigt", vier in der Reihe, weitere daneben
+      zum Wischen, gleiche Hoehe und Breite. */
+   ['Jede Kachel ist ein Viertel der Reihe breit', /\.ml\{flex:0 0 calc\(\(100% - 18px\) \/ 4\);/],
+   ['Die Reihe bricht nicht um, sie laesst sich wischen',
+    /\.mleg\{display:flex;[^}]*overflow-x:auto;[^}]*scroll-snap-type:x mandatory;/],
+   ['Die Kacheln rasten beim Wischen ein', /scroll-snap-align:start/],
+   ['Der rechte Rand blendet aus, solange es weitergeht', /\.mleg\.weiter\{[^}]*mask-image:linear-gradient/],
+   ['Der Wisch auf der Reihe blaettert nicht den Monat', /if\(e\.target\.closest\('\.mleg\.kann'\)\) return;/],
+   ['Auf schmalen Karten rutscht der Punkt vor die Stunden',
+    /@container \(max-width:329px\)\{[\s\S]{0,120}\.ml b::before\{display:none\}/],
    ['Die Uebersicht misst ihre eigene Breite', /\.mbar\{[^}]*container-type:inline-size/],
    ['Arbeit traegt die Marke', /arbeit: \['var\(--butter\)'/],
-   /* 27.09.2026: "die Kacheln zu hoch" — kleiner geschrieben, eine Zeile. */
-   ['Die Kacheln sind flach', /\.ml\{min-width:0;padding:6px 9px 7px;/],
-   ['Und klein beschriftet', /\.ml b\{[^}]*font-size:11px;/],
-   ['Name und Stunden in einer Zeile, ausser bei dreien',
-    /\.mleg:not\(\.n3\) \.ml\{display:flex;/],
+   ['Klein beschriftet', /\.ml b\{[^}]*font-size:11px;/],
    ['Weniger Bewegung: Balken und Kacheln stehen', /\.mbbar span,\.ml\{animation:none\}/]
   ].forEach(([n, re]) => E.push({ n, ok: re.test(roh), z: re.test(roh) ? '' : 'fehlt' }));
 
