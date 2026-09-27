@@ -1256,14 +1256,13 @@ setTimeout(() => {
     roh.includes('function ktMessen(){')
     && roh.includes('const m = _ktMasse || ktMessen();')
     && roh.includes('_ktMasse = null;               /* neue Karten, neue Masse */')],
-   ['Waehrend der Fahrt rastet nichts ein',
-    roh.includes('.kt-bahn.fliegt{ scroll-snap-type:none }')
-    && roh.includes("bahn.classList.add('fliegt', 'wischt');")],
-   /* Zwoelf Karten mit eigener Perspektive und preserve-3d bei jedem
-      Winkel neu zu rastern ist die eigentliche Last. */
-   ['Und die Karten drehen sich dabei nicht',
-    roh.includes('.kt-bahn.fliegt .kt-dreh{ transform:none }')
-    && roh.includes('.kt-bahn.fliegt .kt-glanz{ animation:none }')],
+   /* Seit 27.09.2026 wird der echte Stapel nicht mehr durchgescrollt —
+      er steht am Ziel, gefahren wird eine Schicht mit Abbildern. */
+   ['Der echte Stapel wird nicht mehr durchgescrollt',
+    roh.includes('ktZeige(bis, false);                        /* der echte Stapel steht schon am Ziel */')
+    && !roh.includes('.kt-bahn.fliegt{')],
+   ['Die Abbilder tragen keinen laufenden Glanz und keine Drehung',
+    roh.includes("c.classList.remove('vorn', 'um', 'stups', 'ankunft');")],
    ['Und Titel und Punkte nur beim Wechsel',
     roh.includes('if(n === _ktVorne) return;     /* der Rest gilt nur beim Wechsel */')],
    ['Gerechnet wird einmal je Bild, nicht je Scroll-Ereignis',
@@ -1500,19 +1499,27 @@ setTimeout(() => {
    /* Wer die Karten aufmacht, faehrt von der ersten bis zu der, die
       gerade gilt — das zeigt in einer Bewegung, dass es ein Stapel
       ist und wo man darin steht. */
+   /* Seit 27.09.2026 dieselbe Fahrt wie im Jahresrueckblick: Abbilder
+      der Karten ueberlappend im Raum, langsam vorbei, die erreichten
+      mit Haken; der echte Stapel steht verdeckt am Ziel. */
    ['Der Stapel faehrt von der ersten bis zur aktuellen',
-    roh.includes('function ktFlug(vonNr, bisNr, fertig){')
-    && roh.includes('else ktFlug(1, _ktZeig, stups);')],
-   ['Gerechnet, damit die Dauer an der Strecke haengt',
-    roh.includes('const dauer = Math.min(1350, 380 + weit * 80);')],
-   /* Seit 27.09.2026 in der Handschrift des Grusses: eigene Zeitkurve,
-      die Kamera zieht auf, der Titel verschwimmt, und angekommen geht
-      ein Schein auf. */
-   ['Zuegig los, lange weiche Landung', roh.includes('const zeit = kurve(.32, .04, .1, 1);')],
-   ['Die Kamera zieht auf und faehrt wieder heran',
-    roh.includes("bahn.style.setProperty('--zoom', (1 - tief * hub * hub).toFixed(4));")
-    && roh.includes('scale:calc((.9 + .1 * var(--nah, 1)) * var(--zoom, 1));')],
-   ['Bei der Ankunft steht der Zoom wieder auf 1', roh.includes("bahn.style.removeProperty('--zoom');")],
+    roh.includes('function ktFahrt(bis, fertig){') && roh.includes('else ktFahrt(_ktZeig, stups);')
+    && !roh.includes('function ktFlug(')],
+   ['Gerechnet wie im Rueckblick: je Karte ein Stueck, hoechstens 6 s',
+    roh.includes('const KT_FAHRT_AB = 1300, KT_FAHRT_JE = 430;')
+    && roh.includes('return weit > 0 ? Math.min(6000, KT_FAHRT_AB + weit * KT_FAHRT_JE) : 0;')],
+   ['Langsam los, gleitend, sanft stehen', roh.includes('const zeit = kurve(.42, 0, .18, 1), dauer = ktFahrtDauer(weit);')],
+   ['Ueberlappend, schraeg und kleiner nach Abstand wie im Rueckblick',
+    roh.includes("const s = 1 - Math.min(a, 2.2) * .13, ry = Math.max(-42, Math.min(42, -off * 32));")
+    && roh.includes('const letzte = karten.length - 1, abstand = kb * .44;')],
+   ['Gefahren werden Abbilder, der echte Stapel steht verdeckt am Ziel',
+    roh.includes("c.classList.add('kt-abbild');") && roh.includes("bahn.classList.add('verdeckt');")
+    && roh.includes('.kt-bahn.verdeckt{ opacity:0 }')],
+   ['Die erreichten tragen ihren Haken von Anfang an',
+    roh.includes("if(n < echt) c.insertAdjacentHTML('beforeend', '<em class=\"kt-haken\">' + JR_HAKEN + '</em>');")],
+   ['Masse aus dem Layout, nicht aus dem verschobenen Bild', roh.includes('const kb = ziel.offsetWidth, oben = ziel.offsetTop;')],
+   ['Zugemacht mitten in der Fahrt, bleibt nichts liegen',
+    roh.includes("if(mkv && !mkv.classList.contains('on')){ schicht.remove(); aufraeumen(); return; }")],
    ['Der Titel verschwimmt waehrend der Fahrt',
     roh.includes('#mkv.fahrt .kt-zeile b{ opacity:.28; filter:blur(5px);')],
    ['Angekommen geht ein Schein in der Stufenfarbe auf',
@@ -1526,7 +1533,7 @@ setTimeout(() => {
    /* Im Hintergrund feuert requestAnimationFrame nicht — dort bliebe
       der Stapel sonst auf der ersten Karte stehen. */
    ['Wer Bewegung abgestellt hat oder wegsieht, kommt gleich an',
-    roh.includes('if(!weit || still || !bahn.clientWidth || document.hidden){')],
+    roh.includes('if(weit < 1 || still || !bahn.clientWidth || document.hidden) return ende();')],
    ['Und am Ziel wackelt sie gleich, nicht erst nach einer halben Sekunde',
     roh.includes('animation:ktStups 1.5s .18s var(--ease-out) 1 }')],
    ['Die Stufenkachel ist zweizeilig wie die anderen',

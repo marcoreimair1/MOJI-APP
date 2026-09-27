@@ -143,7 +143,7 @@ const schS = document.createElement('div'); schS.innerHTML = kS.html; document.b
 JR.still = false; jrStufenFahrt(schS, 0);
 const lkS = schS.querySelectorAll('.jr-lk');
 ok('Ohne Fahrt steht sofort die aktuelle in der Mitte', lkS[3].id === 'jr-holo' && lkS[3].classList.contains('ziel') && lkS[3].classList.contains('lebt'));
-ok('Die vorigen sind erreicht und treten zurueck', lkS[0].classList.contains('erreicht') && lkS[2].classList.contains('vorbei'));
+ok('Die vorigen treten zurueck', lkS[2].classList.contains('vorbei'));
 ok('Dann kommt der Text', schS.classList.contains('fertig'));
 schS.remove();
 dS.stufe = 1; dS.aufstiege = 0;
@@ -270,6 +270,8 @@ setTimeout(() => {
    ['Kein Uebergang auf der Deckkraft, die jedes Bild neu kommt', /\.jr-lk\{[\s\S]{0,700}transition:scale \.9s var\(--ease-out\)\}/.test(roh)
     && /\.jr-lk\.vorbei\{animation:jrVorbei/.test(roh)],
    ['Die 6 in 2026 hat Luft', /\.jr-jahr \.jr-wk\{padding:0 \.09em \.06em\}/.test(roh)],
+   ['Die Haken sind von Anfang an da, nicht erst im Vorbeifahren',
+    /\.jr-lk-haken\{[^}]*\}/.test(roh) && !/\.jr-lk-haken\{[^}]*transform:scale\(0\)/.test(roh) && !/toggle\('erreicht'/.test(roh)],
    ['Leerzeichen im Rollzaehler bleiben stehen', /\(c === ' ' \? '&nbsp;' : esc\(c\)\)/.test(roh)],
    ['Die Stunden-Ziffern stehen so eng wie die Jahreszahl', /\.jr-rz\{[^}]*margin-inline:-\.036em\}/.test(roh)],
    ['Die grosse Medaille dreht sich herein', /@keyframes jrMuenzeDreh\{0%\{opacity:0;transform:rotateY\(-540deg\)/.test(roh)],

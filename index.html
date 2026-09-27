@@ -3064,8 +3064,9 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 
 /* ─── Die Fahrt durch die Stufenkarten ───
    Jede Karte in ihrer Stufenfarbe. Stellung, Groesse und Neigung setzt
-   jrStufenFahrt() in jedem Bild; erreichte Karten bekommen im
-   Vorbeifahren ihren gruenen Haken. Die aktuelle waechst am Ende und
+   jrStufenFahrt() in jedem Bild; erreichte Karten tragen ihren gruenen
+   Haken von Anfang an — erschien er erst im Vorbeifahren, wirkte das
+   komisch. Die aktuelle waechst am Ende und
    wird zur Holo-Karte (.ziel). Spruch und Text kommen erst danach. */
 .jr-fahrt{position:relative;width:100%;height:250px;perspective:900px;margin:10px 0 4px}
 .jr-lks{position:absolute;left:50%;top:10px;width:0;height:0;transform-style:preserve-3d}
@@ -3084,10 +3085,8 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-lk-fuss{margin-top:auto;padding:6px 4px 2px;font-size:10px;font-weight:600;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jr-lk .jr-folie, .jr-lk .jr-glanzpunkt{opacity:0;transition:opacity .8s var(--ease-blend)}
 .jr-lk-haken{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:#34C759;color:#fff;
-  display:grid;place-items:center;transform:scale(0);box-shadow:0 0 0 3px rgba(255,255,255,.9),0 6px 12px -4px rgba(0,0,0,.4);
-  transition:transform .45s cubic-bezier(.34,1.7,.5,1)}
+  display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 6px 12px -4px rgba(0,0,0,.4)}
 .jr-lk-haken svg{width:15px;height:15px}
-.jr-lk.erreicht .jr-lk-haken{transform:none}
 .jr-lk.vorbei{animation:jrVorbei .7s var(--ease-blend) forwards}
 @keyframes jrVorbei{to{opacity:.38}}
 .jr-lk.ziel{transform:rotateX(var(--rx)) rotateY(var(--ry));scale:1.2}
@@ -3464,8 +3463,8 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
      waehrend gewischt wird. Ein Uebergang wuerde bei jedem dieser Werte
      von vorne anfangen und dem Finger hinterherlaufen — genau das war
      das Ruckeln. Ohne ihn folgt die Groesse dem Scrollen unmittelbar. */
-  /* --zoom setzt ktFlug() waehrend der Fahrt: die Kamera zieht auf und
-     faehrt bei der Ankunft wieder heran. Ohne Fahrt ist es 1. */
+  /* --zoom bleibt als Stellschraube (ohne Angabe 1). Bis 27.09.2026
+     setzte ktFlug() sie waehrend der Fahrt. */
   scale:calc((.9 + .1 * var(--nah, 1)) * var(--zoom, 1));
   opacity:calc(.55 + .45 * var(--nah, 1));
 }
@@ -3482,20 +3481,22 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 /* Waehrend gewischt wird ohne Uebergang — sonst liefe die Drehung dem
    Finger hinterher, genau wie vorher die Groesse. */
 .kt-bahn.wischt .kt-dreh{ transition:none }
-/* ─── Waehrend der gerechneten Fahrt ──────────────────────────────
-   Drei Dinge fallen weg, bis sie steht:
-
-   scroll-snap-type, weil es bei jedem gesetzten scrollLeft zur
-   naechsten Karte zieht und damit gegen die Bewegung kaempft;
-
-   die Drehung, weil zwoelf Karten mit eigener Perspektive und
-   preserve-3d bei jedem Winkel neu gerastert werden muessen — das
-   ist die eigentliche Last, nicht das Rechnen;
-
-   und der wandernde Glanz, der waehrend der Fahrt ohnehin niemand
-   ansieht. Uebrig bleiben Groesse und Deckkraft, und die kosten
-   nichts. Am Ende drehen sich die Karten weich in ihre Winkel. */
-.kt-bahn.fliegt{ scroll-snap-type:none }
+/* Bis 27.09.2026 wurde der echte Stapel beim Aufmachen per scrollLeft
+   durchgezogen; dafuer fielen Einrasten, Drehung und Glanz weg
+   (.kt-bahn.fliegt). Seither faehrt eine Schicht mit Abbildern, der
+   echte Stapel steht still am Ziel — die Regeln sind weg. */
+/* ─── Die Fahrt beim Aufmachen (ktFahrt) ───
+   Eine Schicht mit Abbildern der Karten ueber dem echten Stapel, der so
+   lange verdeckt ist. Die erreichten tragen einen gruenen Haken an der
+   Ecke — von Anfang an. */
+.kt-fahrt{ position:absolute; inset:0; z-index:5; pointer-events:none; perspective:1400px; overflow:visible }
+.kt-fahrt.weg{ opacity:0; transition:opacity .26s var(--ease-blend) }
+.kt-fahrt .kt-abbild{ position:absolute; margin:0; will-change:transform,opacity; cursor:default }
+.kt-haken{ position:absolute; top:-9px; right:-9px; z-index:6; width:32px; height:32px; border-radius:50%;
+  background:#34C759; color:#fff; display:grid; place-items:center;
+  box-shadow:0 0 0 3px rgba(255,255,255,.92), 0 8px 14px -6px rgba(0,0,0,.45) }
+.kt-haken svg{ width:18px; height:18px }
+.kt-bahn.verdeckt{ opacity:0 }
 /* ─── Die Fahrt, seit 27.09.2026 ─────────────────────────────────
    Der Titel wechselte waehrend der Fahrt bei jeder Karte — zwoelf
    Namen in einer Sekunde, das flackerte. Jetzt verschwimmt er, solange
@@ -3512,8 +3513,6 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .kt.ankunft::before{ animation:ktSchein 1.5s var(--ease-out) both }
 @keyframes ktSchein{ 0%{ opacity:0; transform:scale(.6) } 30%{ opacity:.65 } 100%{ opacity:0; transform:scale(1.15) } }
 .kt.vorn.ankunft .kt-glanz{ animation:ktGlanz 1.1s var(--ease-blend) 1 }
-.kt-bahn.fliegt .kt-dreh{ transform:none }
-.kt-bahn.fliegt .kt-glanz{ animation:none }
 .kt.um .kt-dreh{ transform:rotateY(180deg) }
 /* Beim Aufschlagen stupst die vordere Karte einmal an: eine kurze
    Drehung, die zeigt, dass da eine Rueckseite ist. */
@@ -7100,7 +7099,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1500';
+const APP_STAND = '2026-09-27-1600';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -11545,81 +11544,115 @@ function mkvFlug(auf){
 /* nr: welche Karte vorne liegen soll. Ohne Angabe die aktuelle Stufe.
    Aus einem Brief heraus ist es die Stufe, von der der Brief handelt —
    sonst macht der Stapel woanders auf als dort, wo man getippt hat. */
-/* ─── Der Flug durch den Stapel ───────────────────────────────────
+/* ─── Die Fahrt durch den Stapel ───────────────────────────────────
    Wer die Karten aufmacht, sieht zuerst die erste und faehrt dann an
-   allen vorbei bis zu der, die gerade gilt. Das zeigt in einer
-   Bewegung, was sonst niemand sieht: dass es ein Stapel ist, dass er
-   waechst und wo man darin steht.
+   allen vorbei bis zu der, die gerade gilt.
 
-   Gerechnet statt scrollTo({behavior:'smooth'}): der Browser nimmt
-   sich dafuer dieselbe kurze Zeit, egal ob eine Karte oder elf
-   dazwischen liegen — ueber elf Karten waere das ein Zucken.
+   Seit 27.09.2026 dieselbe Fahrt wie im Jahresrueckblick
+   (jrStufenFahrt): die Karten stehen ueberlappend im Raum, schraeg,
+   kleiner und blasser, je weiter sie von der Mitte sind, und wischen
+   langsam vorbei — langsam los, gleitend, sanft stehen. Die erreichten
+   tragen von Anfang an ihren gruenen Haken.
 
-   Seit 27.09.2026 in der Handschrift des Grusses:
-   - die Zeit laeuft ueber kurve(.32, .04, .1, 1) — zuegig los, lange
-     weiche Landung, dieselbe Familie wie der Flug in die Leiste. Vorher
-     t·(2−t): quadratisch, am Ende noch mit Tempo;
-   - die Kamera zieht auf: alle Karten treten waehrend der Fahrt um bis
-     zu 11 % zurueck (--zoom, ueber sin², also ohne Ruck an den Enden)
-     und fahren bei der Ankunft wieder heran. Das kostet nichts: die
-     Groesse wird ohnehin in jedem Bild gesetzt;
-   - der Titel verschwimmt waehrend der Fahrt (#mkv.fahrt);
-   - angekommen, geht hinter der Karte ein Schein in ihrer Farbe auf und
-     der Glanz laeuft einmal darueber (.ankunft), dann erst das Anstupsen. */
-function ktFlug(vonNr, bisNr, fertig){
-  const bahn = $('#kt-bahn');
+   Der echte Stapel kann das nicht: seine Karten rasten nebeneinander
+   ein. Gefahren wird deshalb eine Schicht mit Abbildern der echten
+   Karten ueber ihm. Der echte Stapel steht dabei schon am Ziel und ist
+   verdeckt; die letzte Karte landet genau auf seiner, dann uebernimmt
+   er unsichtbar, und man kann wie gewohnt wischen und umdrehen.
+
+   Vorher lief hier ktFlug(): der echte Stapel wurde per scrollLeft in
+   hoechstens 1,35 s durchgezogen — zu schnell, und flach. */
+const KT_FAHRT_AB = 1300, KT_FAHRT_JE = 430;
+function ktFahrtDauer(weit){ return weit > 0 ? Math.min(6000, KT_FAHRT_AB + weit * KT_FAHRT_JE) : 0; }
+function ktFahrt(bis, fertig){
+  const bahn = $('#kt-bahn'), kiste = $('.mkv-in'), mkv = $('#mkv');
   const ende = () => { if(fertig) fertig(); };
-  if(!bahn) return ende();
-  const platz = n => {
-    const el = $('.kt[data-n="' + n + '"]', bahn);
-    return el ? el.offsetLeft - (bahn.clientWidth - el.offsetWidth) / 2 : 0;
-  };
+  if(!bahn || !kiste) return ende();
   let still = false;
   try{ still = matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
-  const a = platz(vonNr), b = platz(bisNr);
-  const weit = Math.abs(bisNr - vonNr);
-  /* document.hidden gehoert dazu: liegt die Seite im Hintergrund,
-     feuert requestAnimationFrame nicht, und der Stapel bliebe auf der
-     ersten Karte stehen. Wer nicht hinsieht, braucht keine Fahrt. */
-  if(!weit || still || !bahn.clientWidth || document.hidden){
-    bahn.scrollLeft = b; kartenTiefe(); return ende();
+  ktZeige(bis, false);                        /* der echte Stapel steht schon am Ziel */
+  const weit = bis - 1;
+  /* document.hidden gehoert dazu: im Hintergrund feuert
+     requestAnimationFrame nicht, und die Fahrt bliebe stehen. */
+  if(weit < 1 || still || !bahn.clientWidth || document.hidden) return ende();
+  const ziel = $('.kt[data-n="' + bis + '"]', bahn);
+  if(!ziel) return ende();
+  const echt = stufe();
+  /* Masse aus dem Layout, nicht aus getBoundingClientRect: die Kiste
+     faehrt gerade aus der Menuekarte heraus und ist dabei verschoben. */
+  const kb = ziel.offsetWidth, oben = ziel.offsetTop;
+  const mitte = bahn.offsetLeft + bahn.clientWidth / 2;
+  const schicht = document.createElement('div');
+  schicht.className = 'kt-fahrt';
+  schicht.style.perspectiveOrigin = mitte + 'px ' + (oben + ziel.offsetHeight / 2) + 'px';
+  const karten = [];
+  for(let n = 1; n <= bis; n++){
+    const o = $('.kt[data-n="' + n + '"]', bahn);
+    if(!o) continue;
+    const c = o.cloneNode(true);
+    c.removeAttribute('id');
+    $$('[id]', c).forEach(x => x.removeAttribute('id'));
+    c.classList.remove('vorn', 'um', 'stups', 'ankunft');
+    c.classList.add('kt-abbild');
+    c.setAttribute('aria-hidden', 'true');
+    c.style.removeProperty('--nah'); c.style.removeProperty('--seite');
+    c.style.left = (mitte - kb / 2) + 'px'; c.style.top = oben + 'px'; c.style.width = kb + 'px';
+    if(n < echt) c.insertAdjacentHTML('beforeend', '<em class="kt-haken">' + JR_HAKEN + '</em>');
+    schicht.appendChild(c);
+    karten.push(c);
   }
-  const dauer = Math.min(1350, 380 + weit * 80);
-  /* Wie weit die Kamera aufzieht: bei einer Karte kaum, ab zehn voll. */
-  const tief = Math.min(.11, .025 + weit * .009);
-  /* Waehrend der Fahrt kein Einrasten: scroll-snap-type zieht bei
-     jedem gesetzten scrollLeft zur naechsten Karte, und das kaempft
-     gegen die gerechnete Bewegung — daher das Stocken. Und keine
-     Uebergaenge auf der Drehung, die liefen der Fahrt hinterher. */
-  bahn.classList.add('fliegt', 'wischt');
-  const mkv = $('#mkv');
+  kiste.appendChild(schicht);
+  bahn.classList.add('verdeckt');
   if(mkv) mkv.classList.add('fahrt');
-  bahn.scrollLeft = a;
-  const start = performance.now();
-  const zeit = kurve(.32, .04, .1, 1);
-  const landen = () => {
-    bahn.scrollLeft = b;
-    bahn.style.removeProperty('--zoom');
-    bahn.classList.remove('fliegt');
+  /* Die Karten sind hier fast so breit wie der Schirm. Mit dem Abstand
+     aus dem Rueckblick laegen die Nachbarn draussen — naeher beisammen
+     schauen links und rechts mehrere hervor, wie dort. */
+  const letzte = karten.length - 1, abstand = kb * .44;
+  let vorne = 0;
+  const setze = p => {
+    karten.forEach((el, i) => {
+      const off = i - p, a = Math.abs(off);
+      const s = 1 - Math.min(a, 2.2) * .13, ry = Math.max(-42, Math.min(42, -off * 32));
+      el.style.transform = 'translateX(' + (off * abstand).toFixed(1) + 'px) rotateY(' + ry.toFixed(1) + 'deg) scale(' + s.toFixed(3) + ')';
+      el.style.opacity = Math.max(0, 1 - Math.max(0, a - 1.4) * .7).toFixed(3);
+      el.style.zIndex = String(100 - Math.round(a * 10));
+    });
+    /* Zaehler und Punkte laufen mit, der Titel verschwimmt (#mkv.fahrt). */
+    const n = Math.round(p) + 1;
+    if(n !== vorne){
+      vorne = n;
+      $('#kt-titel').textContent = rang(n).n;
+      $('#kt-zaehler').textContent = 'Karte ' + n + ' von ' + RAENGE.length;
+      $$('#kt-punkte i').forEach((q, i) => q.classList.toggle('vorne', i + 1 === n));
+    }
+  };
+  const aufraeumen = () => {
+    bahn.classList.remove('verdeckt');
     if(mkv) mkv.classList.remove('fahrt');
-    setTimeout(() => bahn.classList.remove('wischt'), 60);
-    kartenTiefe();
+    _ktVorne = 0; kartenTiefe();             /* Titel, Zaehler, Punkte wieder vom echten Stapel */
+  };
+  setze(0);
+  const zeit = kurve(.42, 0, .18, 1), dauer = ktFahrtDauer(weit);
+  const t0 = performance.now() + 250;         /* kurz stehen, waehrend der Stapel aufgeht */
+  const landen = () => {
+    setze(letzte);
+    aufraeumen();
+    schicht.classList.add('weg');
+    setTimeout(() => schicht.remove(), 280);
     const v = $('.kt.vorn', bahn);
     if(v){
       v.classList.remove('ankunft'); void v.offsetWidth; v.classList.add('ankunft');
       setTimeout(() => v.classList.remove('ankunft'), 1600);
     }
-    /* Das Anstupsen kommt, wenn der Schein aufgegangen ist. */
     setTimeout(ende, 260);
   };
-  const bild = jetzt => {
-    const p = Math.min(1, (jetzt - start) / dauer);
-    bahn.scrollLeft = a + (b - a) * zeit(p);
-    const hub = Math.sin(Math.PI * p);
-    bahn.style.setProperty('--zoom', (1 - tief * hub * hub).toFixed(4));
-    kartenTiefe();               /* gleich hier, nicht ueber den Horcher */
-    if(p < 1) requestAnimationFrame(bild);
-    else landen();
+  const bild = t => {
+    if(!schicht.isConnected) return;
+    /* Zugemacht mitten in der Fahrt: abraeumen, nichts liegen lassen. */
+    if(mkv && !mkv.classList.contains('on')){ schicht.remove(); aufraeumen(); return; }
+    const u = Math.max(0, Math.min(1, (t - t0) / dauer));
+    setze(zeit(u) * letzte);
+    if(u < 1) requestAnimationFrame(bild); else landen();
   };
   requestAnimationFrame(bild);
 }
@@ -11647,7 +11680,7 @@ function karteAuf(nr){
       if(v){ v.classList.remove('stups'); void v.offsetWidth; v.classList.add('stups'); }
     };
     if(nr){ ktZeige(_ktZeig, false); stups(); }
-    else ktFlug(1, _ktZeig, stups);
+    else ktFahrt(_ktZeig, stups);
   }, 160);
 }
 function karteZu(){
@@ -12402,7 +12435,7 @@ function jrKapitel(d){
       + '</div>' }));
   }
   /* Die Stufe: alle Karten bis zur aktuellen wischen langsam vorbei
-     (jrStufenFahrt), jede erreichte bekommt im Vorbeifahren ihren Haken.
+     (jrStufenFahrt), die erreichten tragen ihren Haken von Anfang an.
      Die aktuelle bleibt stehen, waechst und wird zur Holo-Karte — dann
      erst kommen Spruch und Text. */
   const fahrt = nr > 1 ? Math.min(6000, 1300 + (nr - 1) * 430) : 0;
@@ -12499,7 +12532,6 @@ function jrStufenFahrt(schicht, dauer){
     el.style.transform = 'translateX(' + (off * abstand).toFixed(1) + 'px) rotateY(' + ry.toFixed(1) + 'deg) scale(' + s.toFixed(3) + ')';
     el.style.opacity = Math.max(0, 1 - Math.max(0, a - 1.4) * .7).toFixed(3);
     el.style.zIndex = String(100 - Math.round(a * 10));
-    if(i < letzte) el.classList.toggle('erreicht', p >= i + .4);
   });
   const fertig = () => {
     setze(letzte);

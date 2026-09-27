@@ -693,22 +693,23 @@ statt auf den Kalender. Lädt die Seite gar nicht neu (das PDF lag nur darüber)
 so bekommt ein späterer echter Start wieder seinen Vorspann. `test-export.js` startet dafür zwei
 zusätzliche Instanzen, eine mit frischem und eine mit altem Vermerk.
 
-### Die Fahrt durch den Kartenstapel *(neu am 27. September 2026)*
+### Die Fahrt durch den Kartenstapel *(27. September 2026, zweite Fassung)*
 
-Tippt man im Profilmenü auf **Karten**, fährt der Stapel von der ersten bis zur aktuellen Karte
-(`ktFlug()`). Seit dem 27. September in der Handschrift des Grußes:
+Tippt man im Profilmenü auf **Karten**, läuft dieselbe Fahrt wie im Stufen-Kapitel des
+Jahresrückblicks (`ktFahrt()`): die Karten stehen überlappend im Raum, schräg, kleiner und blasser
+je weiter von der Mitte, und wischen langsam vorbei — `kurve(.42, 0, .18, 1)`, Dauer
+`min(6000, 1300 + weit · 430)` ms (`ktFahrtDauer()`). Die erreichten tragen **von Anfang an**
+einen grünen Haken an der Ecke.
 
-- **Zeitkurve** `kurve(.32, .04, .1, 1)` — zügig los, lange weiche Landung. Nachgemessen bei acht
-  Karten: in den letzten 300 ms nur noch 67 px. Dauer `min(1350, 380 + weit · 80)` ms.
-- **Die Kamera zieht auf**: `--zoom` auf `.kt-bahn` lässt alle Karten während der Fahrt um bis zu
-  11 % zurücktreten und bei der Ankunft wieder heranfahren (`sin²`, also ohne Ruck an den Enden).
-  Das kostet nichts, `scale` wird ohnehin in jedem Bild aus `--nah` gerechnet.
-- **Der Titel verschwimmt** während der Fahrt (`#mkv.fahrt`) und stellt sich bei der Ankunft
-  scharf. Vorher wechselte er bei jeder Karte — zwölf Namen in einer Sekunde. Der Zähler
-  „Karte n von 12" darf mitzählen.
-- **Ankunft**: hinter der Karte geht ein Schein in ihrer Stufenfarbe auf (`.kt.ankunft::before`),
-  der Glanz läuft sofort einmal darüber, und 260 ms später stupst sie an (`.stups`).
-- Die Fahrt beginnt 160 ms nach dem Aufschlagen, wenn der Stapel fast steht.
+Der echte Stapel kann das nicht, seine Karten rasten nebeneinander ein. Gefahren wird deshalb eine
+Schicht mit **Abbildern** der echten Karten (`.kt-fahrt .kt-abbild`). Der echte Stapel steht
+dabei schon am Ziel und ist verdeckt (`.kt-bahn.verdeckt`); die letzte Karte landet genau auf
+seiner (nachgemessen: 0,3 px), dann übernimmt er unsichtbar. Gemessen wird mit `offsetWidth` /
+`offsetTop`, nicht mit `getBoundingClientRect` — die Kiste fährt gerade aus der Menükarte heraus.
+Der Abstand ist `0,44 ×` Kartenbreite statt `0,76` wie im Rückblick, weil die Karten hier fast
+so breit wie der Schirm sind. Vorher lief `ktFlug()`: der echte Stapel per `scrollLeft` in
+höchstens 1,35 s durchgezogen — zu schnell und flach. Der Titel verschwimmt weiter während der
+Fahrt, angekommen geht der Schein auf und die Karte stupst an.
 
 ### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
 
