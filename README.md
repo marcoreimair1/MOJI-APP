@@ -2623,6 +2623,14 @@ Angabe nur 5 Sekunden auf die Funktion. Seither:
 Migration: `20260927120000_monatsmail_alle.sql`, prüft sich selbst (auch den Auslöser, in
 einem zurückgerollten Teilschritt).
 
+**Nebenwirkung, am selben Tag behoben:** Diese Migration änderte jede Zeile in `records`, und
+der Auslöser `records_mitglied` setzte dabei bei allen `mitglieder.zuletzt = now()` — in der
+Firmenansicht waren plötzlich alle „gerade online". `20260927130000_zuletzt_zurueck.sql` setzt
+die 20 betroffenen Zeilen auf den jüngsten echten Hinweis von vorher zurück (letztes Speichern,
+letzte Sitzungsaktivität, letzte Anmeldung) und ändert den Auslöser: `zuletzt` rückt nur noch
+vor, wenn die Person selbst speichert (`auth.uid() = new.user_id`). **Merke:** Wer `records` in
+der Masse ändert, löst `records_mitglied` für jede Zeile aus.
+
 ### 15.3 Funktion veröffentlichen *(erledigt)*
 
 Läuft als `monatsmail` unter

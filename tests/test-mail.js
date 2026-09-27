@@ -210,6 +210,19 @@ ok('Ein Ausloeser haelt die Zustimmung gegen alte App-Fassungen',
 ok('Die Migration probiert beides selbst aus', mig.includes('alte Fassung haette die Zustimmung ueberschrieben')
    && mig.includes('eine eigene Wahl wuerde nicht gelten'));
 
+/* ── 7d · „Zuletzt online" nur, wer selbst speichert ──
+   Die Migration von 7c aenderte jede Zeile in records, und der
+   Ausloeser records_mitglied setzte dabei bei allen zuletzt = now().
+   Behoben in 20260927130000_zuletzt_zurueck.sql. */
+const zur = lies('supabase/migrations/20260927130000_zuletzt_zurueck.sql');
+ok('Der Ausloeser setzt zuletzt nur, wenn die Person selbst speichert',
+   /zuletzt = case when auth\.uid\(\) = new\.user_id\s*\n\s*then greatest\(public\.mitglieder\.zuletzt, excluded\.zuletzt\)\s*\n\s*else public\.mitglieder\.zuletzt end;/.test(zur));
+ok('Die verschobenen Zeiten kommen aus echten Spuren von vorher',
+   zur.includes('greatest(r.updated_at, s.z, u.last_sign_in_at)') && zur.includes('and neu.z < (select t from mig);'));
+ok('Nur die Zeilen, die genau auf dem Zeitpunkt der Migration stehen', zur.includes('where m.zuletzt = (select t from mig)'));
+ok('Die Migration probiert beide Wege selbst aus',
+   zur.includes('eine Aenderung ohne Person hat zuletzt verschoben') && zur.includes('eigenes Speichern setzt zuletzt nicht mehr'));
+
 /* ── 8 · In der App: ?tee oeffnet die Bubble-Tea-Seite ──
    Zwei Instanzen: eine mit ?tee, eine ohne. Hier wird index.html
    geprueft — die Datei aus dem Argument, falls alle.js eine mitgibt. */
