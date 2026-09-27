@@ -2976,26 +2976,34 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .an .jr-metall{animation:jrMetall 2.2s var(--ease-blend) forwards;animation-delay:var(--mz,1.6s)}
 @keyframes jrMetall{to{background-position:0 0}}
 /* Rollzaehler: jede Ziffer rollt einzeln */
-.jr-zahl{font-family:var(--font-dis);font-weight:700;letter-spacing:-.045em;line-height:1;display:flex;align-items:flex-end}
+.jr-zahl{font-family:var(--font-dis);font-weight:700;letter-spacing:0;line-height:1;display:flex;align-items:flex-end}
 /* Jede Spalte ist so breit wie ihre Zielziffer (gesetzt in jrSchicht) —
    sonst stand die schmale 1 in einer Spalte so breit wie die 0, und in
    "1.580" klaffte eine Luecke. Die anderen Ziffern rollen mittig durch. */
-.jr-rz{display:inline-flex;justify-content:center;height:1em;overflow:hidden}
+/* Die Laufweite steckt nicht mehr in den Ziffern: eng gesetzt war die
+   Spalte schmaler als die Ziffer, und die Rundung der 0 wurde an der
+   Kante abgeschnitten. Jetzt misst die Spalte die ganze Ziffer, dazu
+   Luft oben und unten; zusammengerueckt wird ueber den Rand. */
+.jr-rz{display:inline-flex;justify-content:center;height:1.12em;overflow:hidden;margin-inline:-.018em}
 .jr-rz-s{display:flex;flex-direction:column;align-items:center;transform:translateY(0)}
-.jr-rz-s b{display:block;width:max-content;height:1em;line-height:1em;font-weight:inherit}
+.jr-rz-s b{display:block;width:max-content;height:1.12em;line-height:1.12em;font-weight:inherit}
 .an .jr-rz-s{transition:transform 1.9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--v,0s) + var(--i) * 110ms);
-  transform:translateY(calc(var(--d) * -1em))}
+  transform:translateY(calc(var(--d) * -1.12em))}
 .jr-rz-z{display:inline-block}
 
 /* Eroeffnung */
 .jr-open{align-items:center;text-align:center}
-.jr-av{position:relative;width:132px;aspect-ratio:1;margin-bottom:8px}
-.jr-av img{position:relative;width:100%;height:100%;border-radius:30%;object-fit:cover;object-position:center 86%;background:#fff;
+/* Feste Hoehe statt aspect-ratio: die Profilbilder sind 3:4, und in der
+   Spalte streckte der Browser den Rahmen auf die Bildhoehe — aus dem
+   weichen Viereck wurde eine hohe Pille, die rund wirkte. */
+.jr-av{position:relative;flex:none;width:132px;height:132px;min-height:0;margin-bottom:8px}
+/* Weiches Viereck wie ueberall in MOJI (Mitgliedskarte: 24 von 88 px). */
+.jr-av img{position:relative;width:100%;height:100%;border-radius:27%;object-fit:cover;object-position:center 86%;background:#fff;
   box-shadow:0 30px 60px -24px rgba(0,0,0,.6);opacity:0}
 .an .jr-av img{animation:jrScharf 1.3s .15s var(--ease-out) forwards}
 @keyframes jrScharf{0%{opacity:0;transform:translateY(22px) scale(.82);filter:blur(18px)}55%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none;filter:none}}
-.jr-av::before{content:"";position:absolute;left:50%;top:50%;width:230%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,255,255,.34),transparent 60%);opacity:0}
+/* Der Schein hat die Form des Bilds — ein runder Hof liess es rund wirken. */
+.jr-av::before{content:"";position:absolute;inset:-16%;border-radius:34%;background:rgba(255,255,255,.26);filter:blur(22px);opacity:0}
 .an .jr-av::before{animation:jrSchein 1.8s .1s var(--ease-out) forwards, jrAtmen 3.6s 1.9s ease-in-out infinite alternate}
 @keyframes jrSchein{from{opacity:0;transform:scale(.5)}to{opacity:1}}
 @keyframes jrAtmen{to{transform:scale(1.1);opacity:.7}}
@@ -3041,12 +3049,39 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-holo .jr-fach b{font-family:var(--font-dis);font-size:14px;letter-spacing:-.01em;text-transform:none}
 /* Die Folie: ein Farbfaecher, der sich mit dem Winkel verschiebt, und
    feine Linien wie bei einem Hologramm. Dazu ein Glanzpunkt am Finger. */
-.jr-folie{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:color-dodge;opacity:.34;
+.jr-folie{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:color-dodge;opacity:.22;
   background:
     repeating-linear-gradient(calc(var(--ang,0deg) + 110deg), rgba(255,255,255,0) 0 5%, rgba(255,255,255,.22) 7%, rgba(255,255,255,0) 9.5%),
     conic-gradient(from var(--ang,0deg) at var(--gx,50%) var(--gy,50%), #ff9bd4, #a9c9ff, #9ff0d0, #fff1a1, #ffb2a6, #ff9bd4)}
 .jr-glanzpunkt{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:overlay;
   background:radial-gradient(45% 35% at var(--gx,50%) var(--gy,30%), rgba(255,255,255,.75), transparent 70%)}
+
+/* Die Stufenleiter: jede erreichte Stufe mit gruenem Haken. */
+/* Zwei Spalten: bei drei wurden die Namen abgeschnitten. */
+.jr-leiter{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;max-width:340px}
+.jr-sc{position:relative;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 6px;border-radius:12px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);opacity:0;min-width:0;text-align:left}
+.jr-sc i{flex:none;width:20px;height:20px;border-radius:7px;background:var(--c);color:#fff;font-style:normal;
+  font:700 10.5px/20px var(--font-ui);text-align:center;box-shadow:0 0 0 1px rgba(255,255,255,.35) inset}
+.jr-sc small{flex:1;min-width:0;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}
+.jr-sc em{flex:none;width:16px;height:16px;border-radius:50%;background:#34C759;color:#fff;display:grid;place-items:center;
+  transform:scale(0);box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.jr-sc em svg{width:11px;height:11px}
+.an .jr-sc{animation:jrSc .6s var(--ease-out) forwards;animation-delay:calc(.6s + var(--i) * 90ms)}
+.an .jr-sc em{animation:jrHaken .45s cubic-bezier(.34,1.6,.5,1) forwards;animation-delay:calc(.85s + var(--i) * 90ms)}
+@keyframes jrSc{from{opacity:0;transform:translateY(10px) scale(.92);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes jrHaken{to{transform:none}}
+.jr-holo.klein{width:min(40vw,164px);margin:4px 0 6px;padding:7px;border-radius:18px}
+.jr-holo.klein .jr-band{padding:3px 4px 6px}
+.jr-holo.klein .jr-band b{font-size:13px}
+.jr-holo.klein .jr-wer{padding-top:6px}
+.jr-holo.klein .jr-wer b{font-size:13px}
+.jr-holo.klein .jr-fach{padding:6px 8px;font-size:8px}
+.jr-holo.klein .jr-fach b{font-size:11.5px;white-space:nowrap}
+.an .jr-holo.klein{animation-delay:var(--ab,.5s)}
+.jr-spruch{font-family:var(--font-dis);font-weight:500;font-size:19px;letter-spacing:-.01em;line-height:1.25;margin:0;
+  max-width:24ch;text-wrap:balance}
+.jr-stufe .jr-spruch, .jr-buddy .jr-spruch{margin-inline:auto;text-align:center}
 
 /* Bubble-Tea-Buddy */
 .jr-buddy{align-items:center;text-align:center}
@@ -3100,6 +3135,58 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .jr-flamme path{transform-origin:50% 90%;animation:jrFlackern 1.6s ease-in-out infinite alternate}
 @keyframes jrFlackern{0%{transform:scale(1,1) rotate(-2deg)}50%{transform:scale(.94,1.06) rotate(1deg)}100%{transform:scale(1.03,.96) rotate(2deg)}}
 
+/* Abschluss: die Karte im Format 4:5, so wie sie geteilt wird.
+   Ein eigener Verlauf aus der Stufe, Korn, Folie — und alles, was das
+   Jahr ausgemacht hat. */
+/* Satt statt blass: der Grund geht von der Stufenfarbe in ihr tiefes
+   Ende, die Nachbartoene leuchten nur in den Ecken. Hoehe fest auf 4:5 —
+   aspect-ratio allein gab dem Inhalt nach. */
+.jr-holo.jr-share{aspect-ratio:4/5;width:min(84vw,330px);height:calc(min(84vw,330px) * 1.25);
+  padding:16px;gap:10px;border-radius:26px;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(60% 45% at 0% 0%, var(--jr-warm), transparent 70%),
+    radial-gradient(65% 55% at 100% 100%, var(--jr-kuehl), transparent 72%),
+    radial-gradient(50% 40% at 85% 10%, rgba(255,255,255,.18), transparent 70%),
+    linear-gradient(160deg,var(--jr-a) 0%,var(--jr-b) 45%,var(--jr-tiefk) 100%);
+  box-shadow:0 50px 90px -40px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.28) inset}
+/* Die Folie schimmert hier weich (soft-light) — mit color-dodge hellte sie
+   die ganze Karte auf und nahm ihr die Farbe. */
+.jr-share .jr-folie{mix-blend-mode:soft-light;opacity:.6}
+/* Korn und Glanzpunkt nur leise — kraeftiger wuschen sie die Farbe aus. */
+.jr-share::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.1;mix-blend-mode:overlay;background-image:var(--jr-korn)}
+.jr-share .jr-glanzpunkt{opacity:.3}
+.jr-sh-kopf{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.jr-sh-lvl{padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);letter-spacing:.1em}
+.jr-sh-wer{display:flex;align-items:center;gap:11px}
+.jr-sh-wer img{width:46px;height:46px;border-radius:13px;object-fit:cover;object-position:center 86%;background:#fff;flex:none;
+  box-shadow:0 8px 16px -8px rgba(0,0,0,.5)}
+.jr-sh-wer span{min-width:0}
+.jr-sh-wer b{display:block;font-family:var(--font-dis);font-weight:600;font-size:17px;letter-spacing:-.015em;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-sh-wer small{display:block;font-size:10.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-sh-held b{display:block;font-family:var(--font-dis);font-weight:700;font-size:48px;letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(100deg,#fff 0 30%,var(--jr-glanz) 50%,#fff 70% 100%);background-size:260% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:jrHeld 5s 1.4s var(--ease-blend) infinite}
+@keyframes jrHeld{0%,15%{background-position:100% 0}60%,100%{background-position:0 0}}
+.jr-sh-held small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.78}
+.jr-sh-raster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.jr-sh-raster div{border-radius:12px;background:rgba(255,255,255,.14);padding:8px 9px;min-width:0}
+.jr-sh-raster b{display:block;font-family:var(--font-dis);font-weight:700;font-size:18px;letter-spacing:-.02em;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-sh-raster small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.72;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-sh-buddy{display:flex;align-items:center;gap:10px;border-radius:14px;padding:6px 10px 6px 6px;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22)}
+.jr-sh-buddy > span:not(.jr-ico){flex:1;min-width:0}
+.jr-sh-buddy small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+.jr-sh-buddy b{display:block;font-family:var(--font-dis);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jr-sh-tee{width:34px;height:40px;object-fit:contain;flex:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+.jr-sh-bav{width:32px;height:32px;border-radius:10px;object-fit:cover;object-position:center 86%;background:#fff;flex:none}
+.jr-sh-buddy .jr-ico{width:34px;height:34px}
+.jr-sh-fuss{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;opacity:.78}
+.jr-sh-fuss span:first-child{font-family:var(--font-dis);font-size:14px;letter-spacing:.02em;opacity:1}
+
 /* Abschluss */
 .jr-holo.breit{aspect-ratio:auto;width:min(80vw,310px);padding:18px 16px 16px;gap:14px}
 .jr-ende-kopf{display:flex;align-items:center;gap:12px;text-align:left}
@@ -3127,7 +3214,9 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
   .jr-rz-s{transition:none!important}
   .jr-saeulen span{transform:none!important;animation:none!important}
   .jr-metall{animation:none!important;background-position:50% 0}
-  .jr-med::after,.jr-flamme path{animation:none!important}
+  .jr-med::after,.jr-flamme path,.jr-sh-held b{animation:none!important}
+  .jr-sc{opacity:1!important;animation:none!important;filter:none!important}
+  .jr-sc em{transform:none!important;animation:none!important}
 }
 
 /* ─── Stufe, Karte, Rangliste ───────────────────────────────────────────
@@ -6964,7 +7053,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1130';
+const APP_STAND = '2026-09-27-1300';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -12001,6 +12090,7 @@ function jrFarbenAn(el, p){
   el.style.setProperty('--jr-hell', p.hell); el.style.setProperty('--jr-tief', p.tief);
   el.style.setProperty('--jr-glanz', p.glanz);
   el.style.setProperty('--jr-hochk', p.hochk); el.style.setProperty('--jr-tiefk', p.tiefk);
+  el.style.setProperty('--jr-warm', p.warm);   el.style.setProperty('--jr-kuehl', p.kuehl);
 }
 
 /* ─── Das Banner ─── */
@@ -12181,6 +12271,47 @@ const jrRollen = (t, v) => [...t].map((c, i) => /\d/.test(c)
     + '</span></span>'
   : '<span class="jr-rz-z jr-metall" style="--mz:' + (v + 1.9).toFixed(2) + 's">' + esc(c) + '</span>').join('');
 
+/* Ein Spruch je Stufe — unter der Karte im Stufen-Kapitel. */
+const JR_STUFE_SPRUCH = [
+  'Jede Legende fängt mit dem ersten Eintrag an.',
+  'Warmgelaufen — und MOJI kennt jetzt deinen Rhythmus.',
+  'Läuft bei dir. Wortwörtlich.',
+  'Auf dich ist Verlass. Auf deine Stunden auch.',
+  'Andere suchen noch Zettel. Du bist schon fertig.',
+  'Summ, summ — und schon ist der Monat abgegeben.',
+  'Pünktlich wie ein Uhrwerk. Nur charmanter.',
+  'Deine Stunden stapeln sich schöner als jedes Regal.',
+  'Schlau wie ein Fuchs, ordentlich wie ein Archiv.',
+  'Die Zeit arbeitet für dich — nicht umgekehrt.',
+  'Ordnung ist das halbe Leben. Du hast beide Hälften.',
+  'Ganz oben. Ab hier schreibst du Geschichte.'
+];
+/* Und einer fuer den Bubble-Tea-Buddy — kollegial, nach Anzahl gestaffelt. */
+function jrTeeSpruch(n, name){
+  const vn = String(name || '').split(' ')[0] || 'euch';
+  if(n <= 2)  return 'Der Anfang einer wunderbaren Tee-Freundschaft.';
+  if(n <= 9)  return 'Mit ' + vn + ' schmeckt sogar der Montag nach Pause.';
+  if(n <= 19) return 'Ihr zwei haltet den Laden am Laufen — mit Tapioka.';
+  if(n <= 39) return 'Das Dreamteam der Filiale. Slurp auf euch!';
+  return 'Offiziell unzertrennlich. Die Bubble-Tea-Bar kennt eure Namen.';
+}
+/* Die Kacheln der Abschlusskarte: sechs Werte, die es in dem Jahr gab. */
+const JR_MON_KURZ = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+function jrKacheln(d){
+  const k = [];
+  k.push({ w:fmtT(d.urlaub).replace(/ Tage?$/, '').replace('keine', '0'), t:'Urlaubstage' });
+  k.push({ w:d.abgegeben + '/' + d.verfuegbar, t:'Abgegeben' });
+  if(d.serie >= 2) k.push({ w:d.serie + ' T.', t:'Längste Serie' });
+  if(d.top) k.push({ w:JR_MON_KURZ[d.top.m], t:'Top-Monat' });
+  if(d.tee) k.push({ w:String(d.tee.summe), t:'Bubble Teas' });
+  if(d.gespart > 0) k.push({ w:fmtDauer(d.gespart).replace(' Std', 'h').replace(' Min', 'm'), t:'Zeit gespart' });
+  if(d.bruecken) k.push({ w:String(d.bruecken), t:'Brückentage' });
+  if(d.frueh) k.push({ w:d.frueh, t:'Frühester Start' });
+  k.push({ w:String(d.dabei), t:'Monate MOJI' });
+  return k.slice(0, 6);
+}
+const JR_HAKEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
 /* Die Kapitel, die es fuer dieses Jahr gibt. Jedes traegt seine
    Stimmung (vier Farben fuer den Verlauf) und wie lange es steht. */
 function jrKapitel(d){
@@ -12209,22 +12340,29 @@ function jrKapitel(d){
           + jrTausend(d.top.work) + ' Stunden</span>' : '')
       + '</div>' });
   }
-  k.push({ id:'stufe', dauer:8, holo:true, st:[p.nacht, p.kuehl, p.b, p.dunkel], html:
+  /* Die Stufe: erst alle erreichten mit gruenem Haken, dann die
+     aktuelle als Holo-Karte, darunter ihr Spruch. */
+  const frueher = [];
+  for(let n = 1; n < nr; n++) frueher.push(n);
+  const kartenAb = (.6 + frueher.length * .09 + .25).toFixed(2);
+  k.push({ id:'stufe', dauer:Math.max(8, 5.5 + frueher.length * .3), holo:true, st:[p.nacht, p.kuehl, p.b, p.dunkel], html:
     '<div class="jr-kin jr-stufe">'
     + '<p class="jr-kick">' + jrWoerter(d.aufstiege ? 'Du bist aufgestiegen' : 'Deine Stufe', .2) + '</p>'
-    + '<div class="jr-holo" id="jr-holo">'
+    + (frueher.length ? '<div class="jr-leiter">' + frueher.map((n, i) => '<span class="jr-sc" style="--c:' + rang(n).a + ';--i:' + i + '">'
+        + '<i>' + n + '</i><small>' + esc(rang(n).n) + '</small><em>' + JR_HAKEN + '</em></span>').join('') + '</div>' : '')
+    + '<div class="jr-holo klein" id="jr-holo" style="--ab:' + kartenAb + 's">'
     +   '<div class="jr-band"><b>' + esc(r.n) + '</b><span>' + nr + ' / ' + RAENGE.length + '</span></div>'
     +   '<div class="jr-fenster"><img src="' + av + '" alt=""></div>'
     +   '<div class="jr-wer"><b>' + esc(ME.vorname + ' ' + ME.nachname) + '</b><small>' + esc(EMPLOYER) + '</small></div>'
     +   '<div class="jr-fach"><span>Zeit gespart</span><b>' + (gespartMin() ? fmtDauer(gespartMin()) : 'noch nichts') + '</b></div>'
     +   '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>'
     + '</div>'
-    + '<p class="jr-klein jr-ruhig" style="--v:1.9s;margin-inline:auto">Stufe ' + nr
-    + (d.aufstiege ? ' · ' + (d.aufstiege === 1 ? 'eine Stufe' : d.aufstiege + ' Stufen') + ' höher als im Jänner.' : ' · ' + esc(r.w))
-    + ' Streich über die Karte.</p></div>' });
+    + '<p class="jr-spruch jr-ruhig" style="--v:' + (+kartenAb + 1.1).toFixed(2) + 's">' + esc(JR_STUFE_SPRUCH[nr - 1]) + '</p>'
+    + '<p class="jr-klein jr-ruhig" style="--v:' + (+kartenAb + 1.5).toFixed(2) + 's;margin-inline:auto">Stufe ' + nr
+    + (d.aufstiege ? ' · ' + (d.aufstiege === 1 ? 'eine Stufe' : d.aufstiege + ' Stufen') + ' höher als im Jänner' : '') + '</p></div>' });
   if(d.tee && d.tee.buddy){
     const b = d.tee.buddy;
-    k.push({ id:'buddy', dauer:8, st:[p.dunkel, p.warm, p.b, p.nacht], html:
+    k.push({ id:'buddy', dauer:8.5, st:[p.dunkel, p.warm, p.b, p.nacht], html:
       '<div class="jr-kin jr-buddy">'
       + '<p class="jr-kick">' + jrWoerter('Dein Bubble-Tea-Buddy', .2) + '</p>'
       + '<div class="jr-paar"><img class="jr-ich" src="' + av + '" alt="">'
@@ -12233,7 +12371,8 @@ function jrKapitel(d){
       + '<h3 class="jr-buddy-name">' + jrZeichen(b.name, 1.9) + '</h3>'
       + '<div class="jr-buddy-zahl"><div class="jr-zahl">' + jrRollen(String(b.punkte), 2.2) + '</div>'
       +   '<p class="jr-einheit jr-ruhig" style="--v:2.5s">' + (b.punkte === 1 ? 'Bubble Tea' : 'Bubble Teas') + ' zwischen euch</p></div>'
-      + '<span class="jr-pille jr-ruhig" style="--v:3.3s"><i style="background:' + b.tee.f + '"></i>Tee-Stufe ' + b.lvl + ' · ' + esc(b.tee.n) + '</span>'
+      + '<p class="jr-spruch jr-ruhig" style="--v:3.1s">' + esc(jrTeeSpruch(b.punkte, b.name)) + '</p>'
+      + '<span class="jr-pille jr-ruhig" style="--v:3.6s"><i style="background:' + b.tee.f + '"></i>Tee-Stufe ' + b.lvl + ' · ' + esc(b.tee.n) + '</span>'
       + '</div>' });
   }
   const abz = jrAbzeichen(d);
@@ -12245,27 +12384,31 @@ function jrKapitel(d){
           + '<span class="jr-ico">' + JR_ICO[a.i] + '</span><span><b>' + esc(a.w) + '</b><br><small>' + esc(a.t) + '</small></span></div>').join('')
       + '</div></div>' });
   }
-  const werte = [
-    { w:jrTausend(d.work), t:'Stunden' },
-    { w:fmtT(d.urlaub).replace(/ Tage?$/, '').replace('keine', '0'), t:'Urlaubstage' },
-    { w:d.abgegeben + '/' + d.verfuegbar, t:'Abgegeben' },
-    d.tee ? { w:String(d.tee.summe), t:'Bubble Teas' }
-      : d.gespart > 0 ? { w:fmtDauer(d.gespart), t:'Zeit gespart' }
-      : { w:String(d.dabei), t:d.dabei === 1 ? 'Monat mit MOJI' : 'Monate mit MOJI' }
-  ];
+  /* Die Abschlusskarte im Format 4:5 — genau so, wie sie geteilt wird. */
+  const kach = jrKacheln(d), bu = d.tee && d.tee.buddy;
+  const abz0 = jrAbzeichen(d)[0];
   k.push({ id:'ende', dauer:0, holo:true, ende:true, st:[p.b, p.tief, p.warm, p.dunkel], html:
     '<div class="jr-kin jr-ende">'
     + '<p class="jr-kick">' + jrWoerter('Das war dein ' + d.y, .2) + '</p>'
-    + '<div class="jr-holo breit" id="jr-holo">'
-    +   '<div class="jr-ende-kopf"><img src="' + av + '" alt=""><span><b>' + esc(ME.vorname) + ' · ' + esc(r.n) + '</b>'
-    +   '<small>Stufe ' + nr + ' von ' + RAENGE.length + '</small></span></div>'
-    +   '<div class="jr-werte">' + werte.map(x => '<div><b>' + esc(x.w) + '</b><small>' + x.t + '</small></div>').join('') + '</div>'
+    + '<div class="jr-holo jr-share" id="jr-holo">'
+    +   '<div class="jr-sh-kopf"><span>MOJI · ' + d.y + '</span><span class="jr-sh-lvl">LVL ' + nr + '</span></div>'
+    +   '<div class="jr-sh-wer"><img src="' + av + '" alt=""><span><b>' + esc(ME.vorname + ' ' + ME.nachname) + '</b>'
+    +     '<small>' + esc(r.n) + ' · ' + esc(EMPLOYER) + '</small></span></div>'
+    +   '<div class="jr-sh-held"><b>' + jrTausend(d.work) + '</b><small>Stunden gearbeitet</small></div>'
+    +   '<div class="jr-sh-raster">' + kach.map(x => '<div><b>' + esc(x.w) + '</b><small>' + esc(x.t) + '</small></div>').join('') + '</div>'
+    +   (bu
+          ? '<div class="jr-sh-buddy"><img class="jr-sh-tee" src="tee-' + bu.lvl + '.webp" alt=""><span><small>Bester Tee-Freund</small>'
+            + '<b>' + esc(bu.name) + ' · ' + bu.punkte + (bu.punkte === 1 ? ' Tea' : ' Teas') + '</b></span>'
+            + (bu.avatar ? '<img class="jr-sh-bav" src="' + bu.avatar + '" alt="">' : '') + '</div>'
+          : (abz0 ? '<div class="jr-sh-buddy"><span class="jr-ico">' + JR_ICO[abz0.i] + '</span><span><small>' + esc(abz0.t) + '</small>'
+            + '<b>' + esc(abz0.w) + '</b></span></div>' : ''))
+    +   '<div class="jr-sh-fuss"><span>MOJI</span><span>moji-app.at</span></div>'
     +   '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>'
     + '</div>'
     + '<div class="jr-knoepfe jr-ruhig" style="--v:1.6s"><button class="jr-haupt" type="button" id="jr-teilen">Teilen</button>'
     +   '<button class="jr-neben" type="button" id="jr-nochmal">Nochmal</button></div>'
     + '<p class="jr-klein jr-ruhig" style="--v:2s;margin-inline:auto">Auf ein gutes ' + (d.y + 1) + '.</p>'
-    + '</div>', werte:werte });
+    + '</div>', kacheln:kach });
   return k;
 }
 
@@ -12361,7 +12504,7 @@ function jrSchicht(i){
   $$('.jr-rz', d).forEach(z => {
     const s = z.firstElementChild, b = s && s.children[+s.style.getPropertyValue('--d') || 0];
     const w = b ? b.getBoundingClientRect().width : 0;
-    if(w > 0) z.style.width = w + 'px';
+    if(w > 0) z.style.width = 'calc(' + w.toFixed(1) + 'px + .06em)';
   });
   requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('an')));
   if(JR.still) d.classList.add('an');
@@ -12454,54 +12597,119 @@ function jrZu(){
    Variablen. 1080 x 1350. */
 async function jrBild(){
   const d = JR.daten; if(!d) return null;
-  const B = 1080, H = 1350, p = d.p, r = rang(d.stufe);
+  /* 1080 x 1350 — 4:5, dieselbe Karte wie auf dem Schirm. Gezeichnet
+     wird in Karteneinheiten (330 x 412,5) und hochgerechnet. */
+  const B = 1080, H = 1350, S = B / 330, p = d.p, r = rang(d.stufe);
   const cv = document.createElement('canvas'); cv.width = B; cv.height = H;
   const c = cv.getContext('2d'); if(!c) return null;
   try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
   const stil = getComputedStyle(document.documentElement);
   const DIS = (stil.getPropertyValue('--font-dis') || '').trim() || "'Bricolage Grotesque',Georgia,serif";
   const UI  = (stil.getPropertyValue('--font-ui') || '').trim() || "'Plus Jakarta Sans',sans-serif";
-  const rrect = (x, y, w, h, rr) => { c.beginPath(); c.moveTo(x + rr, y);
-    c.arcTo(x + w, y, x + w, y + h, rr); c.arcTo(x + w, y + h, x, y + h, rr);
-    c.arcTo(x, y + h, x, y, rr); c.arcTo(x, y, x + w, y, rr); c.closePath(); };
-  /* Der Verlauf der Abschlussseite */
-  c.fillStyle = p.b; c.fillRect(0, 0, B, H);
-  [[p.warm, .2, .18, .75], [p.tief, .85, .2, .7], [p.dunkel, .72, .9, .9], [p.warm, .2, .88, .6]].forEach(([f, fx, fy, fr]) => {
+  const x = v => v * S;
+  const rrect = (X, Y, W, Hh, rr) => { c.beginPath(); c.moveTo(X + rr, Y);
+    c.arcTo(X + W, Y, X + W, Y + Hh, rr); c.arcTo(X + W, Y + Hh, X, Y + Hh, rr);
+    c.arcTo(X, Y + Hh, X, Y, rr); c.arcTo(X, Y, X + W, Y, rr); c.closePath(); };
+  const lade = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  const schrift = (gew, px, fam) => { c.font = gew + ' ' + Math.round(px * S) + 'px ' + fam; };
+  const passend = (t, max) => { let s = String(t); while(s.length > 1 && c.measureText(s).width > max) s = s.slice(0, -2) + '…'; return s; };
+  const bildIn = (img, X, Y, W, Hh, rr, fuellen) => {
+    c.save(); rrect(X, Y, W, Hh, rr); c.clip();
+    if(fuellen){ c.fillStyle = '#fff'; c.fillRect(X, Y, W, Hh); }
+    const sw = img.width, sh = Math.min(img.height, sw * Hh / W), sy = Math.max(0, (img.height - sh) * .86);
+    c.drawImage(img, 0, sy, sw, sh, X, Y, W, Hh); c.restore();
+  };
+
+  /* Grund: Verlauf der Stufe mit zwei Nachbartoenen */
+  const lg = c.createLinearGradient(0, 0, B * .45, H);
+  lg.addColorStop(0, p.a); lg.addColorStop(.45, p.b); lg.addColorStop(1, p.tiefk);
+  c.fillStyle = lg; c.fillRect(0, 0, B, H);
+  [[p.warm, 0, 0, .7], [p.kuehl, 1, 1, .78], ['rgba(255,255,255,.22)', .85, .1, .5]].forEach(([f, fx, fy, fr]) => {
     const g = c.createRadialGradient(B * fx, H * fy, 0, B * fx, H * fy, B * fr);
     g.addColorStop(0, f); g.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = g; c.fillRect(0, 0, B, H);
+    c.globalAlpha = .9; c.fillStyle = g; c.fillRect(0, 0, B, H); c.globalAlpha = 1;
   });
-  c.fillStyle = '#fff'; c.textAlign = 'left';
-  c.font = '500 44px ' + DIS; c.fillText('Mein Jahr', 90, 170);
-  c.font = '700 190px ' + DIS; c.fillText(String(d.y), 80, 340);
-  /* Die Karte */
-  const kx = 90, ky = 420, kb = B - 180, kh = 720;
-  const kg = c.createLinearGradient(kx, ky, kx + kb * .4, ky + kh);
-  kg.addColorStop(0, p.hochk); kg.addColorStop(1, p.tiefk);
-  c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 60; c.shadowOffsetY = 30;
-  c.fillStyle = kg; rrect(kx, ky, kb, kh, 56); c.fill(); c.restore();
-  const bild = await new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = avDatei(avNummer()); });
-  if(bild){
-    c.save(); rrect(kx + 50, ky + 50, 150, 150, 48); c.clip();
-    c.fillStyle = '#fff'; c.fillRect(kx + 50, ky + 50, 150, 150);
-    const sw = bild.width, sy = (bild.height - sw) * .86;
-    c.drawImage(bild, 0, sy > 0 ? sy : 0, sw, Math.min(sw, bild.height), kx + 50, ky + 50, 150, 150);
-    c.restore();
+  /* Folie: ein schraeger Farbfaecher, sehr leise */
+  const fo = c.createLinearGradient(0, H * .15, B, H * .85);
+  ['rgba(255,155,212,0)', 'rgba(255,155,212,.16)', 'rgba(169,201,255,.2)', 'rgba(159,240,208,.14)', 'rgba(255,241,161,.16)', 'rgba(255,241,161,0)']
+    .forEach((f, i, a) => fo.addColorStop(i / (a.length - 1), f));
+  c.globalCompositeOperation = 'overlay'; c.fillStyle = fo; c.fillRect(0, 0, B, H);
+  /* Korn: feines Rauschen, damit es wie Papier wirkt */
+  const kn = document.createElement('canvas'); kn.width = kn.height = 180;
+  const kc = kn.getContext('2d');
+  if(kc){
+    const bd = kc.createImageData(180, 180);
+    for(let i = 0; i < bd.data.length; i += 4){ const v = Math.random() * 255; bd.data[i] = bd.data[i+1] = bd.data[i+2] = v; bd.data[i+3] = 30; }
+    kc.putImageData(bd, 0, 0);
+    c.fillStyle = c.createPattern(kn, 'repeat'); c.fillRect(0, 0, B, H);
   }
-  c.fillStyle = '#fff'; c.font = '600 58px ' + DIS; c.fillText(ME.vorname + ' · ' + r.n, kx + 230, ky + 120);
-  c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '500 30px ' + UI; c.fillText('Stufe ' + d.stufe + ' von ' + RAENGE.length, kx + 230, ky + 170);
-  const w = (JR.kap.find(k => k.ende) || {}).werte || [];
-  w.forEach((x, i) => {
-    const bx = kx + 50 + (i % 2) * ((kb - 130) / 2 + 30), by = ky + 250 + Math.floor(i / 2) * 210, bb = (kb - 130) / 2, bh = 180;
-    c.fillStyle = 'rgba(255,255,255,.14)'; rrect(bx, by, bb, bh, 36); c.fill();
-    c.fillStyle = '#fff'; c.font = '700 76px ' + DIS; c.fillText(x.w, bx + 36, by + 100);
-    c.fillStyle = 'rgba(255,255,255,.72)'; c.font = '700 24px ' + UI; c.fillText(x.t.toUpperCase(), bx + 36, by + 146);
+  c.globalCompositeOperation = 'source-over';
+
+  const P = 18, W = 330 - P * 2;
+  c.textBaseline = 'alphabetic'; c.fillStyle = '#fff';
+  /* Kopf */
+  schrift('700', 10.5, UI); c.textAlign = 'left';
+  if('letterSpacing' in c) c.letterSpacing = Math.round(1.6 * S) + 'px';
+  c.fillText('MOJI · ' + d.y, x(P), x(P + 12));
+  const lvl = 'LVL ' + d.stufe; const lw = c.measureText(lvl).width + x(20);
+  c.fillStyle = 'rgba(255,255,255,.2)'; rrect(x(330 - P) - lw, x(P - 2), lw, x(20), x(10)); c.fill();
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(lvl, x(330 - P) - lw / 2, x(P + 12));
+  if('letterSpacing' in c) c.letterSpacing = '0px';
+  /* Wer */
+  const ich = await lade(avDatei(avNummer()));
+  if(ich) bildIn(ich, x(P), x(44), x(50), x(50), x(14), true);
+  c.textAlign = 'left'; c.fillStyle = '#fff'; schrift('600', 19, DIS);
+  c.fillText(passend(ME.vorname + ' ' + ME.nachname, x(W - 62)), x(P + 62), x(66));
+  c.fillStyle = 'rgba(255,255,255,.78)'; schrift('500', 11, UI);
+  c.fillText(passend(r.n + ' · ' + EMPLOYER, x(W - 62)), x(P + 62), x(84));
+  /* Die grosse Zahl mit Metallglanz */
+  schrift('700', 54, DIS);
+  const zahl = jrTausend(d.work), zw = c.measureText(zahl).width;
+  const mg = c.createLinearGradient(x(P), 0, x(P) + zw, 0);
+  mg.addColorStop(0, '#ffffff'); mg.addColorStop(.5, p.glanz); mg.addColorStop(1, '#ffffff');
+  c.fillStyle = mg; c.fillText(zahl, x(P - 1), x(152));
+  c.fillStyle = 'rgba(255,255,255,.78)'; schrift('700', 10.5, UI);
+  if('letterSpacing' in c) c.letterSpacing = Math.round(1.2 * S) + 'px';
+  c.fillText('STUNDEN GEARBEITET', x(P), x(170));
+  if('letterSpacing' in c) c.letterSpacing = '0px';
+  /* Sechs Kacheln */
+  const kach = (JR.kap.find(k => k.ende) || {}).kacheln || jrKacheln(d);
+  const kb = (W - 16) / 3, kh = 52;
+  kach.forEach((k, i) => {
+    const X = P + (i % 3) * (kb + 8), Y = 184 + Math.floor(i / 3) * (kh + 8);
+    c.fillStyle = 'rgba(255,255,255,.14)'; rrect(x(X), x(Y), x(kb), x(kh), x(12)); c.fill();
+    c.fillStyle = '#fff'; schrift('700', 19, DIS); c.fillText(passend(k.w, x(kb - 16)), x(X + 9), x(Y + 26));
+    c.fillStyle = 'rgba(255,255,255,.72)'; schrift('700', 8.5, UI); c.fillText(passend(k.t.toUpperCase(), x(kb - 14)), x(X + 9), x(Y + 42));
   });
-  c.textAlign = 'center';
-  c.fillStyle = 'rgba(255,255,255,.9)'; c.font = '600 32px ' + UI;
-  c.fillText('Arbeitszeit ohne Zettel — moji-app.at', B / 2, H - 90);
+  /* Bester Tee-Freund — oder das staerkste Abzeichen */
+  const bu = d.tee && d.tee.buddy, abz0 = jrAbzeichen(d)[0];
+  const sy = 184 + 2 * (kh + 8) + 2;
+  if(bu || abz0){
+    c.fillStyle = 'rgba(255,255,255,.16)'; rrect(x(P), x(sy), x(W), x(54), x(15)); c.fill();
+    let tx = P + 12;
+    if(bu){
+      const tee = await lade('tee-' + bu.lvl + '.webp');
+      if(tee){ const th = 44, tw = tee.width / tee.height * th; c.drawImage(tee, x(P + 8), x(sy + 5), x(tw), x(th)); tx = P + 14 + tw; }
+      const du = bu.avatar ? await lade(bu.avatar) : null;
+      if(du) bildIn(du, x(330 - P - 44), x(sy + 9), x(36), x(36), x(11), true);
+    }
+    c.fillStyle = 'rgba(255,255,255,.75)'; schrift('700', 8.5, UI);
+    if('letterSpacing' in c) c.letterSpacing = Math.round(1 * S) + 'px';
+    c.fillText((bu ? 'BESTER TEE-FREUND' : abz0.t.toUpperCase()), x(tx), x(sy + 22));
+    if('letterSpacing' in c) c.letterSpacing = '0px';
+    c.fillStyle = '#fff'; schrift('600', 15, DIS);
+    c.fillText(passend(bu ? bu.name + ' · ' + bu.punkte + (bu.punkte === 1 ? ' Tea' : ' Teas') : abz0.w, x(W - (tx - P) - (bu ? 50 : 10))), x(tx), x(sy + 41));
+  }
+  /* Fuss */
+  c.fillStyle = '#fff'; schrift('700', 15, DIS); c.textAlign = 'left';
+  c.fillText('MOJI', x(P), x(393));
+  c.fillStyle = 'rgba(255,255,255,.78)'; schrift('700', 10, UI); c.textAlign = 'right';
+  if('letterSpacing' in c) c.letterSpacing = Math.round(1.2 * S) + 'px';
+  c.fillText('MOJI-APP.AT', x(330 - P), x(392));
+  if('letterSpacing' in c) c.letterSpacing = '0px';
   return await new Promise(res => {
-    try{ cv.toBlob(b => res(b ? new File([b], 'moji-jahr-' + d.y + '.png', { type:'image/png' }) : null), 'image/png'); }
+    /* JPEG statt PNG: das Korn machte das PNG 3,3 MB schwer. */
+    try{ cv.toBlob(b => res(b ? new File([b], 'moji-jahr-' + d.y + '.jpg', { type:'image/jpeg' }) : null), 'image/jpeg', .92); }
     catch(e){ res(null); }
   });
 }

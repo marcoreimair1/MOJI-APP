@@ -591,8 +591,16 @@ Story (`jrAuf()`). Zum Ansehen vor Dezember: **moji-app.at/?rueckblick** in Safa
 laufenden Tab.
 
 **Kapitel** (nur die mit Inhalt): Eröffnung („Dein Jahr 2026") · Stunden mit rollender Zahl,
-Vergleich und zwölf Säulen · Stufe als Holo-Karte · Bubble-Tea-Buddy · Abzeichen · Abschluss mit
-Teilen-Bild (`jrBild()`, 1080 × 1350). Bedienung wie Stories: rechts weiter, links zurück, halten
+Vergleich und zwölf Säulen · Stufe: erst alle erreichten Stufen mit grünem Haken (zwei Spalten),
+dann die aktuelle als Holo-Karte, darunter ein Spruch je Stufe (`JR_STUFE_SPRUCH`) ·
+Bubble-Tea-Buddy mit kollegialem Spruch nach Anzahl (`jrTeeSpruch()`) · Abzeichen · Abschluss:
+die **Teilkarte im Format 4:5** — Stufe, Stunden, sechs Kacheln (`jrKacheln()`), bester
+Tee-Freund oder das stärkste Abzeichen. `jrBild()` zeichnet genau diese Karte in 1080 × 1350
+als JPEG (als PNG waren es durch das Korn 3,3 MB).
+
+Zwei Fallen, die dabei aufgefallen sind: Das Profilbild (3:4) streckte in der Flex-Spalte seinen
+Rahmen mit `aspect-ratio` auf die Bildhöhe und wurde zur runden Pille — daher feste Höhe. Und die
+Holo-Folie mit `color-dodge` wusch die Teilkarte aus; dort mischt sie jetzt mit `soft-light`. Bedienung wie Stories: rechts weiter, links zurück, halten
 pausiert, das letzte Kapitel läuft nicht von selbst weiter.
 
 **Gestaltung:** jedes Kapitel ein lebender Verlauf aus der Stufenfarbe und zwei Nachbartönen

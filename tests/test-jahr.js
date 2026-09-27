@@ -121,7 +121,37 @@ ok('Mit Buddy sechs Kapitel', ids === 'auf,std,stufe,buddy,abz,ende', ids);
 dA.tee = null;
 const ids2 = jrKapitel(dA).map(k => k.id).join(',');
 ok('Ohne Teas faellt der Buddy weg', ids2 === 'auf,std,stufe,abz,ende', ids2);
-ok('Die Abschlusskarte traegt vier Werte', jrKapitel(dA).find(k => k.ende).werte.length === 4);
+const kach = jrKapitel(dA).find(k => k.ende).kacheln;
+ok('Die Abschlusskarte traegt sechs Kacheln', kach.length === 6, kach.length);
+ok('Mit Urlaub und Abgegeben vorn', kach[0].t === 'Urlaubstage' && kach[1].t === 'Abgegeben' && kach[1].w === '2/12', kach[1].w);
+ok('Und der laengsten Serie', kach.some(k => k.t === 'Längste Serie' && k.w === '5 T.'));
+/* Die Stufe: alle erreichten mit Haken, dann die aktuelle */
+const dS = jrDaten(2025, heute); dS.p = jrPalette(4); dS.stufe = 4; dS.aufstiege = 2;
+const hS = jrKapitel(dS).find(k => k.id === 'stufe').html;
+const tS = document.createElement('div'); tS.innerHTML = hS;
+ok('Drei erreichte Stufen vor der vierten', tS.querySelectorAll('.jr-leiter .jr-sc').length === 3, tS.querySelectorAll('.jr-sc').length);
+ok('Jede mit gruenem Haken', tS.querySelectorAll('.jr-sc em svg').length === 3);
+ok('In ihrer Farbe', tS.querySelector('.jr-sc').getAttribute('style').indexOf(rang(1).a) > -1);
+ok('Dann die aktuelle Karte', tS.querySelector('.jr-holo .jr-band b').textContent === rang(4).n);
+ok('Die Karte kommt nach der Leiter', parseFloat(tS.querySelector('.jr-holo').style.getPropertyValue('--ab')) > .6 + 3 * .09);
+ok('Darunter ihr Spruch', tS.querySelector('.jr-spruch').textContent === JR_STUFE_SPRUCH[3], tS.querySelector('.jr-spruch').textContent);
+ok('Zwoelf Sprueche fuer zwoelf Stufen', JR_STUFE_SPRUCH.length === RAENGE.length);
+dS.stufe = 1; dS.aufstiege = 0;
+const t1 = document.createElement('div'); t1.innerHTML = jrKapitel(dS).find(k => k.id === 'stufe').html;
+ok('Auf Stufe 1 gibt es keine Leiter', !t1.querySelector('.jr-leiter'));
+/* Der Buddy bekommt seinen Spruch */
+dA.tee = t26;
+const tB = document.createElement('div'); tB.innerHTML = jrKapitel(dA).find(k => k.id === 'buddy').html;
+ok('Unter der Tee-Zahl ein Spruch', !!tB.querySelector('.jr-buddy-zahl + .jr-spruch'), tB.querySelector('.jr-spruch') && tB.querySelector('.jr-spruch').textContent);
+ok('Kollegial gestaffelt', jrTeeSpruch(1, 'Anna M.') !== jrTeeSpruch(24, 'Anna M.') && jrTeeSpruch(5, 'Anna M.').indexOf('Anna') > -1);
+/* Die Abschlusskarte kennt den besten Tee-Freund */
+const tE = document.createElement('div'); tE.innerHTML = jrKapitel(dA).find(k => k.ende).html;
+ok('Die Karte ist das Teilbild im Format 4:5', !!tE.querySelector('.jr-holo.jr-share'));
+ok('Mit dem besten Tee-Freund', tE.querySelector('.jr-sh-buddy b').textContent === 'Anna M. · 24 Teas', tE.querySelector('.jr-sh-buddy b').textContent);
+ok('Mit Stufe und Stunden', tE.querySelector('.jr-sh-lvl').textContent === 'LVL ' + dA.stufe && tE.querySelector('.jr-sh-held b').textContent === jrTausend(dA.work));
+dA.tee = null;
+const tE2 = document.createElement('div'); tE2.innerHTML = jrKapitel(dA).find(k => k.ende).html;
+ok('Ohne Tee-Freund steht dort das staerkste Abzeichen', tE2.querySelector('.jr-sh-buddy small').textContent === 'Längste Tagesserie');
 ok('Die Farben kommen aus der Stufe', jrPalette(1).a === rang(1).a && jrPalette(12).glanz === '#FFE9A8');
 const leer = normalize({ id:'n', vorname:'Neu', nachname:'Ling', dob:'2000-01-01', seit: new Date(2025, 0, 1).getTime(),
   sched: { weeks: [[0,1,2,3,4,5,6].map(() => ({ vmOn:false, nmOn:false, vmFrom:'08:00', vmTo:'12:00', nmFrom:'13:00', nmTo:'17:00' }))], offset:0 } });
@@ -202,7 +232,16 @@ setTimeout(() => {
    ['Zahlen rollen Ziffer fuer Ziffer', /\.an \.jr-rz-s\{transition:transform 1\.9s/.test(roh)],
    ['Die Holo-Karte traegt eine Folie', /\.jr-folie\{[\s\S]{0,120}mix-blend-mode:color-dodge/.test(roh)],
    ['Weniger Bewegung: alles steht', /prefers-reduced-motion:reduce\)\{\s*\n\s*\.jr-kap\{animation:none\}/.test(roh)],
-   ['Auf der Leinwand echte Farben', /async function jrBild\(\)\{[\s\S]{0,700}getPropertyValue\('--font-dis'\)/.test(roh)],
+   ['Auf der Leinwand echte Farben', /async function jrBild\(\)\{[\s\S]{0,900}getPropertyValue\('--font-dis'\)/.test(roh)],
+   ['Das Teilbild ist ein JPEG, kein 3-MB-PNG', /'moji-jahr-' \+ d\.y \+ '\.jpg', \{ type:'image\/jpeg' \}\) : null\), 'image\/jpeg', \.92\)/.test(roh)],
+   ['Die Folie waescht die Teilkarte nicht aus', /\.jr-share \.jr-folie\{mix-blend-mode:soft-light;opacity:\.6\}/.test(roh)],
+   ['Die Stufenleiter hat zwei Spalten', /\.jr-leiter\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(roh)],
+   ['Das Teilbild ist 4:5', /const B = 1080, H = 1350, S = B \/ 330/.test(roh) && /\.jr-holo\.jr-share\{aspect-ratio:4\/5;/.test(roh)],
+   ['Das Profilbild ist ein weiches Viereck wie ueberall', /\.jr-av img\{[^}]*border-radius:27%/.test(roh)],
+   ['Das Profilbild bleibt quadratisch, auch in der Spalte', /\.jr-av\{[^}]*flex:none;width:132px;height:132px;min-height:0/.test(roh)],
+   ['Kein runder Schein mehr dahinter', /\.jr-av::before\{[^}]*border-radius:34%/.test(roh)],
+   ['Die Ziffern werden nicht mehr abgeschnitten',
+    /\.jr-zahl\{[^}]*letter-spacing:0;/.test(roh) && /\.jr-rz\{[^}]*height:1\.12em/.test(roh) && /translateY\(calc\(var\(--d\) \* -1\.12em\)\)/.test(roh)],
    ['Alles mit eigenem Vorsatz', !/\n\.kap\{|\n\.holo\{|\n\.medaille\{/.test(roh)]
   ].forEach(([n, gut]) => E.push({ n, ok: !!gut, z: gut ? '' : 'Regel fehlt' }));
 
