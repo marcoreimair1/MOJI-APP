@@ -2781,30 +2781,29 @@ body.locked #tabbar{
 /* Die Erklärung der Farben, gleich breite Kacheln. Am Handy passen höchstens
    drei nebeneinander; ab vier stehen sie zwei und zwei, Name und Stunden in
    einer Zeile. Erst ab 400 px Kartenbreite (Tablet) kommen vier in eine Reihe. */
-.mleg{--sp:2;display:grid;grid-template-columns:repeat(var(--sp),minmax(0,1fr));gap:7px;margin-top:12px}
+.mleg{--sp:2;display:grid;grid-template-columns:repeat(var(--sp),minmax(0,1fr));gap:6px;margin-top:11px}
 .mleg:empty{display:none}
 .mleg.n3{--sp:3}
 @container (min-width:400px){ .mleg.n4{--sp:4} .mleg.n5,.mleg.n6{--sp:3} }
-.ml{min-width:0;padding:9px 10px 10px;border-radius:14px;border:1px solid var(--ml-rand,var(--line-2));
+.ml{min-width:0;padding:6px 9px 7px;border-radius:11px;border:1px solid var(--ml-rand,var(--line-2));
   background:var(--ml-grund,transparent);animation:mlIn .5s var(--ease-out) both}
 .ml:nth-child(2){animation-delay:.06s}.ml:nth-child(3){animation-delay:.12s}
 .ml:nth-child(4){animation-delay:.18s}.ml:nth-child(5){animation-delay:.24s}.ml:nth-child(6){animation-delay:.3s}
 @keyframes mlIn{from{opacity:0;transform:translateY(6px)}}
-.ml b{display:block;min-width:0;font-size:12.5px;font-weight:550;color:var(--tx);
+.ml b{display:block;min-width:0;font-size:11px;font-weight:550;line-height:1.3;color:var(--tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ml b::before{content:"";display:inline-block;width:9px;height:9px;margin-right:7px;border-radius:50%;
+.ml b::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;
   vertical-align:.02em;background:var(--ml-farbe)}
-.mleg.n3 b{font-size:12px}
-.ml i{display:block;margin:3px 0 0 16px;font-style:normal;font-size:12px;color:var(--tx-2);
+.ml i{display:block;margin:1px 0 0 13px;font-style:normal;font-size:11px;line-height:1.3;color:var(--tx-2);
   font-variant-numeric:tabular-nums;white-space:nowrap}
-/* Ab vier Arten auf schmaler Karte: Name und Stunden in einer Zeile —
-   sonst würde die Übersicht doppelt so hoch wie nötig. */
-.mleg.n4 .ml,.mleg.n5 .ml,.mleg.n6 .ml{display:flex;align-items:center;justify-content:space-between;
-  gap:6px;padding:9px 11px}
-.mleg.n4 .ml i,.mleg.n5 .ml i,.mleg.n6 .ml i{margin:0;flex:none}
+/* Name und Stunden in einer Zeile, damit die Kacheln flach bleiben. Nur
+   wo es dafür zu eng ist — drei nebeneinander — steht die Zahl darunter.
+   Ab 400 px Kartenbreite stehen vier in einer Reihe, auch zweizeilig. */
+.mleg:not(.n3) .ml{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px}
+.mleg:not(.n3) .ml i{margin:0;flex:none}
 @container (min-width:400px){
-  .mleg.n4 .ml,.mleg.n5 .ml,.mleg.n6 .ml{display:block;padding:9px 10px 10px}
-  .mleg.n4 .ml i,.mleg.n5 .ml i,.mleg.n6 .ml i{margin:3px 0 0 16px}
+  .mleg.n4 .ml,.mleg.n5 .ml,.mleg.n6 .ml{display:block;padding:6px 9px 7px}
+  .mleg.n4 .ml i,.mleg.n5 .ml i,.mleg.n6 .ml i{margin:1px 0 0 13px}
 }
 @media (prefers-reduced-motion:reduce){ .mbbar span,.ml{animation:none} }
 
@@ -7237,7 +7236,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1900';
+const APP_STAND = '2026-09-27-1930';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;

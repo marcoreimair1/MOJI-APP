@@ -229,6 +229,11 @@ setTimeout(() => {
     /@container \(min-width:400px\)\{ \.mleg\.n4\{--sp:4\}/],
    ['Die Uebersicht misst ihre eigene Breite', /\.mbar\{[^}]*container-type:inline-size/],
    ['Arbeit traegt die Marke', /arbeit: \['var\(--butter\)'/],
+   /* 27.09.2026: "die Kacheln zu hoch" — kleiner geschrieben, eine Zeile. */
+   ['Die Kacheln sind flach', /\.ml\{min-width:0;padding:6px 9px 7px;/],
+   ['Und klein beschriftet', /\.ml b\{[^}]*font-size:11px;/],
+   ['Name und Stunden in einer Zeile, ausser bei dreien',
+    /\.mleg:not\(\.n3\) \.ml\{display:flex;/],
    ['Weniger Bewegung: Balken und Kacheln stehen', /\.mbbar span,\.ml\{animation:none\}/]
   ].forEach(([n, re]) => E.push({ n, ok: re.test(roh), z: re.test(roh) ? '' : 'fehlt' }));
 

@@ -758,9 +758,11 @@ lagen in einem Blatt, das man erst antippen musste. Jetzt steht alles offen in d
   den Tagen. **Arbeit trägt jetzt die Marke** statt Grau (`MX_FARBE.arbeit`).
 - Darunter je Art eine Kachel mit Farbpunkt und Stunden — **nur für die Arten, die in diesem
   Monat vorkommen** (`MB_ARTEN`): Arbeit, Urlaub, Krankheit, Feiertag, Sonstiges, Ausgleich.
-- Anordnung nach Zahl und Kartenbreite (Container-Abfrage auf `.mbar`): bis drei nebeneinander;
-  ab vier am Handy zwei und zwei mit Name und Stunden in einer Zeile; ab 400 px Kartenbreite
-  vier in einer Reihe.
+- Anordnung nach Zahl und Kartenbreite (Container-Abfrage auf `.mbar`): Name und Stunden stehen
+  in einer Zeile, die Kacheln sind flach (28 px, Schrift 11 px). Nur bei drei nebeneinander steht
+  die Zahl darunter, weil es sonst zu eng wird. Ab vier am Handy zwei und zwei, ab 400 px
+  Kartenbreite vier in einer Reihe. Kleiner geschrieben seit Marcos Rückmeldung am selben Tag
+  („die Kacheln zu hoch").
 
 ### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
 
