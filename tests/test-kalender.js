@@ -148,6 +148,39 @@ ok('Spaeter also seltener als am Anfang',    EI_VON > EI_ERST_BIS);
 ok('Gewuerfelt, nicht getaktet',             EI_BIS > EI_VON && EI_ERST_BIS > EI_ERST);
 setTimeout(window.__EI, EI_DAUER + 250);
 
+/* ── 7b · Die Monatsuebersicht steht offen in der Karte ──
+   Seit 27.09.2026 kein Blatt mehr zum Antippen: Tage, Stunden, Balken
+   und je Art eine Kachel — nur fuer Arten, die im Monat vorkommen. */
+var mb = document.querySelector('#mbar');
+ok('Die Uebersicht ist kein Knopf mehr', mb.tagName === 'DIV', mb.tagName);
+ok('Und das Blatt dazu ist weg', !document.querySelector('#msheet') && typeof msAuf === 'undefined');
+ok('Sie heisst Monatsuebersicht', mb.querySelector('.mbl').textContent === 'Monatsübersicht');
+function kacheln(){ return Array.prototype.map.call(document.querySelectorAll('#mb-leg .ml b'), function(b){ return b.textContent; }); }
+/* Februar 2025: kein Feiertag, nichts eingetragen — nur Arbeit. */
+CAL.y = 2025; CAL.m = 1; renderCal();
+ok('Ohne Eintraege steht nur die Arbeit da', kacheln().join(',') === 'Arbeit', kacheln().join(','));
+ok('Der Balken hat dann ein Stueck', document.querySelectorAll('#mb-bar span').length === 1);
+ME.events['2025-02-10'] = { t:'urlaub', s:'full', text:'', aw:false };
+ME.events['2025-02-11'] = { t:'urlaub', s:'full', text:'', aw:false };
+ME.events['2025-02-12'] = { t:'krank',  s:'full', text:'', aw:false };
+renderCal();
+ok('Mit Urlaub und Krankheit: drei Kacheln, Sonstiges fehlt',
+   kacheln().join(',') === 'Arbeit,Urlaub,Krankheit', kacheln().join(','));
+ok('Drei nebeneinander', document.querySelector('#mb-leg').className === 'mleg n3');
+ok('Und drei Stuecke im Balken', document.querySelectorAll('#mb-bar span').length === 3);
+ok('Urlaub zeigt seine Stunden',
+   document.querySelectorAll('#mb-leg .ml i')[1].textContent === '16,00 h',
+   document.querySelectorAll('#mb-leg .ml i')[1].textContent);
+ok('Oben stehen Tage ausgeschrieben und die Stunden',
+   /Tage/.test(document.querySelector('#mb-v').textContent) && / h$/.test(document.querySelector('#mb-v').textContent),
+   document.querySelector('#mb-v').textContent);
+ME.events['2025-02-13'] = { t:'eigen', s:'vm', text:'Kurs', aw:false };
+renderCal();
+ok('Ab vier Arten stehen sie zwei und zwei', document.querySelector('#mb-leg').className === 'mleg n4');
+['2025-02-10','2025-02-11','2025-02-12','2025-02-13'].forEach(function(k){ delete ME.events[k]; });
+renderCal();
+ok('Wieder weg, wenn die Eintraege weg sind', kacheln().join(',') === 'Arbeit');
+
 /* ── 8 · Der Vermerk loest sich von selbst wieder ── */
 kalenderFrisch();
 ok('Frisch steht erst mal', v.classList.contains('frisch'));
@@ -191,7 +224,12 @@ setTimeout(() => {
    ['Und nicht, wenn die Seite ruht',    /if\(document\.hidden\) return false;/],
    ['Jedes Mal neu gewuerfelt',
     /von \+ Math\.random\(\) \* \(bis - von\)/],
-   ['Das erste Mal kommt frueher',       /planen\(true\);/]
+   ['Das erste Mal kommt frueher',       /planen\(true\);/],
+   ['Vier Kacheln in einer Reihe erst ab 400 px Kartenbreite',
+    /@container \(min-width:400px\)\{ \.mleg\.n4\{--sp:4\}/],
+   ['Die Uebersicht misst ihre eigene Breite', /\.mbar\{[^}]*container-type:inline-size/],
+   ['Arbeit traegt die Marke', /arbeit: \['var\(--butter\)'/],
+   ['Weniger Bewegung: Balken und Kacheln stehen', /\.mbbar span,\.ml\{animation:none\}/]
   ].forEach(([n, re]) => E.push({ n, ok: re.test(roh), z: re.test(roh) ? '' : 'fehlt' }));
 
   let schlecht = 0;

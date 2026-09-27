@@ -1743,7 +1743,7 @@ body.nobar .topbar{display:none}
    entfallen, weil der Inhalt jetzt im Blatt liegt und dort ohnehin
    von unten hereinfährt. */
 /* Eine flache Pille, keine Karte. Der volle Rundungsradius unterscheidet sie
-   deutlich von den Monatsdetails darunter, die eine 20-px-Karte sind — dasselbe
+   deutlich von der Kalenderkarte darunter, die eine 20-px-Karte ist — dasselbe
    Mittel wie bei den Knöpfen. Nur halb so hoch wie die alte Zeile, weil der
    erklärende Satz jetzt im Blatt steht, wo er gebraucht wird. */
 /* Kopfzeile im Export — gleiche Bauhöhe wie die Pille daneben. */
@@ -1910,7 +1910,7 @@ body.sigmodus .exhbtn{display:none}
   .zrk.auf + .zrk-wahl .zo,.zrk.auf + .zrk-wahl .zrk-wie{animation:none}
 }
 
-/* Das Feld unter dem Kalender, an der Stelle der Monatsdetails. */
+/* Das Feld unter dem Kalender, an der Stelle der Monatsübersicht. */
 /* Der Kalender nimmt die Farbe der Leistung an. */
 body.zrmodus #v-cal .card{border-color:var(--zrf,var(--line));
   box-shadow:0 0 0 1px var(--zrf-schwach,transparent),0 22px 60px -34px var(--zrf-schwach,transparent),var(--shadow)}
@@ -2751,32 +2751,62 @@ body.locked #tabbar{
 .warnnote svg{width:17px;height:17px;color:var(--butter);flex:none;margin-top:1px}
 .warnnote b{color:var(--butter);font-weight:600}
 
-/* ─── Monatsdetails ──────────────────────────────────────────────────────
-   Ein Balken zeigt die Anteile des Monats, rechts daneben die Summe. Er
-   sitzt in der Kalenderkarte, weil er den Monat beschreibt, den man sieht.
-   Ein Tipp öffnet die Zahlen in einem Blatt — dieselbe Bewegung wie beim
-   Zeitraum. So bleibt auf der Seite nichts, was sich verschieben könnte. */
-.mbar{display:block;width:100%;text-align:left;margin-top:15px;padding-top:13px;
-  border-top:1px solid var(--line-2);transition:border-color .22s var(--ease)}
-.mbar:hover{border-top-color:var(--butter-dim)}
-.mbar:active .mbbar{opacity:.75}
-.mbtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+/* ─── Monatsübersicht ────────────────────────────────────────────────────
+   Bis 27.09.2026 zeigte die Karte nur einen dünnen Balken; die Zahlen lagen
+   in einem Blatt, das man erst antippen musste. Jetzt steht alles offen da:
+   Tage und Stunden oben, der Balken in abgesetzten Stücken, darunter je Art
+   eine Kachel mit Farbe und Stunden — aber nur für die Arten, die in diesem
+   Monat wirklich vorkommen. Ein Blatt gibt es dafür nicht mehr. */
+.mbar{display:block;width:100%;margin-top:15px;padding-top:14px;border-top:1px solid var(--line-2);
+  container-type:inline-size}
+.mbtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
 .mbl{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--tx-3)}
-.mbv{display:flex;align-items:baseline;gap:7px}
-.mbv b{font-family:var(--font-dis);font-size:17px;font-weight:400;color:var(--butter);
+.mbv{display:flex;align-items:baseline;gap:12px;white-space:nowrap}
+.mbv span{display:flex;align-items:baseline;gap:4px}
+.mbv b{font-family:var(--font-dis);font-size:20px;font-weight:400;color:var(--butter);
   font-variant-numeric:tabular-nums;line-height:1}
-.mbv u{font-size:9.5px;text-decoration:none;color:var(--tx-3);margin-left:-4px}
-.mbv i{font-style:normal;font-size:10.5px;color:var(--tx-3);font-variant-numeric:tabular-nums}
-.mbbar{display:flex;gap:2px;height:7px;transition:opacity .2s}
-/* Jeder Abschnitt wächst aus der linken Kante, leicht nacheinander. Beim
-   Monatswechsel läuft das neu — der Balken erzählt den Wechsel mit. */
-.mbbar span{border-radius:3px;transform-origin:left center;animation:mbGrow .7s var(--ease-out) both}
+.mbv u{font-size:12px;text-decoration:none;color:var(--tx-3)}
+.mbv i{font-style:normal;font-family:var(--font-dis);font-size:16px;color:var(--tx-2);
+  font-variant-numeric:tabular-nums;line-height:1}
+/* Die Stücke stehen einzeln, mit Luft dazwischen und ganz gerundet. */
+.mbbar{display:flex;gap:4px;height:10px}
+.mbbar span{min-width:8px;border-radius:99px;transform-origin:left center;animation:mbGrow .7s var(--ease-out) both}
 @keyframes mbGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .mbbar span:nth-child(2){animation-delay:.07s}
 .mbbar span:nth-child(3){animation-delay:.14s}
 .mbbar span:nth-child(4){animation-delay:.21s}
 .mbbar span:nth-child(5){animation-delay:.28s}
+.mbbar span:nth-child(6){animation-delay:.35s}
 .mbbar .leer{flex:1;background:rgba(var(--tx-rgb),.06);animation:none}
+/* Die Erklärung der Farben, gleich breite Kacheln. Am Handy passen höchstens
+   drei nebeneinander; ab vier stehen sie zwei und zwei, Name und Stunden in
+   einer Zeile. Erst ab 400 px Kartenbreite (Tablet) kommen vier in eine Reihe. */
+.mleg{--sp:2;display:grid;grid-template-columns:repeat(var(--sp),minmax(0,1fr));gap:7px;margin-top:12px}
+.mleg:empty{display:none}
+.mleg.n3{--sp:3}
+@container (min-width:400px){ .mleg.n4{--sp:4} .mleg.n5,.mleg.n6{--sp:3} }
+.ml{min-width:0;padding:9px 10px 10px;border-radius:14px;border:1px solid var(--ml-rand,var(--line-2));
+  background:var(--ml-grund,transparent);animation:mlIn .5s var(--ease-out) both}
+.ml:nth-child(2){animation-delay:.06s}.ml:nth-child(3){animation-delay:.12s}
+.ml:nth-child(4){animation-delay:.18s}.ml:nth-child(5){animation-delay:.24s}.ml:nth-child(6){animation-delay:.3s}
+@keyframes mlIn{from{opacity:0;transform:translateY(6px)}}
+.ml b{display:block;min-width:0;font-size:12.5px;font-weight:550;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ml b::before{content:"";display:inline-block;width:9px;height:9px;margin-right:7px;border-radius:50%;
+  vertical-align:.02em;background:var(--ml-farbe)}
+.mleg.n3 b{font-size:12px}
+.ml i{display:block;margin:3px 0 0 16px;font-style:normal;font-size:12px;color:var(--tx-2);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Ab vier Arten auf schmaler Karte: Name und Stunden in einer Zeile —
+   sonst würde die Übersicht doppelt so hoch wie nötig. */
+.mleg.n4 .ml,.mleg.n5 .ml,.mleg.n6 .ml{display:flex;align-items:center;justify-content:space-between;
+  gap:6px;padding:9px 11px}
+.mleg.n4 .ml i,.mleg.n5 .ml i,.mleg.n6 .ml i{margin:0;flex:none}
+@container (min-width:400px){
+  .mleg.n4 .ml,.mleg.n5 .ml,.mleg.n6 .ml{display:block;padding:9px 10px 10px}
+  .mleg.n4 .ml i,.mleg.n5 .ml i,.mleg.n6 .ml i{margin:3px 0 0 16px}
+}
+@media (prefers-reduced-motion:reduce){ .mbbar span,.ml{animation:none} }
 
 /* ─── Neue Fassung ─────────────────────────────────────────────────────
    Sie liegt über allem, zeichnet den Hintergrund weich und wartet auf einen
@@ -4091,26 +4121,6 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 .pfleer{text-align:center;color:var(--tx-3);font-size:13.5px;padding:40px 0 8px;line-height:1.6}
 .pfleer svg{display:block;width:34px;height:34px;margin:0 auto 12px;color:var(--tx-3);opacity:.5}
 
-/* Die Zahlen im Blatt: eine Zeile je Art, Tage groß, Stunden klein. */
-.msr{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line-2)}
-.msr:first-child{border-top:none}
-.msr .dot{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
-.msr .dot svg{width:14px;height:14px}
-.msr .lb{flex:1;font-size:13.5px;color:var(--tx-2)}
-.msr .tg{font-family:var(--font-dis);font-size:21px;font-weight:400;line-height:1;
-  font-variant-numeric:tabular-nums}
-.msr .tg u{font-size:11px;text-decoration:none;color:var(--tx-3);margin-left:2px;font-family:var(--font)}
-.msr .hr{width:78px;text-align:right;font-style:normal;font-size:12px;color:var(--tx-3);
-  font-variant-numeric:tabular-nums;flex:none}
-.msr.tot{margin-top:6px;border-top:1px solid var(--butter-dim)}
-.msr.tot .lb{color:var(--tx-1);font-weight:600}
-.msr.tot .tg{color:var(--butter);font-size:23px}
-.msr.tot .hr{color:var(--tx-2)}
-#msheet.on .sheet-card > *:not(.sheet-grab){animation:qIn .46s var(--ease-out) both}
-#msheet.on .sheet-card > *:nth-child(2){animation-delay:.07s}
-#msheet.on .sheet-card > *:nth-child(3){animation-delay:.11s}
-#msheet.on .sheet-card > *:nth-child(4){animation-delay:.15s}
-
 #ex-card{position:relative}
 .linkbtn{font-size:12.5px;color:var(--tx-3);text-decoration:underline;text-underline-offset:3px;
   text-decoration-color:var(--line);transition:.2s;padding:4px 0}
@@ -4866,7 +4876,7 @@ section#v-onboard.on > #ob-nav{margin-top:auto}
   :root:not([data-theme="light"]) .ikon .ik-dunkel{ display:grid }
 }
 /* Die Stufenleiste im Menue heisst .mrang — nicht .mbar. .mbar ist die
-   Monatsdetails-Zeile im Kalender und hat hier nichts verloren.
+   Monatsübersicht im Kalender und hat hier nichts verloren.
    Sie lief mit 353 px breiter als die Gruppen mit 326 und begann
    13 px weiter links; jetzt exakt dasselbe Mass. */
 /* width:auto liesse den <button> auf Inhaltsbreite schrumpfen — das
@@ -6333,7 +6343,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         </div>
 
         <!-- Während eines Zeitraums steht hier, worum es geht — statt der
-             Monatsdetails, die so lange weichen. -->
+             Monatsübersicht, die so lange weicht. -->
         <div class="zrp" id="zrp" hidden>
           <div class="zrp-spann">
             <button class="zrs leer dran" id="zrs-von" type="button"><u>Von</u><b id="zrs-von-b">Tag antippen</b><em class="zrs-x" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></em></button>
@@ -6354,13 +6364,14 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         </div>
 
         <!-- Der Auszug gehört zum Monat, also steht er in dessen Karte. -->
-        <button class="mbar" id="mbar" aria-label="Monatsdetails öffnen">
+        <div class="mbar" id="mbar">
           <div class="mbtop">
-            <span class="mbl">Monatsdetails</span>
+            <span class="mbl">Monatsübersicht</span>
             <span class="mbv" id="mb-v"></span>
           </div>
-          <div class="mbbar" id="mb-bar"></div>
-        </button>
+          <div class="mbbar" id="mb-bar" aria-hidden="true"></div>
+          <div class="mleg" id="mb-leg"></div>
+        </div>
       </div>
     </section>
 
@@ -7034,18 +7045,6 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
   </div>
 </div>
 
-<!-- Monatsdetails — die Zahlen liegen im Blatt, nicht auf der Seite -->
-<div class="sheet" id="msheet">
-  <div class="sheet-bd" data-close="msheet"></div>
-  <div class="sheet-card" id="mcard">
-    <div class="sheet-grab" id="m-grab" aria-label="Zum Schließen nach unten schieben"><div class="grip"></div></div>
-    <h3 id="ms-title">—</h3>
-    <p class="sd">Monatsdetails · Tage und Stunden</p>
-    <div id="ms-rows"></div>
-  </div>
-</div>
-
-
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span id="toast-t"></span></div>
 
 
@@ -7238,7 +7237,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-1800';
+const APP_STAND = '2026-09-27-1900';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -13996,10 +13995,7 @@ function renderCal(){
   malBalken();
   fitAll();
 }
-/* Uhrsymbol für die Arbeitszeit — die anderen Arten bringen ihr eigenes mit. */
-const ICON_ARBEIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
-  + 'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6V12l3 1.8"/></svg>';
-/* Tage ohne Wort — die Einheit steht als kleines T daneben. */
+/* Tage ohne Wort — die Einheit steht daneben. */
 function nurT(d){
   const r = Math.round(d * 2) / 2;
   return (r % 1 === 0) ? String(r) : String(r).replace('.', ',');
@@ -14007,82 +14003,47 @@ function nurT(d){
 /* Farbe und leicht getoenter Grund je Art. Ausgeschrieben, weil aeltere
    iPhones die Mischfunktion von CSS nicht kennen — dort bliebe der Grund leer. */
 const MX_FARBE = {
-  arbeit: ['var(--c-arbeit)', 'rgba(var(--c-arbeit-rgb-f),.15)'],
+  /* Arbeit traegt in der Monatsuebersicht die Marke — sie ist der grosse
+     Teil des Balkens und soll ihn nicht grau machen. */
+  arbeit: ['var(--butter)',   'rgba(var(--marke-rgb),.08)'],
   urlaub: ['var(--c-urlaub)', 'rgba(var(--c-urlaub-rgb-f),.13)'],
   krank:  ['var(--c-krank)',  'rgba(var(--c-krank-rgb-f),.14)'],
   feier:  ['var(--c-feier)',  'rgba(var(--c-feier-rgb-f),.14)'],
   eigen:  ['var(--c-eigen)',  'rgba(var(--c-eigen-rgb-f),.14)'],
   zeit:   ['var(--c-arbeit)', 'rgba(var(--c-arbeit-rgb-f),.16)']
 };
-/* ─── Monatsdetails ────────────────────────────────────────────────────
-   Der Balken zeigt die Anteile, das Blatt die Zahlen. MSUM hält die
-   Summen des gerade gezeichneten Monats, damit das Blatt nichts neu
-   rechnen muss. */
+/* ─── Monatsübersicht ──────────────────────────────────────────────────
+   Tage und Stunden, der Balken mit den Anteilen und darunter je Art eine
+   Kachel — nur für die Arten, die in diesem Monat vorkommen. MSUM hält die
+   Summen des gerade gezeichneten Monats. */
 let MSUM = null;
+const MB_ARTEN = [
+  ['arbeit', 'Arbeit',     'work',   'dWork'],
+  ['urlaub', 'Urlaub',     'urlaub', 'dUrlaub'],
+  ['krank',  'Krankheit',  'krank',  'dKrank'],
+  ['feier',  'Feiertag',   'feier',  'dFeier'],
+  ['eigen',  'Sonstiges',  'sonst',  'dSonst'],
+  ['zeit',   'Ausgleich',  'zeit',   'dZeit']
+];
 function malBalken(){
   const s = MSUM; if(!s) return;
-  $('#mb-v').innerHTML = '<b>' + nurT(s.dTotal) + '</b><u>T</u><i>'
-    + (s.total > 0 ? fmtH(s.total) + ' h' : '–') + '</i>';
-  const teile = [['arbeit', s.dWork], ['urlaub', s.dUrlaub], ['krank', s.dKrank],
-                 ['feier', s.dFeier], ['eigen', s.dSonst], ['zeit', s.dZeit]];
-  const summe = teile.reduce((a, x) => a + x[1], 0);
-  let h = '';
-  if(summe <= 0){
-    h = '<span class="leer"></span>';
-  } else {
-    teile.forEach(([art, tage]) => {
-      if(tage <= 0.004) return;
-      /* Anteil als flex-grow — jeder Abschnitt so breit wie sein Anteil. */
-      h += '<span style="flex:' + tage.toFixed(3) + ';background:' + MX_FARBE[art][0] + '"></span>';
-    });
-  }
-  $('#mb-bar').innerHTML = h;
+  const t = Math.round(s.dTotal * 2) / 2;
+  $('#mb-v').innerHTML = '<span><b>' + nurT(s.dTotal) + '</b><u>' + (t === 1 ? 'Tag' : 'Tage') + '</u></span>'
+    + '<i>' + (s.total > 0 ? fmtH(s.total) + ' h' : '–') + '</i>';
+  const da = MB_ARTEN.filter(a => s[a[3]] > 0.004);
+  $('#mb-bar').innerHTML = da.length
+    /* Anteil als flex-grow — jedes Stück so breit wie sein Anteil an den Tagen. */
+    ? da.map(a => '<span style="flex:' + s[a[3]].toFixed(3) + ';background:' + MX_FARBE[a[0]][0] + '"></span>').join('')
+    : '<span class="leer"></span>';
+  const leg = $('#mb-leg');
+  leg.className = 'mleg n' + da.length;
+  leg.innerHTML = da.map(a => {
+    const f = MX_FARBE[a[0]];
+    const std = s[a[2]];
+    return '<div class="ml" style="--ml-farbe:' + f[0] + ';--ml-grund:' + f[1] + '">'
+      + '<b>' + a[1] + '</b><i>' + (std > 0.004 ? fmtH(std) + ' h' : fmtT(s[a[3]])) + '</i></div>';
+  }).join('');
 }
-function msZeilen(){
-  const s = MSUM; if(!s) return;
-  $('#ms-title').textContent = MONTHS[CAL.m] + ' ' + CAL.y;
-  let h = '';
-  h += msZeile('arbeit', 'Arbeitszeit',  s.work,   s.dWork);
-  h += msZeile('urlaub', 'Urlaub',       s.urlaub, s.dUrlaub);
-  h += msZeile('krank',  'Krankenstand', s.krank,  s.dKrank);
-  h += msZeile('feier',  'Feiertag',     s.feier,  s.dFeier);
-  if(s.sonst > 0) h += msZeile('eigen', 'Sonstige', s.sonst, s.dSonst);
-  if(s.zeit  > 0) h += msZeile('zeit',  'Zeitausgleich', s.zeit, s.dZeit);
-  h += msZeile('', 'Gesamt', s.total, s.dTotal, true);
-  $('#ms-rows').innerHTML = h;
-}
-const ICON_SUMME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" '
-  + 'stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14M5 12h14M5 18h9"/></svg>';
-function msZeile(art, label, stunden, tage, gesamt){
-  const f = MX_FARBE[art] || MX_FARBE.arbeit;
-  const zeichen = gesamt ? ICON_SUMME : (art === 'arbeit' ? ICON_ARBEIT : ICONS[art]);
-  const farbe = gesamt ? 'var(--butter)' : f[0];
-  const grund = gesamt ? 'rgba(var(--marke-rgb),.16)' : f[1];
-  return '<div class="msr' + (gesamt ? ' tot' : '') + '">'
-       + '<span class="dot" style="color:' + farbe + ';background:' + grund + '">' + zeichen + '</span>'
-       + '<span class="lb">' + label + '</span>'
-       + '<b class="tg">' + nurT(tage) + '<u>T</u></b>'
-       + '<i class="hr">' + (stunden > 0 ? fmtH(stunden) + ' h' : '–') + '</i></div>';
-}
-function msAuf(){
-  if($('#msheet').classList.contains('on')) return;
-  msZeilen();
-  if(window.__mReset) window.__mReset();
-  $('#mcard').scrollTop = 0;
-  $('#msheet').classList.add('on');
-  document.body.classList.add('locked');
-}
-function msZu(){
-  $('#msheet').classList.remove('on');
-  document.body.classList.remove('locked');
-}
-$('#mbar').addEventListener('click', () => {
-  if(performance.now() - _wischEnde < 320) return;   /* das war ein Wisch */
-  msAuf();
-});
-$('#msheet').addEventListener('click', e => {
-  if(e.target.dataset.close === 'msheet') msZu();
-});
 /* ─── Monat blättern ──────────────────────────────────────────────────
    Ein Schritt vor oder zurück, mit Wisch oder Pfeil: das alte Blatt fliegt
    zur Seite weg, das neue kommt von der anderen Seite herein. Ein Schritt
@@ -14643,7 +14604,6 @@ function wireSheetDrag(griffId, blattId, zu, rollId, karteWahl, grundWahl){
 }
 $('#hallo').addEventListener('click', grussEnde);
 window.__sheetReset = wireSheetDrag('sh-grab', 'sheet', closeSheet);
-window.__mReset     = wireSheetDrag('m-grab',  'msheet', msZu);
 window.__pfReset    = wireSheetDrag('pf-grab', 'pfsheet', pfZu, 'pf-liste');
 window.__rReset     = wireSheetDrag('r-grab',  'rsheet',  rangZu);
 window.__vReset     = wireSheetDrag('v-grab',  'vsheet',  verlaufZu);
@@ -14905,7 +14865,7 @@ $$('[data-zi]').forEach(e => { e.innerHTML = ICONS[e.dataset.zi] || ''; });
 $('#qopen').addEventListener('click', () => zrkAuf());
 /* ─── Der Ablauf: Kachel → Art → Tage → Eintragen ────────────────────
    Die Kachel klappt die Wahl auf. Ist eine Art gewählt, fällt sie
-   zusammen, der Kalender rückt nach oben, die Monatsdetails weichen dem
+   zusammen, der Kalender rückt nach oben, die Monatsübersicht weicht dem
    Feld mit Von, Bis, Umfang und Vermerk, und unten stehen die zwei
    Entscheidungen. */
 function zrkAuf(an){
@@ -16685,7 +16645,7 @@ $('#tabbar').addEventListener('click', e => {
    Sonderfaelle stehen jetzt im Horcher an #tabbar. */
 $('#sheet').addEventListener('click', e => { if(e.target.dataset.close === 'sheet') closeSheet(); });
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape'){ closeSheet(); msZu(); pfZu(); dlZu(); firmaZu(); menuZu(); if(zrModus()) zrAus(); }
+  if(e.key === 'Escape'){ closeSheet(); pfZu(); dlZu(); firmaZu(); menuZu(); if(zrModus()) zrAus(); }
 });
 /* Überall antippen beendet das Intro — nicht nur die Pille */
 /* Kein Überspringen: die vier Sekunden gehören der Marke. */

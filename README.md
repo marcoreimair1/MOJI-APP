@@ -747,6 +747,21 @@ Pille sah aus wie ein Suchfeld. Neu gebaut:
 Das Rechnen ist unverändert: Sonntage, Feiertage und dienstfreie Tage werden übersprungen, alle
 Tage bekommen eine gemeinsame Serien-Kennung. Geprüft in `tests/test-zeitraum.js`.
 
+### Die Monatsübersicht in der Karte *(27. September 2026)*
+
+Unter dem Kalender stand eine Zeile *Monatsdetails* mit einem dünnen grauen Balken; die Zahlen
+lagen in einem Blatt, das man erst antippen musste. Jetzt steht alles offen in der Karte
+(`malBalken()`), das Blatt `#msheet` ist entfallen:
+
+- Oben *Monatsübersicht*, rechts die Tage groß in der Marke und die Stunden.
+- Der Balken in abgesetzten, ganz gerundeten Stücken, eines je Art, so breit wie ihr Anteil an
+  den Tagen. **Arbeit trägt jetzt die Marke** statt Grau (`MX_FARBE.arbeit`).
+- Darunter je Art eine Kachel mit Farbpunkt und Stunden — **nur für die Arten, die in diesem
+  Monat vorkommen** (`MB_ARTEN`): Arbeit, Urlaub, Krankheit, Feiertag, Sonstiges, Ausgleich.
+- Anordnung nach Zahl und Kartenbreite (Container-Abfrage auf `.mbar`): bis drei nebeneinander;
+  ab vier am Handy zwei und zwei mit Name und Stunden in einer Zeile; ab 400 px Kartenbreite
+  vier in einer Reihe.
+
 ### Der Vorspann in der Handschrift des Grußes *(27. September 2026)*
 
 Der Vorspann spricht jetzt dieselbe Sprache wie Gruß, Abschied und Registrierung:
