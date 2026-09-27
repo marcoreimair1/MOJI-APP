@@ -620,8 +620,15 @@ Dateien, Mail, Nachrichten und Drucken. Ein Knopf statt eines Automatismus, weil
 vorbei. **Das Blatt selbst ist dann auch ein Knopf** (`.tippbar`): es wächst auf die größere
 Darstellung, trägt oben rechts ein Zeichen zum Öffnen, darunter steht *Zum Ansehen antippen*,
 es hebt sich einmal kurz und gibt beim Drücken nach, solange der Finger liegt (`scale` über
-`:active` — Safari setzt `:active` nur mit einem `touchstart`-Horcher). Ein Tipp öffnet das
-Teilen-Blatt, dessen Vorschau zum Dokument führt. Teilen oder „Fertig" schließt die Bühne; bricht man das Teilen-Blatt ab, bleibt sie stehen.
+`:active` — Safari setzt `:active` nur mit einem `touchstart`-Horcher).
+
+**Ein Tipp aufs Blatt öffnet das PDF in einem neuen Tab** (`pdfImTab()`), mit dem PDF-Viewer
+des Browsers. Der MOJI-Tab bleibt dahinter stehen, nichts lädt neu. Die blob-Adresse dafür
+(`pdfAdresse()`) wird erst beim nächsten Export freigegeben, nicht nach 40 s wie bei jsPDF.
+`window.open` steht dabei direkt im Tipp, ohne `await` davor — sonst hält Safari den Tab für
+ein Popup. Geht kein Tab auf (Popup geblockt), oder läuft MOJI als **App vom Homebildschirm**
+(`alsHomeApp()`: dort gibt es keine Tabs, und ein neues Fenster läuft außerhalb der App und
+erreicht die Datei nicht), übernimmt das Teilen-Blatt mit seiner Vorschau. Teilen oder „Fertig" schließt die Bühne; bricht man das Teilen-Blatt ab, bleibt sie stehen.
 Kann das Gerät keine Dateien teilen, bleibt es beim Öffnen mit `doc.save()` samt dem Vermerk
 darunter.
 

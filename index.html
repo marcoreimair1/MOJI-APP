@@ -6706,7 +6706,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0715';
+const APP_STAND = '2026-09-27-0800';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14344,7 +14344,7 @@ function exOverlay(seiten){
     /* Am Ende: teilen oder fertig. Loest auf, sobald geteilt wurde oder
        jemand "Fertig" tippt. Bricht man das Teilen-Blatt ab, bleibt die
        Buehne stehen — vielleicht wollte man doch nur anders teilen. */
-    wahl(teilen){
+    wahl(teilen, ansehen){
       return new Promise(fertig => {
         const w = $('.exwahl', ov);
         w.hidden = false;
@@ -14357,14 +14357,16 @@ function exOverlay(seiten){
           laeuft = false;
         };
         $('#ex-teilen', ov).onclick = los;
-        /* Das Blatt selbst fuehrt zum Dokument — das Teilen-Blatt zeigt
-           es als Vorschau, ein Tipp darauf oeffnet es. */
+        /* Das Blatt selbst fuehrt zum Dokument: in Safari als neuer Tab
+           (ansehen), sonst ueber das Teilen-Blatt mit seiner Vorschau.
+           ansehen() laeuft ohne vorheriges Warten, sonst haelt Safari den
+           Tab fuer ein Popup und blockt ihn. */
         const stapel = $('.exstapel', ov);
         stapel.setAttribute('role', 'button');
         stapel.setAttribute('tabindex', '0');
         stapel.setAttribute('aria-label', 'PDF ansehen');
-        stapel.onclick = los;
-        stapel.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); los(); } };
+        stapel.onclick = () => { if(!(ansehen && ansehen())) los(); };
+        stapel.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); stapel.onclick(); } };
         /* Ohne einen Beruehrungs-Horcher setzt Safari :active nicht —
            dann gaebe das Blatt beim Druecken nicht nach. */
         stapel.addEventListener('touchstart', () => {}, { passive:true });
@@ -14439,8 +14441,10 @@ async function buildPdf(list){
       if(datei){
         /* Erst jetzt zählt der Monat: die Datei ist geschrieben. */
         merkeExporte(list);
+        const adresse = pdfAdresse(datei);
         await wait(900);
-        await ov.wahl(() => navigator.share({ files:[datei], title:name }));
+        await ov.wahl(() => navigator.share({ files:[datei], title:name }),
+                      () => pdfImTab(adresse));
       } else {
         await wait(1250);
         pdfVermerken();
@@ -14459,6 +14463,34 @@ async function buildPdf(list){
   /* Und wieder fort: beim naechsten Export wird neu unterschrieben. */
   SIG_BILD = null;
   _busy = false; exYear();
+}
+/* ─── Das PDF in einem neuen Tab ───────────────────────────────────
+   Ein Tipp aufs fertige Blatt oeffnet das PDF im Browser, in einem
+   eigenen Tab mit dem PDF-Viewer von Safari. Der MOJI-Tab bleibt
+   dahinter stehen — nichts laedt neu, und die blob-Adresse lebt, solange
+   er lebt. Deshalb wird sie auch nicht nach Sekunden freigegeben wie
+   bei jsPDF, sondern erst beim naechsten Export.
+
+   Als App vom Homebildschirm gibt es keine Tabs, und ein neues Fenster
+   laeuft dort ausserhalb der App und erreicht die Datei nicht. Dann
+   bleibt es beim Teilen-Blatt, dessen Vorschau zum Dokument fuehrt. */
+let _pdfAdresse = null;
+function pdfAdresse(datei){
+  try{
+    if(_pdfAdresse) URL.revokeObjectURL(_pdfAdresse);
+    _pdfAdresse = (window.URL && typeof URL.createObjectURL === 'function') ? URL.createObjectURL(datei) : null;
+  }catch(e){ _pdfAdresse = null; }
+  return _pdfAdresse;
+}
+function alsHomeApp(){
+  try{
+    return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  }catch(e){ return false; }
+}
+/* true, wenn der Tab aufgegangen ist — sonst uebernimmt das Teilen-Blatt. */
+function pdfImTab(adresse){
+  if(!adresse || alsHomeApp()) return false;
+  try{ return !!window.open(adresse, '_blank'); }catch(e){ return false; }
 }
 /* Das PDF als Datei fuers Teilen-Blatt — oder null, wenn das Geraet
    keine Dateien teilen kann. Dann bleibt es beim Oeffnen wie bisher. */

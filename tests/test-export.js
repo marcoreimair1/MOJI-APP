@@ -286,6 +286,35 @@ ok('Und einem Satz darunter', st6.querySelector('.exhinweis').textContent === 'Z
 st6.click();
 setTimeout(() => { window.__w6Tipp = window.__w6; ov6.stop(); ov6.el.remove(); }, 30);
 
+/* Seit 27.09.2026: der Tipp aufs Blatt oeffnet das PDF in einem neuen Tab. */
+const echtOpen = window.open;
+let geoeffnet = [];
+window.open = function(u, z){ geoeffnet.push([u, z]); return {}; };
+ok('Das PDF geht in einem neuen Tab auf', pdfImTab('blob:https://moji-app.at/x') === true
+   && geoeffnet.length === 1 && geoeffnet[0][0] === 'blob:https://moji-app.at/x' && geoeffnet[0][1] === '_blank');
+ok('Ohne Adresse kein Tab', pdfImTab(null) === false && geoeffnet.length === 1);
+Object.defineProperty(navigator, 'standalone', { value:true, configurable:true });
+ok('Als App vom Homebildschirm kein Tab-Versuch', pdfImTab('blob:https://moji-app.at/x') === false && geoeffnet.length === 1);
+delete navigator.standalone;
+window.open = function(){ return null; };
+ok('Blockt der Browser den Tab, meldet es das', pdfImTab('blob:https://moji-app.at/x') === false);
+window.open = echtOpen;
+const ov7 = exOverlay(1);
+window.__w7 = { teilen:0, ansehen:0 };
+ov7.wahl(() => { window.__w7.teilen++; return Promise.resolve(); }, () => { window.__w7.ansehen++; return true; });
+ov7.el.querySelector('.exstapel').click();
+ok('Geht der Tab auf, bleibt das Teilen-Blatt zu', window.__w7.ansehen === 1 && window.__w7.teilen === 0,
+   JSON.stringify(window.__w7));
+ok('Und die Buehne bleibt fuer die Rueckkehr stehen', document.body.contains(ov7.el));
+ov7.stop(); ov7.el.remove();
+const ov8 = exOverlay(1);
+window.__w8 = { teilen:0, ansehen:0 };
+ov8.wahl(() => { window.__w8.teilen++; return Promise.resolve(); }, () => { window.__w8.ansehen++; return false; });
+ov8.el.querySelector('.exstapel').click();
+ok('Geht er nicht auf, uebernimmt das Teilen-Blatt', window.__w8.ansehen === 1 && window.__w8.teilen === 1,
+   JSON.stringify(window.__w8));
+ov8.stop(); ov8.el.remove();
+
 /* ── Am Ende: teilen oder fertig, seit 27.09.2026 ──
    Vorher wurde das PDF als blob-Adresse im selben Tab geoeffnet — nach
    einem Neuladen stand dort "WebKitBlobResource-Fehler 1". */
@@ -360,7 +389,7 @@ setTimeout(() => {
    ['Der Knopf fuehrt zum Unterschreiben', /\$\('#ex-go'\)\.addEventListener\('click', sigAuf\)/.test(roh)],
    ['Die Unterschrift steht im PDF', /doc\.addImage\(SIG_BILD, 'PNG'/.test(roh)],
    ['Wo es geht, kommt das PDF ueber das Teilen-Blatt',
-    /const datei = pdfDatei\(doc, name\);\s*\n\s*if\(datei\)\{[\s\S]{0,200}await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\)\);/.test(roh)],
+    /const datei = pdfDatei\(doc, name\);\s*\n\s*if\(datei\)\{[\s\S]{0,300}await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),/.test(roh)],
    ['Der Monat zaehlt auch dort erst mit der fertigen Datei',
     /if\(datei\)\{[\s\S]{0,120}merkeExporte\(list\);/.test(roh)],
    ['Vor dem Oeffnen des PDFs merkt sich die App die Rueckkehr', /pdfVermerken\(\);\s*\n\s*doc\.save\(name\);/.test(roh)],
@@ -407,6 +436,11 @@ setTimeout(() => {
    ['Keine violetten Balken mehr in der Tabelle', !/\.exz\.schreibt/.test(roh) && !/\.exz b::after/.test(roh)],
    ['Die Zeilen tauchen aus der Unschaerfe auf',
     /\.exz b\{[\s\S]{0,200}opacity:0;transform:translateX\(-5px\);filter:blur\(3px\)/.test(roh) && /\.exz\.da b\{opacity:1;transform:none;filter:none\}/.test(roh)],
+   ['Der Tipp oeffnet den Tab ohne Warten davor',
+    /stapel\.onclick = \(\) => \{ if\(!\(ansehen && ansehen\(\)\)\) los\(\); \};/.test(roh)],
+   ['Die Adresse lebt bis zum naechsten Export', /if\(_pdfAdresse\) URL\.revokeObjectURL\(_pdfAdresse\);/.test(roh)],
+   ['buildPdf reicht Teilen und Ansehen weiter',
+    /await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),\s*\n\s*\(\) => pdfImTab\(adresse\)\);/.test(roh)],
    ['Fertig waechst das Blatt', /\.exdone\.fertig \.exstapel\{width:min\(68vw,258px\)/.test(roh)],
    ['Beim Druecken gibt es nach, solange der Finger liegt', /\.exdone\.tippbar \.exstapel:active\{scale:\.965\}/.test(roh)
     && /stapel\.addEventListener\('touchstart', \(\) => \{\}, \{ passive:true \}\);/.test(roh)],
