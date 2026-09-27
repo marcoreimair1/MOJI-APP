@@ -2576,6 +2576,19 @@ Es fehlen nur noch die Secrets, die Function und der Zeitplan.
 `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` sind automatisch vorhanden. `MAIL_VON` und
 `MAIL_ANTWORT` sind nur nötig, wenn du von den Standardwerten abweichen willst.
 
+### 15.2b Was in der Erinnerung steht *(27. September 2026)*
+
+Dieselbe Hülle wie die Anmeldemails (Abschnitt 13): „September ist bereit.", ein Satz, der Knopf
+*September abgeben*. **Darunter, wenn es welche gibt, eine zweite Karte: die Bubble Teas, die
+auf Antwort warten** — wer einem einen geschickt hat, auf den man noch nicht zurückgeschickt hat.
+Das ist dieselbe Regel wie in `tee_senden()`: in `tee` ist das Datum der anderen Seite jünger als
+das eigene, oder man hat nie geschickt (`wartendFuer()`). Je Person eine Zeile mit Profilbild
+(`mail-av/`), Name mit Kürzel und dem Tag; höchstens fünf, der Rest als „und 2 weitere". Der Knopf
+*Bubble Tea zurückschicken* führt auf `moji-app.at/?tee` — die App öffnet dann nach dem Einstieg
+gleich die Bubble-Tea-Seite (`TEE_ZIEL`, einmalig, übersteht die Anmeldung, `?tee` verschwindet
+danach aus der Adresse). Scheitert die Abfrage von `tee` oder `mitglieder`, kommt die
+Erinnerung trotzdem, nur ohne Liste. Geprüft in `tests/test-mail.js`.
+
 ### 15.3 Funktion veröffentlichen *(erledigt)*
 
 Läuft als `monatsmail` unter
@@ -2759,6 +2772,8 @@ Stand 14. September 2026, gegen `git ls-files` geprüft.
 | `moji-mail-wortmarke.png` | Alte Wortmarke (weiß auf Nachtblau) der Mailvorlagen vor dem 27.09.2026. Erst löschen, wenn beide Vorlagen in Supabase durch die aus `mail/` ersetzt sind — bis dahin holen sie sie noch von `https://moji-app.at/` |
 | `moji-mail-wort-tinte.png`, `moji-mail-wort-hell.png` | Wortmarke der Mails, dunkel für hell und hell für die dunkle Fassung. Aus `LOGO_WORD_TINTE` / `LOGO_WORD` in `index.html` |
 | `mail/anmeldung.html`, `mail/registrierung.html` | Die beiden Supabase-Mailvorlagen (Abschnitt 13) |
+| `mail-av/av-1.jpg` … `av-116.jpg` | Die Profilbilder quadratisch als JPEG (120 px, Ausschnitt wie in der App) für die Bubble-Tea-Liste der Monats-Erinnerung — Outlook zeigt kein WebP. Kommen neue Bilder dazu: hier nachziehen und `AV_MAX` in `monatsmail.ts` hochsetzen |
+| `mail-tee.png` | Der Becher in der Bubble-Tea-Karte der Erinnerung, aus `tee-1.webp` |
 
 **Testreihen**
 

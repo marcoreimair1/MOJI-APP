@@ -7297,7 +7297,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2130';
+const APP_STAND = '2026-09-27-2200';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -10287,6 +10287,8 @@ function enterApp(){
   /* Wer vom PDF zurueckkommt, will dort weitermachen, wo er war. */
   go(ZURUECK_VOM_PDF && !enterApp._schonDa ? 'v-export' : 'v-cal');
   enterApp._schonDa = true;
+  /* Aus der Erinnerungsmail: gleich zu den Bubble Teas. */
+  if(TEE_ZIEL){ teeZielErfuellt(); firmaAuf(); }
   /* Nach einem Fassungswechsel geht das Menue wieder auf — dort wurde
      ja umgeschaltet. Ohne Einlaufbewegung: es war schon da, und der
      Wechsel ist der Schnitt, nicht das Menue. */
@@ -16964,6 +16966,27 @@ const ZURUECK_VOM_PDF = (function(){
   }catch(e){ return false; }
 })();
 function pdfVermerkWeg(){ try{ localStorage.removeItem(PDF_VERMERK); }catch(e){} }
+/* Aus der Monats-Erinnerung: „Bubble Tea zurückschicken" fuehrt auf
+   moji-app.at/?tee. Dann oeffnet sich nach dem Einstieg die Bubble-Tea-
+   Seite. Der Wunsch ueberlebt die Anmeldung (sessionStorage) und wird
+   nur einmal erfuellt; danach verschwindet ?tee aus der Adresse, damit
+   ein Neuladen wieder im Kalender beginnt. */
+let TEE_ZIEL = (function(){
+  let ja = /[?&]tee(?:[=&]|$)/.test(location.search);
+  try{
+    if(ja) sessionStorage.setItem('moji.tee', '1');
+    ja = sessionStorage.getItem('moji.tee') === '1';
+  }catch(e){}
+  return ja;
+})();
+function teeZielErfuellt(){
+  TEE_ZIEL = false;
+  try{ sessionStorage.removeItem('moji.tee'); }catch(e){}
+  try{
+    const u = new URL(location.href);
+    if(u.searchParams.has('tee')){ u.searchParams.delete('tee'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
+  }catch(e){}
+}
 function pdfVermerken(){
   try{ localStorage.setItem(PDF_VERMERK, String(Date.now())); }catch(e){ return; }
   /* Laedt die Seite gar nicht neu — das PDF lag nur darueber, oder es

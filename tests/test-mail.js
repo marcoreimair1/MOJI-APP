@@ -8,8 +8,9 @@
      mail/registrierung.html  Supabase → Confirm signup
      monatsmail.ts            die Monats-Erinnerung (Edge Function)
 
-   Diese Reihe prueft die Dateien im Projekt, nicht index.html — ein
-   Dateiname als Argument (von alle.js) wird ignoriert. */
+   Die Mails prueft diese Reihe in den Dateien im Projekt. Nur den Weg
+   ?tee in der App prueft sie an index.html — oder an der Datei, die
+   alle.js als Argument mitgibt. */
 const fs = require('fs');
 const path = require('path');
 
@@ -47,8 +48,10 @@ ok('Die alte Wortmarke auf Nachtblau wird nicht mehr benutzt',
    ![anm, reg, mon].some(s => s.includes('moji-mail-wortmarke.png')));
 
 /* ── 4 · Bilder: absolut und im Projekt vorhanden ── */
-const bilder = [...new Set([anm, reg, mon].flatMap(s => [...s.matchAll(/src="([^"]+)"/g)].map(m => m[1])))];
-ok('Drei Bilder insgesamt', bilder.length === 3, bilder.join(', '));
+/* Feste Adressen; die Profilbilder der Bubble-Tea-Liste stehen als
+   \${avBild(...)} da und werden unten eigens geprueft. */
+const bilder = [...new Set([anm, reg, mon].flatMap(s => [...s.matchAll(/src="([^"$]+)"/g)].map(m => m[1])))];
+ok('Vier feste Bilder: Symbol, zwei Wortmarken, der Becher', bilder.length === 4, bilder.join(', '));
 ok('Alle von moji-app.at geladen — Mailprogramme kennen keine relativen Pfade',
    bilder.every(b => b.startsWith('https://moji-app.at/')), bilder.join(', '));
 ok('Und alle liegen im Projekt, also auch auf der Seite',
@@ -71,10 +74,14 @@ ok('Keine anderen Platzhalter als diese beiden',
    Text werden herausgeloest, von ihren Typen befreit und hier ausgefuehrt. */
 const stueck = (von, bis) => mon.slice(mon.indexOf(von), mon.indexOf(bis));
 let fn = stueck('function textFassung(', 'Deno.serve(')
-  .replace(/: string/g, '').replace(/ as Record<string,string>/g, '');
-const LINK = 'https://moji-app.at/';
+  .replace(/ as Record<string,string>/g, '')
+  .replace(/: Map<string, any>/g, '')
+  .replace(/\): Tee\[\] \{/g, ') {')
+  .replace(/: (string|number|any\[\]|Tee\[\]|Tee)(?=[,)=\s])/g, '');
+const LINK = 'https://moji-app.at/', LINK_TEE = 'https://moji-app.at/?tee';
+const MONATE = ['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 let bau;
-try{ bau = new Function('LINK', fn + '; return { textFassung, htmlFassung, esc };')(LINK); }
+try{ bau = new Function('LINK', 'LINK_TEE', 'MONATE', fn + '; return { textFassung, htmlFassung, esc, wartendFuer, teeTeil };')(LINK, LINK_TEE, MONATE); }
 catch(e){ ok('Die Textfunktionen lassen sich ausfuehren', false, e.message); }
 if(bau){
   const h = bau.htmlFassung('<b>Ann</b> & "Co"', 'September');
@@ -87,7 +94,85 @@ if(bau){
   ok('Und nennt, wie man sie abschaltet', t.includes('Im Profilmenü der App schaltest du sie jederzeit ab.'));
 }
 
-/* ── 7 · Die Versandlogik ist unberuehrt ── */
+/* ── 7 · Die Bubble Teas, die auf Antwort warten ── */
+if(bau){
+  const ohne = bau.htmlFassung('Ann', 'September');
+  ok('Ohne wartende Bubble Teas keine zweite Karte', !ohne.includes('Bubble Tea') && !ohne.includes('mail-tee.png'));
+  const anna = { vorname:'Anna', kuerzel:'M', avatar:7, am:'2026-09-24' };
+  const eins = bau.htmlFassung('Ann', 'September', [anna]);
+  ok('Mit einem: „Ein Bubble Tea wartet auf dich"', eins.includes('>Ein Bubble Tea wartet auf dich</h2>'));
+  ok('Mit Namen im Satz', eins.includes('Anna hat dir einen geschickt. Jetzt bist du dran.'));
+  ok('Die Zeile zeigt Profilbild, Namen und Tag',
+     eins.includes('src="https://moji-app.at/mail-av/av-7.jpg"') && eins.includes('>Anna M.</div>') && eins.includes('>am 24. September</div>'));
+  ok('Der Knopf fuehrt in die Bubble-Tea-Seite', eins.includes('<a href="https://moji-app.at/?tee"') && eins.includes('>Bubble Tea zurückschicken</a>'));
+  ok('Die Karte steht unter der Erinnerung, vor dem Fuss',
+     eins.indexOf('September abgeben') < eins.indexOf('Bubble Tea wartet') && eins.indexOf('Bubble Tea wartet') < eins.indexOf('MOJI · Mehr Zeit'));
+  ok('Kein Platzhalter bleibt stehen', !/\$\{|\{\{/.test(eins));
+  const sieben = Array.from({ length: 7 }, (_, i) => ({ vorname:'P' + i, kuerzel:'', avatar:i + 1, am:'2026-09-0' + (i + 1) }));
+  const viele = bau.htmlFassung('Ann', 'September', sieben);
+  ok('Sieben: die Zahl als Wort', viele.includes('>Sieben Bubble Teas warten auf dich</h2>'));
+  ok('Hoechstens fuenf Zeilen', (viele.match(/mail-av\/av-/g) || []).length === 5);
+  ok('Der Rest als Zahl', viele.includes('>und 2 weitere</p>'));
+  ok('Ohne Kuerzel kein Punkt', viele.includes('>P0</div>'));
+  const fremd = bau.htmlFassung('Ann', 'September', [{ vorname:'<i>X</i>', kuerzel:'', avatar:999, am:'2026-09-01' }]);
+  ok('Fremde Namen werden maskiert', fremd.includes('&lt;i&gt;X&lt;/i&gt;') && !fremd.includes('<i>X</i>'));
+  ok('Ein unbekanntes Bild faellt auf das erste zurueck', fremd.includes('mail-av/av-1.jpg') && !fremd.includes('av-999'));
+  const t = bau.textFassung('Ann', 'September', [anna]);
+  ok('Die Textfassung nennt sie auch', t.includes('Ein Bubble Tea wartet auf dich: Anna M.') && t.includes(LINK_TEE));
+
+  /* Wer wartet: dieselbe Regel wie tee_senden(). */
+  const P = new Map([['b', { vorname:'Bea', kuerzel:'K', avatar:3 }], ['c', { vorname:'Cem', kuerzel:'', avatar:4 }],
+                     ['d', { vorname:'Dora', kuerzel:'', avatar:5 }], ['e', { vorname:'Emil', kuerzel:'', avatar:6 }]]);
+  const R = [
+    { a:'a', b:'b', letzt_a:'2026-09-10', letzt_b:'2026-09-20' },   /* Bea juenger: wartet */
+    { a:'a', b:'c', letzt_a:'2026-09-22', letzt_b:'2026-09-20' },   /* ich juenger: nicht */
+    { a:'a', b:'d', letzt_a:null,         letzt_b:'2026-09-25' },   /* nie geschickt: wartet */
+    { a:'a', b:'e', letzt_a:'2026-09-21', letzt_b:'2026-09-21' },   /* gleicher Tag: nicht */
+    { a:'b', b:'c', letzt_a:null,         letzt_b:'2026-09-26' },   /* nicht meins */
+    { a:'a', b:'x', letzt_a:null,         letzt_b:'2026-09-26' }    /* ausgetreten */
+  ];
+  const w = bau.wartendFuer('a', R, P);
+  ok('Es warten genau Dora und Bea, die juengste zuerst', w.map(x => x.vorname).join(',') === 'Dora,Bea', w.map(x => x.vorname).join(','));
+  ok('Mit dem Tag der anderen Seite', w[1].am === '2026-09-20');
+  ok('Auch von der b-Seite aus gerechnet', bau.wartendFuer('c', R, new Map([['b', { vorname:'Bea' }], ['a', { vorname:'Al' }]])).length === 1);
+}
+ok('Jedes Profilbild liegt als JPEG bereit',
+   Array.from({ length: 116 }, (_, i) => 'mail-av/av-' + (i + 1) + '.jpg').every(f => fs.existsSync(path.join(WURZEL, f))));
+ok('So viele wie in der App', fs.readdirSync(WURZEL).filter(f => /^av-\d+\.webp$/.test(f)).length === 116
+   && mon.includes('const AV_MAX = 116;'));
+ok('Die Liste kommt auch dann, wenn die Abfrage scheitert, nur leer',
+   mon.includes("const tee = wartendFuer(r.user_id, teeReihen || [], person);"));
+
+/* ── 8 · In der App: ?tee oeffnet die Bubble-Tea-Seite ──
+   Zwei Instanzen: eine mit ?tee, eine ohne. Hier wird index.html
+   geprueft — die Datei aus dem Argument, falls alle.js eine mitgibt. */
+const { JSDOM, VirtualConsole } = require('jsdom');
+const APP = process.argv[2] || path.join(WURZEL, 'index.html');
+function starte(adresse){
+  const vc = new VirtualConsole();
+  ['jsdomError','error','warn'].forEach(e => vc.on(e, () => {}));
+  const d = new JSDOM(fs.readFileSync(APP, 'utf8'), { url: adresse, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc });
+  const sk = d.window.document.createElement('script');
+  sk.textContent = `window.__V = TEE_ZIEL;
+    ME = normalize({ id:'t', vorname:'Marco', nachname:'Reimair', dob:'1990-05-04', av:3 });
+    enterApp();
+    window.__A = document.querySelector('.view.on') && document.querySelector('.view.on').id;
+    window.__N = TEE_ZIEL;
+    ME = null;`;
+  d.window.document.body.appendChild(sk);
+  return d.window;
+}
+const mit = starte('https://moji-app.at/?tee');
+ok('Mit ?tee merkt sich die App den Wunsch', mit.__V === true);
+ok('Und oeffnet nach dem Einstieg die Bubble-Tea-Seite', mit.__A === 'v-firma', mit.__A);
+ok('Nur einmal', mit.__N === false && mit.sessionStorage.getItem('moji.tee') === null);
+ok('Und ?tee ist aus der Adresse verschwunden', mit.location.search === '', mit.location.search);
+const ohne = starte('https://moji-app.at/');
+ok('Ohne ?tee beginnt sie im Kalender', ohne.__V === false && ohne.__A === 'v-cal', ohne.__A);
+const aehnlich = starte('https://moji-app.at/?teeX=1');
+ok('Ein aehnlicher Parameter zaehlt nicht', aehnlich.__V === false);
+
+/* ── 9 · Die Versandlogik ist unberuehrt ── */
 ok('Der Betreff bleibt', mon.includes("return name + ' ist bereit zum Abgeben';"));
 ok('Nur mit Zustimmung', mon.includes("if(p.mailOk !== true){ bericht.uebersprungen++; continue; }"));
 ok('Nicht, wer schon abgegeben hat', mon.includes("if(p.exp && p.exp[expKey]){ bericht.uebersprungen++; continue; }"));

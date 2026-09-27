@@ -30,6 +30,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const MONATE = ['Jänner','Februar','März','April','Mai','Juni',
                 'Juli','August','September','Oktober','November','Dezember'];
 const LINK = 'https://moji-app.at/';
+const LINK_TEE = 'https://moji-app.at/?tee';
 
 /* Der Monat, an den erinnert wird: der gerade abgeschlossene. */
 function vormonat(heute: Date){
@@ -41,12 +42,21 @@ function betreff(name: string){
   return name + ' ist bereit zum Abgeben';
 }
 
+/* Wer einem einen Bubble Tea geschickt hat, auf den man noch nicht
+   geantwortet hat — dieselbe Regel wie tee_senden(): die Seite, deren
+   Datum juenger ist, wartet auf die andere. */
+type Tee = { vorname: string, kuerzel: string, avatar: number, am: string };
+
 /* Kurze, warme Ansprache — kein Werbeton. */
-function textFassung(vorname: string, monat: string){
+function textFassung(vorname: string, monat: string, tee: Tee[] = []){
   return 'Hallo ' + vorname + ',\n\n'
     + 'dein ' + monat + ' ist abgeschlossen und bereit zum Abgeben.\n'
     + 'Ein Blick in MOJI, Export drücken, fertig.\n\n'
     + LINK + '\n\n'
+    + (tee.length
+        ? teeTitel(tee.length) + ': ' + tee.map(teeName).join(', ') + '.\n'
+          + 'Schick einen zurück: ' + LINK_TEE + '\n\n'
+        : '')
     + 'MOJI · Mehr Zeit fürs Wesentliche\n'
     + 'Eine App von Studio MARU 丸\n\n'
     + 'Diese Erinnerung kommt einmal im Monat, weil du sie erlaubt hast. '
@@ -59,11 +69,84 @@ function esc(s: string){
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' } as Record<string,string>)[c]);
 }
 
+/* ─── Die Bubble Teas unter der Karte ──────────────────────────────
+   Eine Zeile je Kollegin oder Kollege, mit dem Profilbild aus der App
+   (als quadratisches JPEG unter mail-av/, weil Outlook kein WebP zeigt),
+   hoechstens fuenf, der Rest als Zahl. Darunter ein Knopf, der in MOJI
+   direkt die Bubble-Tea-Seite oeffnet (?tee). */
+const AV_MAX = 116;
+const ZAHLWORT = ['', 'Ein', 'Zwei', 'Drei', 'Vier', 'Fünf', 'Sechs', 'Sieben', 'Acht', 'Neun', 'Zehn'];
+function avBild(n: number){
+  return 'https://moji-app.at/mail-av/av-' + (Number.isInteger(n) && n >= 1 && n <= AV_MAX ? n : 1) + '.jpg';
+}
+function teeName(t: Tee){ return t.vorname + (t.kuerzel ? ' ' + t.kuerzel + '.' : ''); }
+function teeTitel(n: number){
+  return (ZAHLWORT[n] || String(n)) + (n === 1 ? ' Bubble Tea wartet' : ' Bubble Teas warten') + ' auf dich';
+}
+function teeTag(iso: string){
+  const t = String(iso).split('-').map(Number);
+  return t.length === 3 && t[1] >= 1 && t[1] <= 12 ? t[2] + '. ' + MONATE[t[1] - 1] : '';
+}
+/* Die andere Seite hat zuletzt geschickt, man selbst seither nicht:
+   ihr Datum ist juenger als das eigene, oder man hat nie geschickt.
+   Gleicher Tag heisst, beide haben — dann wartet niemand. */
+function wartendFuer(uid: string, reihen: any[], person: Map<string, any>): Tee[] {
+  const aus: Tee[] = [];
+  for(const t of reihen){
+    if(t.a !== uid && t.b !== uid) continue;
+    const ichA = t.a === uid;
+    const meins = ichA ? t.letzt_a : t.letzt_b;
+    const seins = ichA ? t.letzt_b : t.letzt_a;
+    if(!seins || (meins && meins >= seins)) continue;
+    const m = person.get(ichA ? t.b : t.a);
+    if(!m) continue;
+    aus.push({ vorname: String(m.vorname || '').trim() || 'Jemand',
+               kuerzel: String(m.kuerzel || '').trim(),
+               avatar: Number(m.avatar), am: String(seins) });
+  }
+  return aus.sort((x, y) => y.am.localeCompare(x.am));
+}
+function teeTeil(tee: Tee[]){
+  if(!tee.length) return '';
+  const zeig = tee.slice(0, 5), rest = tee.length - zeig.length;
+  const satz = tee.length === 1
+    ? esc(tee[0].vorname) + ' hat dir einen geschickt. Jetzt bist du dran.'
+    : 'Sie haben dir einen geschickt. Jetzt bist du dran.';
+  const zeilen = zeig.map((t, i) => `
+      <tr><td class="m-linie" style="padding:12px 0;${i ? 'border-top:1px solid #F0EBF5;' : ''}">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="padding-right:13px;vertical-align:middle;"><img src="${avBild(t.avatar)}" width="40" height="40" alt="" style="display:block;border:0;border-radius:12px;"></td>
+          <td style="vertical-align:middle;">
+            <div class="m-titel" style="font:600 15px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1A1026;">${esc(teeName(t))}</div>
+            <div class="m-leise" style="font:400 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">${teeTag(t.am) ? 'am ' + teeTag(t.am) : ''}</div>
+          </td>
+        </tr></table>
+      </td></tr>`).join('');
+  return `  <tr><td style="height:12px;line-height:12px;font-size:0;">&nbsp;</td></tr>
+  <tr><td class="m-karte" style="background:#FFFFFF;border:1px solid #ECE6F3;border-radius:24px;padding:30px 32px 30px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="vertical-align:middle;">
+        <h2 class="m-titel" style="margin:0 0 6px;font:600 19px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.01em;color:#1A1026;">${teeTitel(tee.length)}</h2>
+        <p class="m-text" style="margin:0;font:400 14.5px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5E5569;">${satz}</p>
+      </td>
+      <td width="36" style="padding-left:14px;vertical-align:middle;"><img src="https://moji-app.at/mail-tee.png" width="28" height="48" alt="" style="display:block;border:0;"></td>
+    </tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;">${zeilen}
+    </table>${rest > 0 ? `
+    <p class="m-leise" style="margin:4px 0 0;font:400 13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">und ${rest} ${rest === 1 ? 'weitere Person' : 'weitere'}</p>` : ''}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+      <td class="m-knopf2" style="border-radius:999px;background:#F5EAFE;"><a href="${LINK_TEE}" style="display:inline-block;padding:13px 24px;border-radius:999px;font:600 14.5px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A21FE0;text-decoration:none;">Bubble Tea zurückschicken</a></td>
+    </tr></table>
+  </td></tr>
+`;
+}
+
 /* Seit 27.09.2026 dieselbe Huelle wie die beiden Anmeldemails in mail/:
    hell, eine weisse Karte, das App-Symbol mit Wortmarke oben, ein Knopf.
    Im Dunkelmodus (Apple Mail, Outlook am Mac) die dunkle Fassung. */
-function htmlFassung(vorname: string, monat: string){
+function htmlFassung(vorname: string, monat: string, tee: Tee[] = []){
   vorname = esc(vorname);
+  const teeHtml = teeTeil(tee);
   return `<!doctype html>
 <html lang="de">
 <head>
@@ -87,6 +170,8 @@ function htmlFassung(vorname: string, monat: string){
     .m-feld{background:#211A2B !important;border-color:#2E2539 !important}
     .m-linie{border-color:#271F30 !important}
     .m-link{color:#DC8AFF !important}
+    .m-knopf2{background:#2A1E37 !important}
+    .m-knopf2 a{color:#E4A4FF !important}
     .m-wort-tinte{display:none !important}
     .m-wort-hell{display:inline-block !important}
   }
@@ -111,7 +196,7 @@ function htmlFassung(vorname: string, monat: string){
     </tr></table>
     <p class="m-leise m-linie" style="margin:28px 0 0;padding-top:20px;border-top:1px solid #F0EBF5;font:400 12.5px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">Diese Erinnerung kommt einmal im Monat, weil du sie erlaubt hast. Im Profilmenü der App schaltest du sie jederzeit ab.</p>
   </td></tr>
-  <tr><td class="m-leise" style="padding:22px 8px 0;font:400 12px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;text-align:center;">
+${teeHtml}  <tr><td class="m-leise" style="padding:22px 8px 0;font:400 12px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;text-align:center;">
     MOJI · Mehr Zeit fürs Wesentliche<br>Eine App von Studio MARU 丸
   </td></tr>
 </table>
@@ -180,6 +265,12 @@ Deno.serve(async (req) => {
 
   const bericht = { gesendet: 0, uebersprungen: 0, fehler: [] as string[] };
 
+  /* Die Bubble Teas: alle Paare und alle Mitglieder einmal holen. Geht
+     das schief, kommt die Erinnerung trotzdem — nur ohne die Liste. */
+  const { data: teeReihen } = await sb.from('tee').select('a, b, letzt_a, letzt_b');
+  const { data: leute } = await sb.from('mitglieder').select('user_id, vorname, kuerzel, avatar');
+  const person = new Map((leute || []).map((m: any) => [m.user_id, m]));
+
   for(const r of (reihen || [])){
     const p = r.data || {};
     if(p.mailOk !== true){ bericht.uebersprungen++; continue; }
@@ -197,6 +288,7 @@ Deno.serve(async (req) => {
     if(!mail){ bericht.uebersprungen++; continue; }
 
     const vorname = (p.vorname || '').trim() || 'du';
+    const tee = wartendFuer(r.user_id, teeReihen || [], person);
 
     try{
       const antwort = await fetch('https://api.resend.com/emails', {
@@ -206,8 +298,8 @@ Deno.serve(async (req) => {
           from: von, to: [mail],
           reply_to: [antwortAn],
           subject: betreff(monat),
-          text: textFassung(vorname, monat),
-          html: htmlFassung(vorname, monat)
+          text: textFassung(vorname, monat, tee),
+          html: htmlFassung(vorname, monat, tee)
         })
       });
       if(!antwort.ok) throw new Error(await antwort.text());
