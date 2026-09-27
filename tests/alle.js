@@ -29,7 +29,8 @@ const REIHEN = [
   ['test-export',       'Exportseite und die PDF-Seite selbst'],
   ['test-vorspann',     'Vorspann, Übergabe an den Gruß, Kopfleiste'],
   ['test-menue',        'Profilmenü, Wischgeste, Fassungswechsel'],
-  ['test-kalender',     'Kalender neu laden und das Osterei']
+  ['test-kalender',     'Kalender neu laden und das Osterei'],
+  ['test-jahr',         'Jahresrückblick: Rechnen, Banner, Kapitel, Bühne']
 ];
 
 const DATEI = process.argv[2] || path.join(__dirname, '..', 'index.html');

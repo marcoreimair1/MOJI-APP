@@ -582,6 +582,37 @@ nahm `body.locked` weg — während der Gruß noch 0,62 s aufblendete. In dieser
 Kalender und Leiste durch das halb sichtbare Profilbild. Bei der Übergabe passiert beides jetzt
 erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält das fest.
 
+### Jahresrückblick *(27. September 2026)*
+
+Wie Spotify Wrapped, in MOJIs Handschrift. Vom **1. Dezember bis 31. Jänner** steht auf der
+Exportseite über „Export als PDF" ein Banner in der Farbe der eigenen Stufe (`malJrBanner()`,
+gemalt aus `go('v-export')`); im Jänner gilt er dem Vorjahr (`jrJahr()`). Ein Tipp öffnet die
+Story (`jrAuf()`). Zum Ansehen vor Dezember: **moji-app.at/?rueckblick** in Safari — gilt für den
+laufenden Tab.
+
+**Kapitel** (nur die mit Inhalt): Eröffnung („Dein Jahr 2026") · Stunden mit rollender Zahl,
+Vergleich und zwölf Säulen · Stufe als Holo-Karte · Bubble-Tea-Buddy · Abzeichen · Abschluss mit
+Teilen-Bild (`jrBild()`, 1080 × 1350). Bedienung wie Stories: rechts weiter, links zurück, halten
+pausiert, das letzte Kapitel läuft nicht von selbst weiter.
+
+**Gestaltung:** jedes Kapitel ein lebender Verlauf aus der Stufenfarbe und zwei Nachbartönen
+(`jrPalette()`, `jrDreh()` im Farbkreis), feines Korn darüber, Kapitel öffnen sich als Kreis vom
+Finger (`jrBlende()`), Zahlen rollen Ziffer für Ziffer mit Metallglanz, jede Ziffernspalte so
+breit wie ihre Zielziffer. Alle Klassen tragen `jr-`.
+
+**Gerechnet** (`jrDaten(y, heute)`): Stunden bis heute aus `monthRows`/`monthSums`, stärkster
+Monat, Urlaubstage, längster Urlaub am Stück (freie Tage dazwischen zählen mit), Brückentage
+(Urlaub neben einem Feiertag), abgegeben und pünktlich (bis zum 5. des Folgemonats), frühester
+Dienstbeginn, Samstage, gesammelter Zeitausgleich, Aufstiege im Jahr aus den `ME.exp`-Zeitstempeln,
+Monate mit MOJI, längste Tagesserie (`ME.serie.best[jahr]`, seit 27.09. gemerkt).
+**Krankentage kommen bewusst nicht vor.**
+
+**Bubble Teas:** neue Tabelle `tee_log` (Migration `20260927090000_tee_protokoll.sql`) — jeder
+gezählte Becher mit Tag, geschrieben nur in `tee_senden()`, lesbar nur für Beteiligte. Für Jahre
+vor `TEE_LOG_AB` (2026-09-27) zählt die Summe je Paar; Bubble Tea gibt es erst seit 15.09.2026.
+Geladen wird erst beim Öffnen (`jrTeeLaden()`); sind die Daten da, kommen Buddy und Abzeichen
+dazu. Prüfungen: `tests/test-jahr.js`.
+
 ### Das Blatt, das sich schreibt — beim Export *(27. September 2026)*
 
 Nach dem Signieren entsteht das PDF vor den Augen: `exOverlay(seiten)` legt eine Bühne über

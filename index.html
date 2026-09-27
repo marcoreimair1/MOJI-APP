@@ -2878,6 +2878,258 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
   .hallo-komet{display:none}
 }
 
+/* ═══ JAHRESRÜCKBLICK ═══════════════════════════════════════════════
+   Seit 27.09.2026. Im Dezember und Jänner steht auf der Exportseite
+   ueber "Export als PDF" ein Banner in der Farbe der eigenen Stufe; ein
+   Tipp oeffnet den Rueckblick als Story, wie man sie von Spotify kennt.
+
+   Die Farbwelt kommt ganz aus der Stufe: jedes Kapitel ist ein
+   lebender Verlauf aus der Stufenfarbe und zwei Nachbartoenen (jrPalette),
+   darueber ein kaum sichtbares Korn. Kapitel oeffnen sich als Kreis von
+   der Stelle, an der getippt wurde. Zahlen rollen Ziffer fuer Ziffer
+   hoch und bekommen einen Metallglanz; die Stufenkarte ist eine
+   Holo-Karte, die sich mit dem Finger neigt.
+
+   Alles traegt den Vorsatz jr-, damit nichts mit der App kollidiert. */
+:root{
+  --jr-korn:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+/* ─── Das Banner ─── */
+.jr-banner{position:relative;display:flex;align-items:center;gap:13px;width:100%;border:0;text-align:left;cursor:pointer;
+  margin:0 0 14px;padding:14px 14px 14px 12px;border-radius:24px;overflow:hidden;isolation:isolate;color:#fff;font-family:var(--font-ui);
+  background:
+    radial-gradient(70% 90% at 0% 0%, var(--jr-hell), transparent 70%),
+    radial-gradient(80% 120% at 100% 100%, var(--jr-tief), transparent 70%),
+    linear-gradient(120deg, var(--jr-a), var(--jr-b));
+  box-shadow:0 18px 34px -18px var(--jr-b),0 0 0 1px rgba(255,255,255,.18) inset;
+  transition:scale .22s var(--ease-out);-webkit-tap-highlight-color:transparent}
+.jr-banner[hidden]{display:none}
+.jr-banner:active{scale:.97}
+.jr-banner:focus-visible{outline:2px solid var(--butter);outline-offset:3px}
+.jr-banner::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.5;mix-blend-mode:overlay;background-image:var(--jr-korn)}
+/* Der Glanz wandert, solange der Rueckblick noch nicht angesehen ist. */
+.jr-banner::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 46%,rgba(255,255,255,.1) 54%,transparent 68%);
+  transform:translateX(-120%);animation:jrBannerGlanz 4.8s 1s var(--ease-blend) infinite}
+.jr-banner.gesehen::after{animation:none}
+@keyframes jrBannerGlanz{0%,8%{transform:translateX(-120%)}46%,100%{transform:translateX(120%)}}
+.jr-banner img{width:46px;height:46px;border-radius:15px;object-fit:cover;object-position:center 86%;background:#fff;flex:none;
+  box-shadow:0 8px 16px -8px rgba(0,0,0,.5)}
+.jr-banner > span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.jr-banner small{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.82}
+.jr-banner b{font-family:var(--font-dis);font-weight:600;font-size:21px;letter-spacing:-.015em;line-height:1.05}
+.jr-banner em{margin-left:auto;font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;
+  padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3)}
+
+/* ─── Die Buehne ─── */
+.jr{position:fixed;inset:0;z-index:65;display:none;color:#fff;touch-action:none;font-family:var(--font-ui);
+  -webkit-user-select:none;user-select:none}
+.jr.offen{display:block}
+.jr-kap{position:absolute;inset:0;overflow:hidden;
+  background:
+    radial-gradient(60% 46% at 18% 22%, var(--m3), transparent 70%),
+    radial-gradient(52% 42% at 84% 16%, var(--m4), transparent 70%),
+    radial-gradient(74% 58% at 72% 86%, var(--m2), transparent 72%),
+    radial-gradient(48% 38% at 22% 82%, var(--m4), transparent 70%),
+    var(--m1);
+  background-size:190% 190%,190% 190%,190% 190%,190% 190%,auto;
+  animation:jrMesh 16s ease-in-out infinite alternate}
+@keyframes jrMesh{
+  from{background-position:10% 12%, 88% 8%, 70% 90%, 18% 84%, 0 0}
+  to  {background-position:32% 30%, 64% 26%, 52% 70%, 36% 64%, 0 0}
+}
+/* Das Korn liegt ueber allem, kaum sichtbar — Papier statt Bildschirm. */
+.jr::after{content:"";position:absolute;inset:0;z-index:30;pointer-events:none;opacity:.14;
+  mix-blend-mode:overlay;background-image:var(--jr-korn)}
+.jr-fort{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;right:58px;z-index:40;display:flex;gap:5px}
+.jr-fort i{flex:1;height:3px;border-radius:9px;background:rgba(255,255,255,.28);overflow:hidden}
+.jr-fort i b{display:block;height:100%;width:0;background:#fff;border-radius:inherit}
+.jr-fort i.durch b{width:100%}
+.jr-fort i.jetzt b{animation:jrFort var(--dauer,6.5s) linear forwards}
+.jr.pause .jr-fort i.jetzt b{animation-play-state:paused}
+@keyframes jrFort{to{width:100%}}
+.jr-zu{position:absolute;top:calc(4px + env(safe-area-inset-top));right:10px;z-index:41;width:42px;height:42px;border:0;border-radius:50%;
+  cursor:pointer;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;transition:scale .2s var(--ease-out)}
+.jr-zu:active{scale:.9}
+.jr-zu svg{width:16px;height:16px}
+
+.jr-kin{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:calc(70px + env(safe-area-inset-top)) 26px calc(56px + env(safe-area-inset-bottom));gap:14px;
+  max-width:520px;margin:0 auto}
+.jr-kick{font-family:var(--font-dis);font-weight:500;font-size:22px;letter-spacing:-.01em;line-height:1.15;margin:0;opacity:.94}
+.jr-klein{font-size:13.5px;line-height:1.5;opacity:.82;margin:0;max-width:32ch}
+.jr-ruhig{opacity:0}
+.an .jr-ruhig{animation:jrRuhig .9s var(--ease-out) forwards;animation-delay:var(--v,0s)}
+@keyframes jrRuhig{from{opacity:0;transform:translateY(12px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+/* Zeichen fuer Zeichen aus der Unschaerfe */
+.jr-zz{display:inline-block;opacity:0}
+.an .jr-zz{animation:jrZeichen .95s var(--ease-out) forwards;animation-delay:calc(var(--v,0s) + var(--i) * 38ms)}
+@keyframes jrZeichen{from{opacity:0;transform:translateY(.45em);filter:blur(9px)}to{opacity:1;transform:none;filter:none}}
+/* Woerter steigen hinter einer Kante hervor */
+.jr-wk{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.08em}
+.jr-wk > span{display:inline-block;transform:translateY(110%)}
+.an .jr-wk > span{animation:jrWort .9s var(--ease-out) forwards;animation-delay:calc(var(--v,0s) + var(--i) * 70ms)}
+@keyframes jrWort{to{transform:none}}
+/* Metallglanz: Schrift mit Verlauf, ueber den ein Lichtband laeuft */
+.jr-metall{background:linear-gradient(100deg,var(--jr-glanz) 0 34%,#fff 45%,var(--jr-glanz) 56% 100%);
+  background-size:320% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent}
+.an .jr-metall{animation:jrMetall 2.2s var(--ease-blend) forwards;animation-delay:var(--mz,1.6s)}
+@keyframes jrMetall{to{background-position:0 0}}
+/* Rollzaehler: jede Ziffer rollt einzeln */
+.jr-zahl{font-family:var(--font-dis);font-weight:700;letter-spacing:-.045em;line-height:1;display:flex;align-items:flex-end}
+/* Jede Spalte ist so breit wie ihre Zielziffer (gesetzt in jrSchicht) —
+   sonst stand die schmale 1 in einer Spalte so breit wie die 0, und in
+   "1.580" klaffte eine Luecke. Die anderen Ziffern rollen mittig durch. */
+.jr-rz{display:inline-flex;justify-content:center;height:1em;overflow:hidden}
+.jr-rz-s{display:flex;flex-direction:column;align-items:center;transform:translateY(0)}
+.jr-rz-s b{display:block;width:max-content;height:1em;line-height:1em;font-weight:inherit}
+.an .jr-rz-s{transition:transform 1.9s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--v,0s) + var(--i) * 110ms);
+  transform:translateY(calc(var(--d) * -1em))}
+.jr-rz-z{display:inline-block}
+
+/* Eroeffnung */
+.jr-open{align-items:center;text-align:center}
+.jr-av{position:relative;width:132px;aspect-ratio:1;margin-bottom:8px}
+.jr-av img{position:relative;width:100%;height:100%;border-radius:30%;object-fit:cover;object-position:center 86%;background:#fff;
+  box-shadow:0 30px 60px -24px rgba(0,0,0,.6);opacity:0}
+.an .jr-av img{animation:jrScharf 1.3s .15s var(--ease-out) forwards}
+@keyframes jrScharf{0%{opacity:0;transform:translateY(22px) scale(.82);filter:blur(18px)}55%{opacity:1;filter:blur(0)}100%{opacity:1;transform:none;filter:none}}
+.jr-av::before{content:"";position:absolute;left:50%;top:50%;width:230%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.34),transparent 60%);opacity:0}
+.an .jr-av::before{animation:jrSchein 1.8s .1s var(--ease-out) forwards, jrAtmen 3.6s 1.9s ease-in-out infinite alternate}
+@keyframes jrSchein{from{opacity:0;transform:scale(.5)}to{opacity:1}}
+@keyframes jrAtmen{to{transform:scale(1.1);opacity:.7}}
+.jr-jahr{font-family:var(--font-dis);font-weight:700;font-size:min(34vw,150px);letter-spacing:-.05em;line-height:.9;margin:0}
+.jr-jahr .jr-wk{padding-bottom:.06em}
+
+/* Stunden */
+.jr-std .jr-zahl{font-size:min(30vw,128px)}
+.jr-einheit{font-family:var(--font-dis);font-weight:500;font-size:26px;letter-spacing:-.01em;margin:-2px 0 0}
+.jr-pille{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600;
+  padding:9px 13px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+.jr-pille i{width:7px;height:7px;border-radius:50%;background:#fff}
+.jr-saeulen{display:flex;align-items:flex-end;gap:5px;height:74px;margin-top:6px}
+.jr-saeulen span{flex:1;border-radius:6px 6px 3px 3px;background:rgba(255,255,255,.26);height:calc(var(--h) * 1%);
+  min-height:3px;transform-origin:bottom;transform:scaleY(0)}
+.jr-saeulen span.top{background:#fff}
+.jr-saeulen span.leer{background:rgba(255,255,255,.1)}
+.an .jr-saeulen span{animation:jrSaeule .9s cubic-bezier(.34,1.3,.5,1) forwards;animation-delay:calc(2.6s + var(--i) * 60ms)}
+@keyframes jrSaeule{to{transform:none}}
+.jr-monatz{display:flex;gap:5px;font-size:9.5px;opacity:.6;margin-top:-6px}
+.jr-monatz span{flex:1;text-align:center}
+
+/* Holo-Karte */
+.jr-stufe, .jr-ende{align-items:center;text-align:center;perspective:1100px}
+.jr-holo{--rx:0deg;--ry:0deg;position:relative;width:min(62vw,240px);aspect-ratio:5/7.2;border-radius:22px;
+  transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateY(var(--ry));
+  background:linear-gradient(165deg,var(--jr-hochk),var(--jr-tiefk));box-shadow:0 40px 70px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.22) inset;
+  padding:9px;display:flex;flex-direction:column;opacity:0;margin:6px 0 10px;text-align:left}
+.an .jr-holo{animation:jrKarte 1.5s .5s var(--ease-out) forwards}
+@keyframes jrKarte{0%{opacity:0;transform:translateY(60px) rotateX(28deg) scale(.86);filter:blur(12px)}
+  60%{opacity:1;filter:none}100%{opacity:1;transform:rotateX(var(--rx)) rotateY(var(--ry))}}
+.jr-holo.lebt{animation:none;opacity:1}
+.jr-holo .jr-band{display:flex;justify-content:space-between;align-items:baseline;padding:4px 6px 8px;font-size:12px}
+.jr-holo .jr-band b{font-family:var(--font-dis);font-size:15px;font-weight:600;letter-spacing:-.01em}
+.jr-holo .jr-band span{opacity:.72;font-size:10px;letter-spacing:.08em}
+.jr-holo .jr-fenster{border-radius:15px;overflow:hidden;aspect-ratio:1;background:#fff}
+.jr-holo .jr-fenster img{width:100%;height:100%;object-fit:cover;object-position:center 86%}
+.jr-holo .jr-wer{padding:9px 4px 0;text-align:center}
+.jr-holo .jr-wer b{display:block;font-family:var(--font-dis);font-weight:600;font-size:16px}
+.jr-holo .jr-wer small{font-size:10px;opacity:.75}
+.jr-holo .jr-fach{margin:auto 2px 2px;border-radius:12px;background:rgba(255,255,255,.14);padding:8px 10px;display:flex;justify-content:space-between;
+  align-items:center;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase}
+.jr-holo .jr-fach b{font-family:var(--font-dis);font-size:14px;letter-spacing:-.01em;text-transform:none}
+/* Die Folie: ein Farbfaecher, der sich mit dem Winkel verschiebt, und
+   feine Linien wie bei einem Hologramm. Dazu ein Glanzpunkt am Finger. */
+.jr-folie{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:color-dodge;opacity:.34;
+  background:
+    repeating-linear-gradient(calc(var(--ang,0deg) + 110deg), rgba(255,255,255,0) 0 5%, rgba(255,255,255,.22) 7%, rgba(255,255,255,0) 9.5%),
+    conic-gradient(from var(--ang,0deg) at var(--gx,50%) var(--gy,50%), #ff9bd4, #a9c9ff, #9ff0d0, #fff1a1, #ffb2a6, #ff9bd4)}
+.jr-glanzpunkt{position:absolute;inset:0;border-radius:inherit;pointer-events:none;mix-blend-mode:overlay;
+  background:radial-gradient(45% 35% at var(--gx,50%) var(--gy,30%), rgba(255,255,255,.75), transparent 70%)}
+
+/* Bubble-Tea-Buddy */
+.jr-buddy{align-items:center;text-align:center}
+.jr-paar{position:relative;width:min(76vw,290px);height:170px;margin:4px 0 6px}
+.jr-paar img{position:absolute;top:34px;width:108px;aspect-ratio:1;border-radius:30%;object-fit:cover;object-position:center 86%;
+  background:#fff;box-shadow:0 24px 40px -20px rgba(0,0,0,.6),0 0 0 3px rgba(255,255,255,.9);opacity:0}
+.jr-paar .jr-ich{left:4%}
+.jr-paar .jr-du{right:4%}
+.jr-paar .jr-becher{top:auto;bottom:-6px;left:50%;width:92px;aspect-ratio:auto;height:auto;margin-left:-46px;border-radius:0;
+  background:none;box-shadow:none;object-fit:contain;z-index:2;filter:drop-shadow(0 16px 18px rgba(0,0,0,.35))}
+.jr-paar::before{content:"";position:absolute;left:50%;bottom:10px;width:190px;aspect-ratio:1;translate:-50% 0;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.4),transparent 62%);opacity:0}
+.an .jr-paar .jr-ich{animation:jrVonLinks 1.1s .5s var(--ease-out) forwards, jrAnstossL .6s 2.05s ease-in-out}
+.an .jr-paar .jr-du{animation:jrVonRechts 1.1s .5s var(--ease-out) forwards, jrAnstossR .6s 2.05s ease-in-out}
+.an .jr-paar .jr-becher{animation:jrBecher 1s 1.35s cubic-bezier(.34,1.4,.5,1) forwards}
+.an .jr-paar::before{animation:jrSchein 1.4s 1.5s var(--ease-out) forwards, jrAtmen 3.4s 2.9s ease-in-out infinite alternate}
+@keyframes jrVonLinks{0%{opacity:0;transform:translateX(-90%) rotate(-14deg) scale(.8);filter:blur(10px)}
+  100%{opacity:1;transform:rotate(-7deg);filter:none}}
+@keyframes jrVonRechts{0%{opacity:0;transform:translateX(90%) rotate(14deg) scale(.8);filter:blur(10px)}
+  100%{opacity:1;transform:rotate(7deg);filter:none}}
+@keyframes jrAnstossL{50%{transform:translateX(9px) rotate(-2deg)}100%{transform:rotate(-7deg)}}
+@keyframes jrAnstossR{50%{transform:translateX(-9px) rotate(2deg)}100%{transform:rotate(7deg)}}
+@keyframes jrBecher{0%{opacity:0;transform:translateY(-150px) scale(.6) rotate(-12deg)}100%{opacity:1;transform:none}}
+.jr-buddy-name{font-family:var(--font-dis);font-weight:600;font-size:34px;letter-spacing:-.02em;margin:0;line-height:1}
+.jr-buddy-zahl{display:flex;align-items:flex-end;gap:10px;justify-content:center}
+.jr-buddy-zahl .jr-zahl{font-size:64px}
+.jr-buddy-zahl .jr-einheit{font-size:17px;margin:0 0 8px;text-align:left;max-width:9em;line-height:1.15}
+.jr-buddy .jr-pille{align-self:center}
+
+/* Abzeichen */
+.jr-abz-kin{gap:12px}
+.jr-abz{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.jr-med{position:relative;overflow:hidden;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:6px;
+  background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.2);opacity:0}
+.jr-med.gross{grid-column:1 / -1;flex-direction:row;align-items:center;gap:14px;padding:14px}
+.an .jr-med{animation:jrMed .8s var(--ease-out) forwards;animation-delay:calc(.9s + var(--i) * 150ms)}
+@keyframes jrMed{0%{opacity:0;transform:scale(.7) translateY(14px);filter:blur(8px)}
+  70%{opacity:1;transform:scale(1.03);filter:none}100%{opacity:1;transform:none}}
+.jr-med::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-130%);
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 48%,transparent 66%)}
+.an .jr-med::after{animation:jrMedGlanz 1.1s var(--ease-blend) forwards;animation-delay:calc(2.4s + var(--i) * 120ms)}
+@keyframes jrMedGlanz{to{transform:translateX(130%)}}
+.jr-ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--jr-tiefk);
+  background:radial-gradient(circle at 35% 30%,#fff,var(--jr-glanz) 60%,var(--jr-a));
+  box-shadow:0 0 0 2px rgba(255,255,255,.55),0 8px 16px -8px rgba(0,0,0,.5)}
+.jr-med.gross .jr-ico{width:58px;height:58px}
+.jr-ico svg{width:52%;height:52%}
+.jr-med b{font-family:var(--font-dis);font-weight:700;font-size:24px;letter-spacing:-.03em;line-height:1}
+.jr-med.gross b{font-size:34px}
+.jr-med small{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;opacity:.78;line-height:1.3}
+.jr-flamme path{transform-origin:50% 90%;animation:jrFlackern 1.6s ease-in-out infinite alternate}
+@keyframes jrFlackern{0%{transform:scale(1,1) rotate(-2deg)}50%{transform:scale(.94,1.06) rotate(1deg)}100%{transform:scale(1.03,.96) rotate(2deg)}}
+
+/* Abschluss */
+.jr-holo.breit{aspect-ratio:auto;width:min(80vw,310px);padding:18px 16px 16px;gap:14px}
+.jr-ende-kopf{display:flex;align-items:center;gap:12px;text-align:left}
+.jr-ende-kopf img{width:52px;height:52px;border-radius:17px;object-fit:cover;object-position:center 86%;background:#fff}
+.jr-ende-kopf b{display:block;font-family:var(--font-dis);font-size:20px;font-weight:600;letter-spacing:-.015em;line-height:1.1}
+.jr-ende-kopf small{font-size:11px;opacity:.78}
+.jr-werte{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.jr-werte div{border-radius:14px;background:rgba(255,255,255,.14);padding:10px 12px;text-align:left}
+.jr-werte b{display:block;font-family:var(--font-dis);font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.jr-werte small{font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.jr-knoepfe{display:flex;gap:10px;margin-top:6px}
+.jr-knoepfe button{font:700 14px var(--font-ui);border:0;border-radius:999px;padding:13px 22px;cursor:pointer;transition:scale .2s var(--ease-out)}
+.jr-knoepfe button:active{scale:.95}
+.jr-knoepfe .jr-haupt{background:#fff;color:var(--jr-tiefk)}
+.jr-knoepfe .jr-neben{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.26)}
+.jr-knoepfe button:focus-visible, .jr-zu:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+@media (prefers-reduced-motion:reduce){
+  .jr-kap{animation:none}
+  .jr-banner::after{animation:none}
+  .jr-ruhig,.jr-zz,.jr-av img,.jr-av::before,.jr-holo,.jr-paar img,.jr-med,.jr-paar::before{
+    opacity:1!important;animation:none!important;filter:none!important}
+  .jr-av img,.jr-holo,.jr-paar img,.jr-med{transform:none!important}
+  .jr-wk > span{transform:none!important;animation:none!important}
+  .jr-rz-s{transition:none!important}
+  .jr-saeulen span{transform:none!important;animation:none!important}
+  .jr-metall{animation:none!important;background-position:50% 0}
+  .jr-med::after,.jr-flamme path{animation:none!important}
+}
+
 /* ─── Stufe, Karte, Rangliste ───────────────────────────────────────────
    Jede Stufe bringt zwei Farben mit (--rf hell, --rf2 dunkel). Ab Stufe 8
    kommt ein Schimmer dazu, ab 10 wandert er, bei 12 ist er golden. So
@@ -5843,6 +6095,12 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
       <!-- Der Kopf ist genau so hoch wie die Pille im Kalender. Dadurch
            beginnt die Karte in beiden Ansichten auf derselben Höhe und das
            Bild springt beim Wechseln unten nicht mehr. -->
+      <!-- Jahresrueckblick: nur vom 1.12. bis 31.1. sichtbar, siehe malJrBanner(). -->
+      <button class="jr-banner" id="jr-banner" type="button" hidden>
+        <img id="jr-banner-img" alt="">
+        <span><small id="jr-banner-j">Dein Jahr</small><b>Jahresrückblick</b></span>
+        <em>Jetzt ansehen ›</em>
+      </button>
       <div class="exhead">
         <h1 class="exh">Export <i>als PDF</i></h1>
         <button class="rnd exhbtn" id="ex-histbtn" aria-label="Verlauf ansehen" hidden>
@@ -6706,7 +6964,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-0800';
+const APP_STAND = '2026-09-27-1130';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8157,6 +8415,7 @@ function go(id){
      ohne Neuladen wieder anmeldete, hatte kein Profilbild mehr, und der
      Gruss fand kein Ziel fuer seinen Flug. */
   $('#avwrap').style.display = ME ? '' : 'none';
+  if(id === 'v-export') malJrBanner();
   /* Die Entscheidungen unten gehoeren zu Kalender und Export. */
   const inApp = (id === 'v-cal' || id === 'v-export');
   $('#fabbar').style.display = inApp ? 'flex' : 'none';
@@ -10747,12 +11006,25 @@ function serieZaehlen(){
   if(!ME) return;
   const h = heuteIso();
   const s = ME.serie || {};
+  /* Die laufende Serie zaehlt auch als laengste ihres Jahres, wenn es
+     dafuer noch keinen Eintrag gibt — sonst fehlte sie am ersten Tag
+     nach dem Update. */
+  if(s.letzt && s.tage > 0){
+    if(!s.best || typeof s.best !== 'object') s.best = {};
+    const j0 = s.letzt.slice(0, 4);
+    if((s.best[j0] || 0) < s.tage){ s.best[j0] = s.tage; ME.serie = s; if(s.letzt === h) save(); }
+  }
   if(s.letzt === h) return;
   const g = new Date();
   g.setDate(g.getDate() - 1);
   const gestern = g.getFullYear() + '-' + p2(g.getMonth() + 1) + '-' + p2(g.getDate());
   s.tage = (s.letzt === gestern) ? (s.tage || 0) + 1 : 1;
   s.letzt = h;
+  /* Die laengste Serie je Jahr — fuer den Jahresrueckblick, seit
+     27.09.2026. Vorher merkte sich MOJI nur die laufende. */
+  const jahr = h.slice(0, 4);
+  if(!s.best || typeof s.best !== 'object') s.best = {};
+  if((s.best[jahr] || 0) < s.tage) s.best[jahr] = s.tage;
   ME.serie = s;
   save();
 }
@@ -11655,6 +11927,602 @@ function verlaufZu(){
 }
 
 /* ═══════════════════════════════════════════════════════════
+   JAHRESRÜCKBLICK
+   Seit 27.09.2026. Vom 1. Dezember bis 31. Jänner steht auf der
+   Exportseite ueber "Export als PDF" ein Banner in der Stufenfarbe
+   (malJrBanner); ein Tipp oeffnet den Rueckblick als Story (jrAuf).
+   Im Jänner gilt er dem Vorjahr.
+
+   Gerechnet wird alles aus dem, was ohnehin da ist: Tage ueber
+   monthRows/evalDay, abgegebene Monate aus ME.exp, die Stufe, die
+   Serie. Bubble Teas kommen aus tee und tee_log (seit 27.09.2026 wird
+   jeder Becher mit Tag protokolliert); fuer Jahre davor zaehlt die
+   Summe je Paar — Bubble Tea gibt es erst seit dem 15.09.2026.
+
+   Krankentage kommen bewusst nicht vor. "Nie krank" als Auszeichnung
+   setzt Leute unter Druck, und es sind Gesundheitsdaten.
+   ═══════════════════════════════════════════════════════════ */
+const TEE_LOG_AB = '2026-09-27';
+/* Zum Ansehen vor Dezember: moji-app.at/?rueckblick zeigt den
+   Rueckblick fuer das laufende Jahr. Gilt, solange der Tab offen ist. */
+let _jrTest = false;
+try{
+  if(/[?&]rueckblick\b/.test(location.search)) sessionStorage.setItem('moji.rueckblick', '1');
+  _jrTest = sessionStorage.getItem('moji.rueckblick') === '1';
+}catch(e){ _jrTest = /[?&]rueckblick\b/.test(location.search); }
+
+/* Welches Jahr gerade zurueckblickt — oder null. */
+function jrJahr(heute){
+  const h = heute || new Date(), m = h.getMonth(), y = h.getFullYear();
+  if(m === 11) return y;
+  if(m === 0) return y - 1;
+  return _jrTest ? y : null;
+}
+/* Gab es das Jahr fuer diese Person ueberhaupt? */
+function jrHatJahr(y){
+  if(!ME || y == null || y < START.y) return false;
+  const seit = ME.seit ? new Date(ME.seit).getFullYear() : y;
+  return seit <= y;
+}
+
+/* ─── Farben aus der Stufe ─── */
+const jrHex = h => { const n = parseInt(String(h).slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const jrXh = a => '#' + a.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+const jrMisch = (h, m, t) => { const a = jrHex(h), b = jrHex(m); return jrXh(a.map((v, i) => v + (b[i] - v) * t)); };
+/* Im Farbkreis drehen — die Nachbartoene einer Stufenfarbe. */
+function jrDreh(h, grad){
+  let [r, g, b] = jrHex(h).map(v => v / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  let hu = 0, sa = 0;
+  if(mx !== mn){
+    const d = mx - mn;
+    sa = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    hu = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    hu /= 6;
+  }
+  hu = (hu + grad / 360 + 1) % 1;
+  const f = (p, q, t) => { t = (t + 1) % 1; return t < 1/6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2/3 ? p + (q - p) * (2/3 - t) * 6 : p; };
+  const q = l < .5 ? l * (1 + sa) : l + sa - l * sa, p = 2 * l - q;
+  return jrXh([f(p, q, hu + 1/3), f(p, q, hu), f(p, q, hu - 1/3)].map(v => v * 255));
+}
+function jrPalette(nr){
+  const r = rang(nr), gold = nr === RAENGE.length;
+  return {
+    a:r.a, b:r.b,
+    hell:jrMisch(r.a, '#ffffff', .35), tief:jrMisch(r.b, '#12060f', .35),
+    nacht:jrMisch(r.b, '#0a0510', gold ? .62 : .72), dunkel:jrMisch(r.b, '#0a0510', .42),
+    warm:jrDreh(r.a, gold ? -14 : 24), kuehl:jrDreh(r.b, gold ? 18 : -30),
+    glanz:gold ? '#FFE9A8' : jrMisch(r.a, '#ffffff', .55),
+    hochk:jrMisch(r.a, '#ffffff', .12), tiefk:jrMisch(r.b, '#000000', .26)
+  };
+}
+function jrFarbenAn(el, p){
+  el.style.setProperty('--jr-a', p.a);       el.style.setProperty('--jr-b', p.b);
+  el.style.setProperty('--jr-hell', p.hell); el.style.setProperty('--jr-tief', p.tief);
+  el.style.setProperty('--jr-glanz', p.glanz);
+  el.style.setProperty('--jr-hochk', p.hochk); el.style.setProperty('--jr-tiefk', p.tiefk);
+}
+
+/* ─── Das Banner ─── */
+function malJrBanner(){
+  const b = $('#jr-banner'); if(!b) return;
+  const y = jrJahr();
+  const zeigen = !!(ME && y != null && jrHatJahr(y));
+  b.hidden = !zeigen;
+  if(!zeigen) return;
+  jrFarbenAn(b, jrPalette(stufe()));
+  $('#jr-banner-j').textContent = 'Dein Jahr ' + y;
+  const img = $('#jr-banner-img');
+  const datei = avDatei(avNummer());
+  if(img.getAttribute('src') !== datei) img.src = datei;
+  b.setAttribute('aria-label', 'Jahresrückblick ' + y + ' ansehen');
+  b.classList.toggle('gesehen', !!(ME.rueckblick && ME.rueckblick[y]));
+}
+
+/* ─── Rechnen ───────────────────────────────────────────────────
+   heute: bis wohin gezaehlt wird — im laufenden Jahr nur bis heute,
+   geplante Tage danach sind noch nicht gearbeitet. */
+const jrTausend = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+function jrDaten(y, heute){
+  const h = heute || new Date();
+  const bis = new Date(h.getFullYear(), h.getMonth(), h.getDate(), 23, 59, 59);
+  const buch = expBuch();
+  const d = { y:y, monate:[], work:0, urlaub:0, feier:0, samstage:0, zaPlus:0, bruecken:0,
+              urlaubLang:0, frueh:'', verfuegbar:0, abgegeben:0, puenktlich:0 };
+  let lauf = null, letzterUrlaub = null;
+  const frei = r => r.type === 'feier' || (r.work + r.urlaub + r.krank + r.sonst + r.zeit) === 0;
+  for(let m = 0; m < 12; m++){
+    const vor = y < START.y || (y === START.y && m < START.m);
+    const zuk = new Date(y, m, 1) > bis;
+    if(vor || zuk){ d.monate.push(null); continue; }
+    const rows = monthRows(ME, y, m).filter(r => r.date <= bis);
+    const s = monthSums(rows);
+    const ab = buch[y + '-' + m];
+    d.monate.push({ m:m, work:s.work, abgegeben:!!ab });
+    d.verfuegbar++;
+    if(ab){
+      d.abgegeben++;
+      if(ab <= new Date(y, m + 1, 5, 23, 59, 59).getTime()) d.puenktlich++;
+    }
+    d.work += s.work; d.urlaub += s.dUrlaub; d.feier += s.dFeier;
+    rows.forEach(r => {
+      if(r.dow === 6 && r.work > 0) d.samstage++;
+      if(r.za > 0) d.zaPlus += r.za;
+      if(r.work > 0){
+        const beginn = r.vmFrom || r.nmFrom;
+        if(beginn && (!d.frueh || beginn < d.frueh)) d.frueh = beginn;
+      }
+      if(r.type === 'urlaub'){
+        /* Brueckentag: Urlaub direkt neben einem Feiertag. */
+        const nachbar = t => { const x = new Date(r.date); x.setDate(x.getDate() + t);
+          return !!holidays(x.getFullYear())[key(x.getFullYear(), x.getMonth(), x.getDate())]; };
+        if(r.scope === 'full' && (nachbar(-1) || nachbar(1))) d.bruecken++;
+        /* Laengster Urlaub am Stueck: vom ersten bis zum letzten
+           Urlaubstag, freie Tage dazwischen zaehlen mit. */
+        if(!lauf) lauf = r.date;
+        letzterUrlaub = r.date;
+        const tage = Math.round((letzterUrlaub - lauf) / 864e5) + 1;
+        if(tage > d.urlaubLang) d.urlaubLang = tage;
+      } else if(!frei(r)){
+        lauf = null;
+      }
+    });
+  }
+  /* Staerkster Monat */
+  d.top = d.monate.reduce((t, x) => (x && (!t || x.work > t.work)) ? x : t, null);
+  /* Aufstiege im Jahr: Stufe am Jahresanfang gegen Stufe am Jahresende. */
+  const zeiten = Object.values(buch);
+  const stufeBis = t => Math.min(RAENGE.length, Math.floor(zeiten.filter(z => z < t).length / PRO_STUFE) + 1);
+  d.stufeAnfang = stufeBis(new Date(y, 0, 1).getTime());
+  d.stufe = stufeBis(Math.min(bis.getTime() + 1, new Date(y + 1, 0, 1).getTime()));
+  d.aufstiege = Math.max(0, d.stufe - d.stufeAnfang);
+  d.gespart = d.abgegeben * JE_MONAT_MIN;
+  /* Monate mit MOJI, bis Ende des Jahres oder bis heute */
+  const seit = new Date(ME.seit || Date.now());
+  const ende = bis < new Date(y, 11, 31) ? bis : new Date(y, 11, 31);
+  d.dabei = Math.max(1, (ende.getFullYear() - seit.getFullYear()) * 12 + ende.getMonth() - seit.getMonth() + 1);
+  /* Laengste Tagesserie in diesem Jahr — seit 27.09.2026 gemerkt. */
+  const se = ME.serie || {};
+  d.serie = Math.max((se.best && se.best[y]) || 0, (se.letzt && se.letzt.slice(0, 4) === String(y)) ? (se.tage || 0) : 0);
+  /* Vergleich fuer die Stunden */
+  const woche = weekTotal(ME.sched, 0) || 40;
+  d.tageAmStueck = Math.round(d.work / 24);
+  d.wochen = Math.round(d.work / woche);
+  d.tee = null;
+  return d;
+}
+
+/* Bubble Teas im Jahr: mit wem am meisten, wie viele insgesamt, wie
+   viele verschiedene beschenkt. zeilen: tee, log: tee_log. */
+function jrTeeAus(y, zeilen, log, team){
+  const zahl = {}, beschenkt = new Set(), J = String(y);
+  (log || []).forEach(z => {
+    if(!z.am || z.am.slice(0, 4) !== J) return;
+    const o = z.von === UID ? z.an : z.von;
+    zahl[o] = (zahl[o] || 0) + 1;
+    if(z.von === UID) beschenkt.add(z.an);
+  });
+  /* Vor dem Protokoll zaehlt die Summe je Paar, wenn es in dem Jahr
+     aktiv war. Bubble Tea gibt es seit dem 15.09.2026 — alles davor
+     faellt ohnehin in dieses Jahr. */
+  if((J + '-01-01') < TEE_LOG_AB){
+    (zeilen || []).forEach(z => {
+      const o = z.a === UID ? z.b : z.a;
+      const meins = z.a === UID ? z.letzt_a : z.letzt_b;
+      const aktiv = [z.letzt_a, z.letzt_b].some(t => t && String(t).slice(0, 4) === J);
+      if(aktiv) zahl[o] = Math.max(zahl[o] || 0, z.punkte || 0);
+      if(meins && String(meins).slice(0, 4) === J) beschenkt.add(o);
+    });
+  }
+  const ids = Object.keys(zahl).filter(k => zahl[k] > 0);
+  if(!ids.length) return null;
+  const name = id => { const m = (team || []).find(x => x.user_id === id); return m ? (m.vorname || '') : ''; };
+  ids.sort((a, b) => zahl[b] - zahl[a] || name(a).localeCompare(name(b), 'de'));
+  const top = ids[0], wer = (team || []).find(x => x.user_id === top) || null;
+  const punkte = zahl[top], lvl = Math.max(1, teeLevel(punkte));
+  return {
+    summe: ids.reduce((s, k) => s + zahl[k], 0),
+    beschenkt: beschenkt.size,
+    buddy: wer ? {
+      name: (wer.vorname || 'Jemand') + (wer.kuerzel ? ' ' + wer.kuerzel + '.' : ''),
+      avatar: wer.avatar ? avDatei(wer.avatar) : '',
+      punkte: punkte, lvl: lvl, tee: TEE[lvl - 1]
+    } : null
+  };
+}
+async function jrTeeLaden(y){
+  if(!CLOUD_ON || !UID || typeof sb === 'undefined') return null;
+  try{
+    const team = TEAM || await teamLaden();
+    const t = await sb.from('tee').select('a,b,punkte,letzt_a,letzt_b');
+    const l = await sb.from('tee_log').select('von,an,am').gte('am', y + '-01-01').lte('am', y + '-12-31');
+    return jrTeeAus(y, t.error ? [] : t.data, l.error ? [] : l.data, team);
+  }catch(e){ console.warn('Rückblick: Bubble Teas nicht geladen', e); return null; }
+}
+
+/* Abzeichen: nur, was in dem Jahr etwas zu sagen hat. Das erste steht
+   gross oben, darunter eine gerade Zahl, damit das Raster aufgeht. */
+const JR_I = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const JR_ICO = {
+  flamme:'<svg class="jr-flamme" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.6 3.2 4.8 5.3 4.8 10.2A4.8 4.8 0 0 1 12 17.5a4.8 4.8 0 0 1-4.8-4.8c0-2.3 1.2-3.7 2.3-4.9.3 1.5 1 2.4 2 2.9-.4-2.9.1-5.6.5-8.2Z"/><path d="M12 21.5a3.2 3.2 0 0 1-3.2-3.2c0-1.6 1.2-2.6 2.1-3.6.2 1 .7 1.6 1.4 1.9.1-.9.5-1.7 1.1-2.4.8 1.2 1.8 2.3 1.8 4.1a3.2 3.2 0 0 1-3.2 3.2Z" opacity=".55"/></svg>',
+  uhr:JR_I('<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/>'),
+  voll:JR_I('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/>'),
+  bruecke:JR_I('<path d="M3 17h18M5 17v-3a7 7 0 0 1 14 0v3M9 17v-2.5M15 17v-2.5"/>'),
+  koffer:JR_I('<rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 13h16"/>'),
+  sonne:JR_I('<circle cx="12" cy="13" r="4"/><path d="M12 3.5v2M4.5 13h-2M21.5 13h-2M6 7l1.4 1.4M18 7l-1.4 1.4M3 20h18"/>'),
+  leute:JR_I('<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.8a3 3 0 0 1 0 5.4M17.5 14.3a5.5 5.5 0 0 1 3 4.7"/>'),
+  samstag:JR_I('<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="M14.5 14.5h-3v3"/>'),
+  plus:JR_I('<circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v7M8.5 12h7"/>'),
+  stern:JR_I('<path d="M12 3.5l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.4l-5.1 2.7 1-5.6-4.1-4 5.7-.8Z"/>')
+};
+function jrAbzeichen(d){
+  const a = [], ein = (n, e, m) => n === 1 ? e : m;
+  if(d.serie >= 2) a.push({ w:d.serie + ' Tage', t:'Längste Tagesserie', i:'flamme' });
+  if(d.verfuegbar >= 3 && d.abgegeben === d.verfuegbar) a.push({ w:d.abgegeben + '/' + d.verfuegbar, t:'Lückenlos abgegeben', i:'voll' });
+  if(d.puenktlich) a.push({ w:d.puenktlich + '×', t:'Pünktlich abgegeben', i:'uhr' });
+  if(d.bruecken) a.push({ w:String(d.bruecken), t:ein(d.bruecken, 'Brückentag genutzt', 'Brückentage genutzt'), i:'bruecke' });
+  if(d.urlaubLang >= 3) a.push({ w:d.urlaubLang + ' Tage', t:'Längster Urlaub am Stück', i:'koffer' });
+  if(d.frueh) a.push({ w:d.frueh, t:'Frühester Dienstbeginn', i:'sonne' });
+  if(d.tee && d.tee.beschenkt) a.push({ w:String(d.tee.beschenkt), t:ein(d.tee.beschenkt, 'Kolleg:in beschenkt', 'Kolleg:innen beschenkt'), i:'leute' });
+  if(d.samstage) a.push({ w:String(d.samstage), t:ein(d.samstage, 'Samstag gearbeitet', 'Samstage gearbeitet'), i:'samstag' });
+  if(d.zaPlus > 0) a.push({ w:'+' + fmtH(d.zaPlus).replace(/,00$/, '') + ' h', t:'Zeitausgleich gesammelt', i:'plus' });
+  a.push({ w:String(d.dabei), t:ein(d.dabei, 'Monat mit MOJI', 'Monate mit MOJI'), i:'stern' });
+  let wahl = a.slice(0, 6);
+  if(wahl.length > 1 && (wahl.length - 1) % 2) wahl = wahl.slice(0, wahl.length - 1);
+  return wahl;
+}
+
+/* ─── Bausteine der Kapitel ─── */
+const jrZeichen = (t, v) => [...t].map((c, i) => c === ' ' ? ' ' : '<span class="jr-zz" style="--i:' + i + ';--v:' + v + 's">' + esc(c) + '</span>').join('');
+const jrWoerter = (t, v) => t.split(' ').map((w, i) => '<span class="jr-wk"><span style="--i:' + i + ';--v:' + v + 's">' + esc(w) + '</span></span>').join(' ');
+const jrRollen = (t, v) => [...t].map((c, i) => /\d/.test(c)
+  ? '<span class="jr-rz"><span class="jr-rz-s" style="--d:' + c + ';--i:' + i + ';--v:' + v + 's">'
+    + '0123456789'.split('').map(n => '<b class="jr-metall" style="--mz:' + (v + 1.9 + i * .07).toFixed(2) + 's">' + n + '</b>').join('')
+    + '</span></span>'
+  : '<span class="jr-rz-z jr-metall" style="--mz:' + (v + 1.9).toFixed(2) + 's">' + esc(c) + '</span>').join('');
+
+/* Die Kapitel, die es fuer dieses Jahr gibt. Jedes traegt seine
+   Stimmung (vier Farben fuer den Verlauf) und wie lange es steht. */
+function jrKapitel(d){
+  const p = d.p, nr = d.stufe, r = rang(nr), av = avDatei(avNummer());
+  const k = [];
+  k.push({ id:'auf', dauer:6.5, st:[p.nacht, p.dunkel, p.b, p.kuehl], html:
+    '<div class="jr-kin jr-open">'
+    + '<div class="jr-av"><img src="' + av + '" alt=""></div>'
+    + '<p class="jr-kick">' + jrZeichen('Dein Jahr', .7) + '</p>'
+    + '<h2 class="jr-jahr"><span class="jr-wk"><span class="jr-metall" style="--i:0;--v:1s;--mz:1.8s">' + d.y + '</span></span></h2>'
+    + '<p class="jr-klein jr-ruhig" style="--v:1.9s;margin-inline:auto">Zwölf Monate, zusammengefasst — mit allem, was du '
+    + d.y + ' in MOJI geschafft hast.</p></div>' });
+  if(d.work > 0){
+    const max = Math.max(1, ...d.monate.map(x => x ? x.work : 0));
+    k.push({ id:'std', dauer:7.5, st:[p.dunkel, p.b, p.warm, p.nacht], html:
+      '<div class="jr-kin jr-std">'
+      + '<p class="jr-kick">' + jrWoerter('Du hast ' + (d.y === new Date().getFullYear() ? 'dieses Jahr' : d.y), .3) + '</p>'
+      + '<div class="jr-zahl">' + jrRollen(jrTausend(d.work), .9) + '</div>'
+      + '<p class="jr-einheit jr-ruhig" style="--v:1.4s">Stunden gearbeitet.</p>'
+      + '<p class="jr-klein jr-ruhig" style="--v:2.2s">Das sind ' + d.tageAmStueck + ' Tage am Stück — oder '
+      + d.wochen + ' volle Arbeitswochen.</p>'
+      + '<div class="jr-saeulen">' + d.monate.map((x, i) => '<span class="' + (!x ? 'leer' : (d.top && x.m === d.top.m ? 'top' : ''))
+          + '" style="--h:' + (x ? Math.round(x.work / max * 100) : 4) + ';--i:' + i + '"></span>').join('') + '</div>'
+      + '<div class="jr-monatz jr-ruhig" style="--v:2.6s">' + 'JFMAMJJASOND'.split('').map(m => '<span>' + m + '</span>').join('') + '</div>'
+      + (d.top ? '<span class="jr-pille jr-ruhig" style="--v:3.4s"><i></i>Stärkster Monat: ' + MONTHS[d.top.m] + ', '
+          + jrTausend(d.top.work) + ' Stunden</span>' : '')
+      + '</div>' });
+  }
+  k.push({ id:'stufe', dauer:8, holo:true, st:[p.nacht, p.kuehl, p.b, p.dunkel], html:
+    '<div class="jr-kin jr-stufe">'
+    + '<p class="jr-kick">' + jrWoerter(d.aufstiege ? 'Du bist aufgestiegen' : 'Deine Stufe', .2) + '</p>'
+    + '<div class="jr-holo" id="jr-holo">'
+    +   '<div class="jr-band"><b>' + esc(r.n) + '</b><span>' + nr + ' / ' + RAENGE.length + '</span></div>'
+    +   '<div class="jr-fenster"><img src="' + av + '" alt=""></div>'
+    +   '<div class="jr-wer"><b>' + esc(ME.vorname + ' ' + ME.nachname) + '</b><small>' + esc(EMPLOYER) + '</small></div>'
+    +   '<div class="jr-fach"><span>Zeit gespart</span><b>' + (gespartMin() ? fmtDauer(gespartMin()) : 'noch nichts') + '</b></div>'
+    +   '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>'
+    + '</div>'
+    + '<p class="jr-klein jr-ruhig" style="--v:1.9s;margin-inline:auto">Stufe ' + nr
+    + (d.aufstiege ? ' · ' + (d.aufstiege === 1 ? 'eine Stufe' : d.aufstiege + ' Stufen') + ' höher als im Jänner.' : ' · ' + esc(r.w))
+    + ' Streich über die Karte.</p></div>' });
+  if(d.tee && d.tee.buddy){
+    const b = d.tee.buddy;
+    k.push({ id:'buddy', dauer:8, st:[p.dunkel, p.warm, p.b, p.nacht], html:
+      '<div class="jr-kin jr-buddy">'
+      + '<p class="jr-kick">' + jrWoerter('Dein Bubble-Tea-Buddy', .2) + '</p>'
+      + '<div class="jr-paar"><img class="jr-ich" src="' + av + '" alt="">'
+      +   (b.avatar ? '<img class="jr-du" src="' + b.avatar + '" alt="">' : '')
+      +   '<img class="jr-becher" src="tee-' + b.lvl + '.webp" alt=""></div>'
+      + '<h3 class="jr-buddy-name">' + jrZeichen(b.name, 1.9) + '</h3>'
+      + '<div class="jr-buddy-zahl"><div class="jr-zahl">' + jrRollen(String(b.punkte), 2.2) + '</div>'
+      +   '<p class="jr-einheit jr-ruhig" style="--v:2.5s">' + (b.punkte === 1 ? 'Bubble Tea' : 'Bubble Teas') + ' zwischen euch</p></div>'
+      + '<span class="jr-pille jr-ruhig" style="--v:3.3s"><i style="background:' + b.tee.f + '"></i>Tee-Stufe ' + b.lvl + ' · ' + esc(b.tee.n) + '</span>'
+      + '</div>' });
+  }
+  const abz = jrAbzeichen(d);
+  if(abz.length >= 2){
+    k.push({ id:'abz', dauer:8.5, st:[p.nacht, p.b, p.kuehl, p.dunkel], html:
+      '<div class="jr-kin jr-abz-kin">'
+      + '<p class="jr-kick">' + jrWoerter('Deine Abzeichen ' + d.y, .2) + '</p>'
+      + '<div class="jr-abz">' + abz.map((a, i) => '<div class="jr-med' + (i === 0 ? ' gross' : '') + '" style="--i:' + i + '">'
+          + '<span class="jr-ico">' + JR_ICO[a.i] + '</span><span><b>' + esc(a.w) + '</b><br><small>' + esc(a.t) + '</small></span></div>').join('')
+      + '</div></div>' });
+  }
+  const werte = [
+    { w:jrTausend(d.work), t:'Stunden' },
+    { w:fmtT(d.urlaub).replace(/ Tage?$/, '').replace('keine', '0'), t:'Urlaubstage' },
+    { w:d.abgegeben + '/' + d.verfuegbar, t:'Abgegeben' },
+    d.tee ? { w:String(d.tee.summe), t:'Bubble Teas' }
+      : d.gespart > 0 ? { w:fmtDauer(d.gespart), t:'Zeit gespart' }
+      : { w:String(d.dabei), t:d.dabei === 1 ? 'Monat mit MOJI' : 'Monate mit MOJI' }
+  ];
+  k.push({ id:'ende', dauer:0, holo:true, ende:true, st:[p.b, p.tief, p.warm, p.dunkel], html:
+    '<div class="jr-kin jr-ende">'
+    + '<p class="jr-kick">' + jrWoerter('Das war dein ' + d.y, .2) + '</p>'
+    + '<div class="jr-holo breit" id="jr-holo">'
+    +   '<div class="jr-ende-kopf"><img src="' + av + '" alt=""><span><b>' + esc(ME.vorname) + ' · ' + esc(r.n) + '</b>'
+    +   '<small>Stufe ' + nr + ' von ' + RAENGE.length + '</small></span></div>'
+    +   '<div class="jr-werte">' + werte.map(x => '<div><b>' + esc(x.w) + '</b><small>' + x.t + '</small></div>').join('') + '</div>'
+    +   '<i class="jr-folie"></i><i class="jr-glanzpunkt"></i>'
+    + '</div>'
+    + '<div class="jr-knoepfe jr-ruhig" style="--v:1.6s"><button class="jr-haupt" type="button" id="jr-teilen">Teilen</button>'
+    +   '<button class="jr-neben" type="button" id="jr-nochmal">Nochmal</button></div>'
+    + '<p class="jr-klein jr-ruhig" style="--v:2s;margin-inline:auto">Auf ein gutes ' + (d.y + 1) + '.</p>'
+    + '</div>', werte:werte });
+  return k;
+}
+
+/* ─── Die Buehne ─── */
+const JR = { el:null, kap:[], jetzt:0, schicht:null, daten:null, holoRaf:0, zeiger:false, druck:null, still:false };
+function jrStill(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+function jrBuehne(){
+  if(JR.el) return JR.el;
+  const el = document.createElement('div');
+  el.className = 'jr'; el.id = 'jr';
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Jahresrückblick');
+  el.innerHTML = '<div class="jr-fort" id="jr-fort"></div>'
+    + '<button class="jr-zu" type="button" id="jr-zu" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+  document.body.appendChild(el);
+  $('#jr-zu', el).addEventListener('click', e => { e.stopPropagation(); jrZu(); });
+  /* Tippen rechts weiter, links zurueck, halten pausiert. */
+  el.addEventListener('pointerdown', e => {
+    if(e.target.closest('button')) return;
+    JR.druck = { x:e.clientX, y:e.clientY, t:performance.now() };
+    el.classList.add('pause');
+  });
+  el.addEventListener('pointerup', e => {
+    el.classList.remove('pause');
+    const d = JR.druck; JR.druck = null;
+    if(!d || e.target.closest('button')) return;
+    if(Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12 || performance.now() - d.t > 320) return;
+    const ort = { x:e.clientX, y:e.clientY };
+    if(e.clientX < innerWidth * .32) jrZeige(JR.jetzt - 1, ort);
+    else jrZeige(JR.jetzt + 1, ort);
+  });
+  el.addEventListener('pointercancel', () => { JR.druck = null; el.classList.remove('pause'); });
+  /* Die Holo-Karte neigt sich mit dem Finger. */
+  el.addEventListener('pointermove', e => {
+    const h = JR.schicht && $('#jr-holo.lebt', JR.schicht);
+    if(!h) return;
+    const r = h.getBoundingClientRect();
+    const nx = (e.clientX - r.left) / r.width, ny = (e.clientY - r.top) / r.height;
+    if(nx < -.3 || nx > 1.3 || ny < -.3 || ny > 1.3){ JR.zeiger = false; return; }
+    JR.zeiger = true;
+    jrNeigung(h, (nx - .5) * 26, (ny - .5) * 22, nx * 100, ny * 100);
+    clearTimeout(el._ruhe);
+    el._ruhe = setTimeout(() => { JR.zeiger = false; }, 1400);
+  });
+  document.addEventListener('keydown', e => {
+    if(!el.classList.contains('offen')) return;
+    if(e.key === 'ArrowRight') jrZeige(JR.jetzt + 1, null);
+    else if(e.key === 'ArrowLeft') jrZeige(JR.jetzt - 1, null);
+    else if(e.key === 'Escape') jrZu();
+  });
+  JR.el = el;
+  return el;
+}
+function jrNeigung(h, ry, rx, gx, gy){
+  h.style.setProperty('--ry', ry.toFixed(2) + 'deg');
+  h.style.setProperty('--rx', (-rx).toFixed(2) + 'deg');
+  h.style.setProperty('--gx', gx.toFixed(1) + '%');
+  h.style.setProperty('--gy', gy.toFixed(1) + '%');
+  h.style.setProperty('--ang', (ry * 9 + rx * 6).toFixed(1) + 'deg');
+}
+function jrHolo(){
+  cancelAnimationFrame(JR.holoRaf);
+  const t0 = performance.now();
+  const lauf = t => {
+    const h = JR.schicht && $('#jr-holo', JR.schicht);
+    if(!h || !JR.el.classList.contains('offen')) return;
+    if(!JR.zeiger && !JR.still){
+      const s = (t - t0) / 1000;
+      jrNeigung(h, Math.sin(s * .9) * 7, Math.sin(s * .6) * 4, 50 + Math.sin(s * .9) * 30, 35 + Math.cos(s * .6) * 20);
+    }
+    JR.holoRaf = requestAnimationFrame(lauf);
+  };
+  JR.holoRaf = requestAnimationFrame(lauf);
+  const h = $('#jr-holo', JR.schicht);
+  setTimeout(() => { if(h) h.classList.add('lebt'); }, JR.still ? 0 : 2100);
+}
+function jrFort(){
+  const f = $('#jr-fort', JR.el);
+  f.innerHTML = JR.kap.map((k, i) => '<i class="' + (i < JR.jetzt ? 'durch' : i === JR.jetzt ? 'jetzt' : '')
+    + '" style="--dauer:' + (k.dauer || 1) + 's"><b></b></i>').join('');
+  const k = JR.kap[JR.jetzt];
+  if(k && k.dauer && !JR.still){
+    const b = $('.jetzt b', f);
+    if(b) b.addEventListener('animationend', () => { if(JR.el.classList.contains('offen')) jrZeige(JR.jetzt + 1, null); }, { once:true });
+  }
+}
+function jrSchicht(i){
+  const k = JR.kap[i];
+  const d = document.createElement('div');
+  d.className = 'jr-kap';
+  ['--m1', '--m2', '--m3', '--m4'].forEach((v, j) => d.style.setProperty(v, k.st[j]));
+  d.innerHTML = k.html;
+  JR.el.insertBefore(d, $('#jr-fort', JR.el));
+  $$('.jr-rz', d).forEach(z => {
+    const s = z.firstElementChild, b = s && s.children[+s.style.getPropertyValue('--d') || 0];
+    const w = b ? b.getBoundingClientRect().width : 0;
+    if(w > 0) z.style.width = w + 'px';
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('an')));
+  if(JR.still) d.classList.add('an');
+  return d;
+}
+/* Die Blende: ein Kreis von der Stelle, an der getippt wurde. */
+function jrBlende(el, x, y, auf){
+  if(JR.still || typeof el.animate !== 'function') return Promise.resolve();
+  const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 20;
+  const zu = 'circle(0px at ' + x + 'px ' + y + 'px)', ganz = 'circle(' + R + 'px at ' + x + 'px ' + y + 'px)';
+  try{
+    return el.animate([{ clipPath: auf ? zu : ganz }, { clipPath: auf ? ganz : zu }],
+      { duration: auf ? 900 : 650, easing: auf ? 'cubic-bezier(.65,0,.25,1)' : 'cubic-bezier(.5,0,.75,0)', fill:'forwards' })
+      .finished.catch(() => {});
+  }catch(e){ return Promise.resolve(); }
+}
+function jrZeige(i, ort){
+  if(i < 0 || i >= JR.kap.length || !JR.el) return;
+  const x = ort ? ort.x : innerWidth / 2, y = ort ? ort.y : innerHeight * .62;
+  const alt = JR.schicht, rueck = i < JR.jetzt;
+  JR.jetzt = i;
+  cancelAnimationFrame(JR.holoRaf);
+  const neu = jrSchicht(i);
+  JR.schicht = neu;
+  if(rueck && alt){
+    JR.el.insertBefore(neu, alt);
+    jrBlende(alt, x, y, false).then(() => alt.remove());
+  } else if(alt){
+    jrBlende(neu, x, y, true).then(() => alt.remove());
+  } else {
+    jrBlende(neu, x, y, true);
+  }
+  jrFort();
+  const k = JR.kap[i];
+  if(k.holo) jrHolo();
+  if(k.ende){
+    $('#jr-teilen', neu).addEventListener('click', e => { e.stopPropagation(); jrTeilen(); });
+    $('#jr-nochmal', neu).addEventListener('click', e => { e.stopPropagation(); jrZeige(0, { x:e.clientX, y:e.clientY }); });
+  }
+}
+function jrAuf(ort){
+  const y = jrJahr();
+  if(!ME || y == null || !jrHatJahr(y)) return;
+  const el = jrBuehne();
+  JR.still = jrStill();
+  const d = jrDaten(y);
+  d.p = jrPalette(d.stufe);
+  JR.daten = d;
+  JR.kap = jrKapitel(d);
+  jrFarbenAn(el, d.p);
+  $$('.jr-kap', el).forEach(k => k.remove());
+  JR.schicht = null; JR.jetzt = 0;
+  el.classList.add('offen');
+  document.body.classList.add('locked');
+  jrZeige(0, ort);
+  if(!ME.rueckblick) ME.rueckblick = {};
+  if(!ME.rueckblick[y]){ ME.rueckblick[y] = Date.now(); save(); }
+  malJrBanner();
+  /* Die Bubble Teas kommen aus der Cloud. Sind sie da, bevor man bei
+     ihnen ankommt, kommen Buddy und Abzeichen dazu. */
+  jrTeeLaden(y).then(tee => {
+    if(!tee || JR.daten !== d || !el.classList.contains('offen')) return;
+    d.tee = tee;
+    const vorher = JR.kap[JR.jetzt] && JR.kap[JR.jetzt].id;
+    const neu = jrKapitel(d);
+    const idx = neu.findIndex(k => k.id === vorher);
+    JR.kap = neu;
+    if(idx >= 0) JR.jetzt = idx;
+    jrFort();
+  });
+}
+function jrZu(){
+  const el = JR.el; if(!el || !el.classList.contains('offen')) return;
+  cancelAnimationFrame(JR.holoRaf);
+  const b = $('#jr-banner'), r = b && !b.hidden ? b.getBoundingClientRect() : null;
+  const s = JR.schicht;
+  const fertig = () => {
+    el.classList.remove('offen');
+    $$('.jr-kap', el).forEach(k => k.remove());
+    $('#jr-fort', el).innerHTML = '';
+    JR.schicht = null;
+  };
+  document.body.classList.remove('locked');
+  if(s && r) jrBlende(s, r.left + r.width / 2, r.top + r.height / 2, false).then(fertig);
+  else fertig();
+}
+
+/* ─── Teilen: die Abschlusskarte als Bild ───
+   Wie karteBild: alles von Hand auf eine Leinwand, echte Farben statt
+   Variablen. 1080 x 1350. */
+async function jrBild(){
+  const d = JR.daten; if(!d) return null;
+  const B = 1080, H = 1350, p = d.p, r = rang(d.stufe);
+  const cv = document.createElement('canvas'); cv.width = B; cv.height = H;
+  const c = cv.getContext('2d'); if(!c) return null;
+  try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+  const stil = getComputedStyle(document.documentElement);
+  const DIS = (stil.getPropertyValue('--font-dis') || '').trim() || "'Bricolage Grotesque',Georgia,serif";
+  const UI  = (stil.getPropertyValue('--font-ui') || '').trim() || "'Plus Jakarta Sans',sans-serif";
+  const rrect = (x, y, w, h, rr) => { c.beginPath(); c.moveTo(x + rr, y);
+    c.arcTo(x + w, y, x + w, y + h, rr); c.arcTo(x + w, y + h, x, y + h, rr);
+    c.arcTo(x, y + h, x, y, rr); c.arcTo(x, y, x + w, y, rr); c.closePath(); };
+  /* Der Verlauf der Abschlussseite */
+  c.fillStyle = p.b; c.fillRect(0, 0, B, H);
+  [[p.warm, .2, .18, .75], [p.tief, .85, .2, .7], [p.dunkel, .72, .9, .9], [p.warm, .2, .88, .6]].forEach(([f, fx, fy, fr]) => {
+    const g = c.createRadialGradient(B * fx, H * fy, 0, B * fx, H * fy, B * fr);
+    g.addColorStop(0, f); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(0, 0, B, H);
+  });
+  c.fillStyle = '#fff'; c.textAlign = 'left';
+  c.font = '500 44px ' + DIS; c.fillText('Mein Jahr', 90, 170);
+  c.font = '700 190px ' + DIS; c.fillText(String(d.y), 80, 340);
+  /* Die Karte */
+  const kx = 90, ky = 420, kb = B - 180, kh = 720;
+  const kg = c.createLinearGradient(kx, ky, kx + kb * .4, ky + kh);
+  kg.addColorStop(0, p.hochk); kg.addColorStop(1, p.tiefk);
+  c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 60; c.shadowOffsetY = 30;
+  c.fillStyle = kg; rrect(kx, ky, kb, kh, 56); c.fill(); c.restore();
+  const bild = await new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = avDatei(avNummer()); });
+  if(bild){
+    c.save(); rrect(kx + 50, ky + 50, 150, 150, 48); c.clip();
+    c.fillStyle = '#fff'; c.fillRect(kx + 50, ky + 50, 150, 150);
+    const sw = bild.width, sy = (bild.height - sw) * .86;
+    c.drawImage(bild, 0, sy > 0 ? sy : 0, sw, Math.min(sw, bild.height), kx + 50, ky + 50, 150, 150);
+    c.restore();
+  }
+  c.fillStyle = '#fff'; c.font = '600 58px ' + DIS; c.fillText(ME.vorname + ' · ' + r.n, kx + 230, ky + 120);
+  c.fillStyle = 'rgba(255,255,255,.75)'; c.font = '500 30px ' + UI; c.fillText('Stufe ' + d.stufe + ' von ' + RAENGE.length, kx + 230, ky + 170);
+  const w = (JR.kap.find(k => k.ende) || {}).werte || [];
+  w.forEach((x, i) => {
+    const bx = kx + 50 + (i % 2) * ((kb - 130) / 2 + 30), by = ky + 250 + Math.floor(i / 2) * 210, bb = (kb - 130) / 2, bh = 180;
+    c.fillStyle = 'rgba(255,255,255,.14)'; rrect(bx, by, bb, bh, 36); c.fill();
+    c.fillStyle = '#fff'; c.font = '700 76px ' + DIS; c.fillText(x.w, bx + 36, by + 100);
+    c.fillStyle = 'rgba(255,255,255,.72)'; c.font = '700 24px ' + UI; c.fillText(x.t.toUpperCase(), bx + 36, by + 146);
+  });
+  c.textAlign = 'center';
+  c.fillStyle = 'rgba(255,255,255,.9)'; c.font = '600 32px ' + UI;
+  c.fillText('Arbeitszeit ohne Zettel — moji-app.at', B / 2, H - 90);
+  return await new Promise(res => {
+    try{ cv.toBlob(b => res(b ? new File([b], 'moji-jahr-' + d.y + '.png', { type:'image/png' }) : null), 'image/png'); }
+    catch(e){ res(null); }
+  });
+}
+async function jrTeilen(){
+  const d = JR.daten; if(!d) return;
+  const text = 'Mein Jahr ' + d.y + ' mit MOJI: ' + jrTausend(d.work) + ' Stunden, Stufe ' + d.stufe + ' · ' + rang(d.stufe).n + '. ' + MOJI_LINK;
+  let datei = null;
+  try{ datei = await jrBild(); }catch(e){ console.warn('Rückblick-Bild nicht möglich', e); }
+  if(datei && navigator.canShare && navigator.share){
+    try{ if(navigator.canShare({ files:[datei] })){ await navigator.share({ files:[datei], text:text }); return; } }
+    catch(e){ if(e && e.name === 'AbortError') return; console.warn(e); }
+  }
+  if(navigator.share){
+    try{ await navigator.share({ text:text }); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; }
+  }
+  try{ await navigator.clipboard.writeText(text); toast('Text kopiert — jetzt einfügen und abschicken'); }
+  catch(e){ toast('Teilen geht auf diesem Gerät nicht'); }
+}
+
+/* ═══════════════════════════════════════════════════════════
    POSTFACH
    Ankündigungen stehen fest im Quelltext — so braucht es keine
    Tabelle und keine Abfrage. Gemerkt wird nur, welche Kennungen
@@ -12040,6 +12908,7 @@ $('#kt-bahn').addEventListener('keydown', e => {
   ktZeige(_ktVorne + (e.key === 'ArrowRight' ? 1 : -1), true);
 });
 $('#ma-auf').addEventListener('click', () => { _vonMenu = true; karteAuf(); });
+$('#jr-banner').addEventListener('click', e => jrAuf({ x:e.clientX || innerWidth / 2, y:e.clientY || innerHeight / 3 }));
 /* Hier gab der ganze Kopf nach, solange der Finger auf ihm lag — er
    war ja ein einziger grosser Knopf. Seit die Karte nur noch
    berichtet und ihre Knoepfe einzeln antworten (Bild, drei Felder,
