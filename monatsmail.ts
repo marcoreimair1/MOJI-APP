@@ -44,47 +44,81 @@ function betreff(name: string){
 /* Kurze, warme Ansprache — kein Werbeton. */
 function textFassung(vorname: string, monat: string){
   return 'Hallo ' + vorname + ',\n\n'
-    + 'wir erinnern dich, dass ' + monat + ' jetzt zum Schreiben wäre.\n'
+    + 'dein ' + monat + ' ist abgeschlossen und bereit zum Abgeben.\n'
     + 'Ein Blick in MOJI, Export drücken, fertig.\n\n'
     + LINK + '\n\n'
-    + 'Mehr Zeit fürs Wesentliche.\n'
+    + 'MOJI · Mehr Zeit fürs Wesentliche\n'
     + 'Eine App von Studio MARU 丸\n\n'
-    + '— Diese Erinnerung kommt einmal im Monat. Im Profilmenü der App '
-    + 'kannst du sie jederzeit abschalten.';
+    + 'Diese Erinnerung kommt einmal im Monat, weil du sie erlaubt hast. '
+    + 'Im Profilmenü der App schaltest du sie jederzeit ab.';
 }
 
+/* Der Vorname kommt aus dem Profil, das jeder selbst schreibt — ins HTML
+   nur maskiert. */
+function esc(s: string){
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' } as Record<string,string>)[c]);
+}
+
+/* Seit 27.09.2026 dieselbe Huelle wie die beiden Anmeldemails in mail/:
+   hell, eine weisse Karte, das App-Symbol mit Wortmarke oben, ein Knopf.
+   Im Dunkelmodus (Apple Mail, Outlook am Mac) die dunkle Fassung. */
 function htmlFassung(vorname: string, monat: string){
-  return `<!doctype html><html lang="de"><body style="margin:0;padding:0;background:#050d24;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050d24;padding:32px 16px;">
-<tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#0b1533;border:1px solid rgba(255,255,255,.10);border-radius:22px;overflow:hidden;">
-    <tr><td style="padding:30px 28px 6px;">
-      <div style="font:700 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.16em;color:#F7D774;text-transform:uppercase;">MOJI</div>
-    </td></tr>
-    <tr><td style="padding:14px 28px 0;">
-      <div style="font:600 23px/1.28 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#F4F6FF;">
-        Hallo ${vorname},
-      </div>
-      <div style="font:400 16px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#AEB8D8;padding-top:10px;">
-        wir erinnern dich, dass <b style="color:#F4F6FF;font-weight:600;">${monat}</b> jetzt zum
-        Schreiben wäre. Ein Blick in MOJI, Export drücken, fertig.
-      </div>
-    </td></tr>
-    <tr><td style="padding:24px 28px 4px;">
-      <a href="${LINK}" style="display:block;text-align:center;background:#F7D774;color:#0B1533;text-decoration:none;font:600 16px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:16px 20px;border-radius:16px;">
-        ${monat} abgeben
-      </a>
-    </td></tr>
-    <tr><td style="padding:22px 28px 28px;">
-      <div style="height:1px;background:rgba(255,255,255,.09);margin-bottom:16px;"></div>
-      <div style="font:400 12px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#7E89AD;">
-        Mehr Zeit fürs Wesentliche. Eine App von Studio MARU 丸<br><br>
-        Diese Erinnerung kommt einmal im Monat, weil du sie erlaubt hast.
-        Im Profilmenü der App schaltest du sie jederzeit wieder ab.
-      </div>
-    </td></tr>
-  </table>
-</td></tr></table></body></html>`;
+  vorname = esc(vorname);
+  return `<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>${monat} ist bereit zum Abgeben</title>
+<!-- MOJI · Mail-Huelle. Dieselbe in mail/anmeldung.html, mail/registrierung.html
+     und monatsmail.ts — tests/test-mail.js prueft, dass sie gleich bleibt. -->
+<style>
+  :root{color-scheme:light dark;supported-color-schemes:light dark}
+  body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+  a{text-decoration:none}
+  @media (prefers-color-scheme:dark){
+    .m-grund{background:#0C090F !important}
+    .m-karte{background:#16111D !important;border-color:#271F30 !important}
+    .m-titel,.m-code{color:#F3EEFF !important}
+    .m-text{color:#B3A9C1 !important}
+    .m-leise{color:#766D83 !important}
+    .m-feld{background:#211A2B !important;border-color:#2E2539 !important}
+    .m-linie{border-color:#271F30 !important}
+    .m-link{color:#DC8AFF !important}
+    .m-wort-tinte{display:none !important}
+    .m-wort-hell{display:inline-block !important}
+  }
+</style>
+</head>
+<body class="m-grund" style="margin:0;padding:0;background:#F6F3FA;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;opacity:0;">${monat} ist bereit zum Abgeben.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="m-grund" style="background:#F6F3FA;">
+<tr><td align="center" style="padding:44px 16px 52px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;">
+  <tr><td style="padding:0 6px 22px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="padding-right:11px;vertical-align:middle;"><img src="https://moji-app.at/icon-180.png" width="34" height="34" alt="" style="display:block;border:0;border-radius:10px;"></td>
+      <td style="vertical-align:middle;"><img class="m-wort-tinte" src="https://moji-app.at/moji-mail-wort-tinte.png" width="61" height="16" alt="MOJI" style="display:inline-block;border:0;"><img class="m-wort-hell" src="https://moji-app.at/moji-mail-wort-hell.png" width="61" height="16" alt="MOJI" style="display:none;mso-hide:all;border:0;"></td>
+    </tr></table>
+  </td></tr>
+  <tr><td class="m-karte" style="background:#FFFFFF;border:1px solid #ECE6F3;border-radius:24px;padding:38px 32px 34px;">
+    <h1 class="m-titel" style="margin:0 0 12px;font:600 26px/1.22 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:#1A1026;">${monat} ist bereit.</h1>
+    <p class="m-text" style="margin:0 0 26px;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5E5569;">Hallo ${vorname}, dein ${monat} ist abgeschlossen. Ein Blick in MOJI, Export drücken, fertig.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="border-radius:999px;background:#C643FE;"><a href="${LINK}" style="display:inline-block;padding:15px 28px;border-radius:999px;font:600 15px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#FFFFFF;text-decoration:none;">${monat} abgeben</a></td>
+    </tr></table>
+    <p class="m-leise m-linie" style="margin:28px 0 0;padding-top:20px;border-top:1px solid #F0EBF5;font:400 12.5px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">Diese Erinnerung kommt einmal im Monat, weil du sie erlaubt hast. Im Profilmenü der App schaltest du sie jederzeit ab.</p>
+  </td></tr>
+  <tr><td class="m-leise" style="padding:22px 8px 0;font:400 12px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;text-align:center;">
+    MOJI · Mehr Zeit fürs Wesentliche<br>Eine App von Studio MARU 丸
+  </td></tr>
+</table>
+</td></tr></table>
+</body>
+</html>
+`;
 }
 
 Deno.serve(async (req) => {

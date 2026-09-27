@@ -32,7 +32,8 @@ const REIHEN = [
   ['test-kalender',     'Kalender neu laden und das Osterei'],
   ['test-jahr',         'Jahresrückblick: Rechnen, Banner, Kapitel, Bühne'],
   ['test-zeitraum',     'Mehrere Tage eintragen: Kachel, Wahl, Von–Bis, Band'],
-  ['test-tag',          'Einen Tag eintragen: Kalenderblatt, Kacheln, Knöpfe']
+  ['test-tag',          'Einen Tag eintragen: Kalenderblatt, Kacheln, Knöpfe'],
+  ['test-mail',         'Die drei Mails: eine Hülle, Platzhalter, Bilder, Logik']
 ];
 
 const DATEI = process.argv[2] || path.join(__dirname, '..', 'index.html');

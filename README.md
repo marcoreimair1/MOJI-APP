@@ -2496,8 +2496,19 @@ Der `{{ .Token }}` ist entscheidend: wer MOJI vom iPhone-Startbildschirm öffnet
 nicht nutzen — der landet in Safari, und eine Startbildschirm-App hat auf iOS einen eigenen
 Speicher. Mit dem Code funktioniert die Anmeldung auch dort.
 
-Die gestalteten Fassungen liegen als `mail-anmeldung.html` und `mail-registrierung.html` im
-Projekt.
+**Seit 27. September 2026 liegen die Vorlagen im Projekt**, unter `mail/`, in einer Hülle mit der
+Monats-Erinnerung: hell, eine weiße Karte, App-Symbol und Wortmarke oben, Markenviolett nur im
+Code-Feld, im Knopf und im Link, dazu eine dunkle Fassung für Apple Mail und Outlook am Mac.
+
+| Supabase-Vorlage | Datei | Betreff |
+|---|---|---|
+| **Magic link or OTP** | `mail/anmeldung.html` | `{{ .Token }} ist dein MOJI-Code` |
+| **Confirm signup** | `mail/registrierung.html` | `{{ .Token }} ist dein MOJI-Code` |
+
+Eintragen: Dashboard → **Authentication** → **Emails** → **Templates** → Vorlage wählen →
+**Source** → den ganzen Inhalt der Datei einfügen → **Save**. Die Hülle muss in allen drei gleich
+bleiben; `tests/test-mail.js` vergleicht sie. Die Bilder (`icon-180.png`,
+`moji-mail-wort-tinte.png`, `moji-mail-wort-hell.png`) kommen von `https://moji-app.at/`.
 
 ---
 
@@ -2745,7 +2756,9 @@ Stand 14. September 2026, gegen `git ls-files` geprüft.
 | `monatsmail.sql` | Tabelle `mail_log` und Zeitplan dazu |
 | `monatsmail-deploy.sh` | veröffentlicht die Function vom Rechner aus |
 | `supabase/config.toml` | bindet den Ordner an das Supabase-Projekt |
-| `moji-mail-wortmarke.png` | Wortmarke im Mailkopf. Im Quelltext steht sie nirgends — die Mailvorlagen holen sie über `https://moji-app.at/moji-mail-wortmarke.png`. Nicht löschen |
+| `moji-mail-wortmarke.png` | Alte Wortmarke (weiß auf Nachtblau) der Mailvorlagen vor dem 27.09.2026. Erst löschen, wenn beide Vorlagen in Supabase durch die aus `mail/` ersetzt sind — bis dahin holen sie sie noch von `https://moji-app.at/` |
+| `moji-mail-wort-tinte.png`, `moji-mail-wort-hell.png` | Wortmarke der Mails, dunkel für hell und hell für die dunkle Fassung. Aus `LOGO_WORD_TINTE` / `LOGO_WORD` in `index.html` |
+| `mail/anmeldung.html`, `mail/registrierung.html` | Die beiden Supabase-Mailvorlagen (Abschnitt 13) |
 
 **Testreihen**
 
