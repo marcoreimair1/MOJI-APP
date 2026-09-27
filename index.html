@@ -1463,6 +1463,11 @@ h1.dis i{font-style:italic;color:var(--butter)}
 .toggle{width:42px;height:24px;border-radius:999px;background:rgba(var(--tx-rgb),.14);position:relative;transition:.26s var(--ease);flex:none}
 .toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--tx-3);transition:.26s var(--ease)}
 .toggle.on{background:rgba(var(--marke-rgb),.3)}
+/* Gesperrt, wo es nichts zu zaehlen gibt — blass, und der Satz daneben
+   sagt den Grund. */
+.toggle:disabled{opacity:.38;cursor:not-allowed}
+.shaw{display:flex;align-items:center;gap:11px;margin:-4px 0 14px;font-size:12.5px;color:var(--tx-2)}
+.shaw.aus{color:var(--tx-3)}
 .toggle.on::after{left:21px;background:var(--butter)}
 
 /* Einstieg und Funnel gehoeren der ganzen Flaeche — dort steht keine Kopfleiste. */
@@ -7297,7 +7302,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2300';
+const APP_STAND = '2026-09-27-2330';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14450,6 +14455,8 @@ function openSheet(y, m, d){
     SH.zaH = ZA_START;
   }
   SH._geplant = geplant;
+  SH._plan = { vm: r25(plan.vm), nm: r25(plan.nm) };
+  SH._feiertag = !!hol;
 
   /* Kopf: das Kalenderblatt mit Wochentag und Tag, daneben ausgeschrieben
      und darunter der Dienstplan des Tages. Das Jahr nur, wenn es nicht
@@ -14596,7 +14603,21 @@ function paintSheet(){
   $$('#sh-scope button').forEach(b => b.classList.toggle('on', b.dataset.s === SH.scope));
   zeigen('#sh-textwrap', SH.type === 'eigen');
   $('#sh-text').value = SH.text;
-  const aw = $('#sh-aw'); if(aw) aw.classList.toggle('on', SH.aw);
+  /* Als Arbeitszeit zaehlen geht nur, wo laut Dienstplan gearbeitet
+     wuerde — im gewaehlten Umfang. An einem freien Tag oder Feiertag
+     gibt es nichts zu zaehlen, der Schalter sagt dann, warum. */
+  const aw = $('#sh-aw');
+  if(aw){
+    const std = shAwStunden();
+    if(std <= 0) SH.aw = false;
+    aw.disabled = std <= 0;
+    aw.classList.toggle('on', SH.aw);
+    aw.setAttribute('aria-pressed', SH.aw ? 'true' : 'false');
+    $('#sh-aw-t').textContent = std > 0
+      ? 'Stunden als Arbeitszeit zählen · ' + fmtH(std) + ' h'
+      : shAwGrund();
+    $('#sh-aw-zeile').classList.toggle('aus', std <= 0);
+  }
 
   malKontingent();
   zeigen('#sh-zawrap', za);
@@ -14630,6 +14651,19 @@ function malZa(){
 /* Schließen: die Karte geht nach unten weg, erst dann ist das Blatt zu.
    Kam sie schon mit dem Finger nach unten geworfen (.weg), ist sie
    bereits draußen — dann sofort. */
+/* Wie viele Stunden ein Vermerk als Arbeitszeit zaehlen wuerde: die
+   geplanten im gewaehlten Umfang. Am Feiertag keine — dort gilt der
+   Feiertag, nicht der Vermerk. */
+function shAwStunden(){
+  if(SH._feiertag || !SH._plan) return 0;
+  return SH.scope === 'vm' ? SH._plan.vm : SH.scope === 'nm' ? SH._plan.nm : SH._plan.vm + SH._plan.nm;
+}
+function shAwGrund(){
+  if(SH._feiertag) return 'Am Feiertag zählt nichts als Arbeitszeit';
+  if(SH.scope === 'vm' && SH._plan && SH._plan.vm + SH._plan.nm > 0) return 'Am Vormittag hast du keinen Dienst';
+  if(SH.scope === 'nm' && SH._plan && SH._plan.vm + SH._plan.nm > 0) return 'Am Nachmittag hast du keinen Dienst';
+  return 'An diesem Tag hast du keinen Dienst';
+}
 function closeSheet(){
   const bl = $('#sheet');
   document.body.classList.remove('locked');
@@ -14819,7 +14853,8 @@ $('#sh-save').addEventListener('click', () => {
       ? fmtH(za) + ' h gesammelt'
       : fmtH(Math.min(-za, SH._geplant)) + ' h eingelöst');
     return;
-  }  ME.events[k] = { t:SH.type, s:SH.scope, text:SH.type === 'eigen' ? SH.text.trim() : '', aw:SH.type === 'eigen' ? SH.aw : false };
+  }  ME.events[k] = { t:SH.type, s:SH.scope, text:SH.type === 'eigen' ? SH.text.trim() : '',
+                     aw:SH.type === 'eigen' ? (SH.aw && shAwStunden() > 0) : false };
   save(); closeSheet(); tagBlitz(k);
   toast((SH.type === 'eigen' ? (SH.text.trim() || 'Vermerk') : TYPES[SH.type].label) + ' eingetragen');
 });
@@ -16821,10 +16856,13 @@ document.addEventListener('keydown', e => {
    START
    ═══════════════════════════════════════════════════════════ */
 $('#sh-textwrap').insertAdjacentHTML('beforeend',
-  '<div style="display:flex;align-items:center;gap:11px;margin:-4px 0 14px">'
-  + '<button class="toggle" id="sh-aw" aria-label="Als Arbeitszeit zählen"></button>'
-  + '<span style="font-size:12.5px;color:var(--tx-2)">Stunden als Arbeitszeit zählen</span></div>');
-$('#sh-aw').addEventListener('click', () => { SH.aw = !SH.aw; paintSheet(); });
+  '<div class="shaw" id="sh-aw-zeile">'
+  + '<button class="toggle" id="sh-aw" aria-label="Als Arbeitszeit zählen" aria-pressed="false"></button>'
+  + '<span id="sh-aw-t">Stunden als Arbeitszeit zählen</span></div>');
+$('#sh-aw').addEventListener('click', () => {
+  if(shAwStunden() <= 0) return;
+  SH.aw = !SH.aw; paintSheet();
+});
 
 window.addEventListener('unhandledrejection', e => {
   console.error('Unbehandelter Fehler:', e.reason);

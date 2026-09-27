@@ -119,6 +119,49 @@ tipp(kachel('eigen'));
 ok('Beim Vermerk das Textfeld', document.querySelector('#sh-textwrap').style.display === 'block');
 closeSheet();
 
+/* ── 9 · Als Arbeitszeit zaehlen nur, wo Dienst waere ──
+   27.09.2026, Marco: an einem Tag ohne Dienst soll der Schalter nicht
+   gehen. Dasselbe am Feiertag und fuer eine Tageshaelfte ohne Dienst. */
+var awS = document.querySelector('#sh-aw'), awT = document.querySelector('#sh-aw-t');
+function vermerk(y, m, d){ openSheet(y, m, d); tipp(kachel('eigen')); }
+
+vermerk(2026, 8, 15);                               /* Dienstag, 8 h, unberuehrt */
+ok('An einem Arbeitstag geht der Schalter', !awS.disabled, awT.textContent);
+ok('Und sagt, wie viele Stunden zaehlen', awT.textContent === 'Stunden als Arbeitszeit zählen · 8,00 h', awT.textContent);
+tipp(awS);
+ok('Er laesst sich einschalten', SH.aw === true && awS.getAttribute('aria-pressed') === 'true');
+tipp(document.querySelector('#sh-save'));
+ok('Und wird gespeichert', ME.events['2026-09-15'] && ME.events['2026-09-15'].aw === true);
+ok('Die Stunden zaehlen als Arbeit', evalDay(ME, 2026, 8, 15).work === 8 && evalDay(ME, 2026, 8, 15).sonst === 0);
+delete ME.events['2026-09-15'];
+
+vermerk(2026, 8, 27);                               /* Sonntag, frei */
+ok('An einem freien Tag ist er gesperrt', awS.disabled && !SH.aw);
+ok('Und nennt den Grund', awT.textContent === 'An diesem Tag hast du keinen Dienst', awT.textContent);
+ok('Die Zeile tritt zurueck', document.querySelector('#sh-aw-zeile').classList.contains('aus'));
+tipp(awS);
+ok('Ein Tipp aendert nichts', SH.aw === false);
+SH.aw = true;                                       /* auch wenn ihn etwas von aussen setzt */
+tipp(document.querySelector('#sh-save'));
+ok('Gespeichert wird er dort nie', ME.events['2026-09-27'] && ME.events['2026-09-27'].aw === false,
+   JSON.stringify(ME.events['2026-09-27']));
+delete ME.events['2026-09-27'];
+
+vermerk(2026, 8, 26);                               /* Samstag, nur vormittags */
+ok('Samstag ganzer Tag: die 4 h vom Vormittag', !awS.disabled && / 4,00 h$/.test(awT.textContent), awT.textContent);
+tipp(awS);
+tipp(document.querySelector('#sh-scope [data-s="nm"]'));
+ok('Nur Nachmittag: gesperrt, und der Schalter geht aus', awS.disabled && SH.aw === false);
+ok('Mit dem passenden Grund', awT.textContent === 'Am Nachmittag hast du keinen Dienst', awT.textContent);
+tipp(document.querySelector('#sh-scope [data-s="vm"]'));
+ok('Zurueck auf Vormittag: wieder frei', !awS.disabled && / 4,00 h$/.test(awT.textContent));
+closeSheet();
+
+vermerk(2026, 9, 26);                               /* Nationalfeiertag, Montag */
+ok('Am Feiertag gesperrt', awS.disabled, awT.textContent);
+ok('Weil der Feiertag gilt', awT.textContent === 'Am Feiertag zählt nichts als Arbeitszeit', awT.textContent);
+closeSheet();
+
 window.__WEITER = function(){
   ok('Nach dem Wegschliessen ist es ganz zu', !bl.classList.contains('on') && !bl.classList.contains('zu'));
   ok('Zuruecksetzen hat den Tag wieder abgeraeumt', !ME.events['2026-09-16'],
@@ -144,6 +187,8 @@ setTimeout(() => {
    ['Schliessen gleitet nach unten weg', /#sheet\.zu \.sheet-card\{animation:shRaus/],
    ['Nach einem Wurf mit dem Finger sofort', /karte\.classList\.contains\('weg'\)\)\)\{\s*\n\s*bl\.classList\.remove\('on', 'zu', 'frisch'\)/],
    ['Die Farbe kommt aus den Marken der Fassung', /getPropertyValue\('--c-' \+ SH\.type\)/],
+   ['Gesperrte Schalter sind blass', /\.toggle:disabled\{opacity:\.38;cursor:not-allowed\}/],
+   ['Gespeichert wird aw nur, wo es Stunden gibt', /aw:SH\.type === 'eigen' \? \(SH\.aw && shAwStunden\(\) > 0\) : false/],
    ['Weniger Bewegung: alles ruhig',
     /#sheet\.frisch \.shkopf,#sheet\.frisch \.sheet-actions,#sheet\.frisch \.fnote,#sheet\.frisch \.sho,\s*\n\s*\.shblatt\.neu/]
   ].forEach(([n, t]) => {

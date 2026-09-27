@@ -767,6 +767,13 @@ eintragen*:
   Schließen gleitet nach unten weg (`#sheet.zu`, 250 ms; nach einem Wurf mit dem Finger sofort),
   und der eingetragene Tag blitzt im Kalender auf (`tagBlitz()`). Die Meldung nennt die Art.
 
+**„Stunden als Arbeitszeit zählen"** beim eigenen Vermerk geht nur, wo laut Dienstplan
+gearbeitet würde, und zwar im gewählten Umfang (`shAwStunden()`). An einem freien Tag, am
+Feiertag (dort gilt der Feiertag, nicht der Vermerk) oder für eine Tageshälfte ohne Dienst ist der
+Schalter gesperrt und sagt, warum (*An diesem Tag hast du keinen Dienst*, *Am Nachmittag hast du
+keinen Dienst* …). Sonst steht dabei, wie viele Stunden zählen würden. Gespeichert wird `aw` nur,
+wo es Stunden gibt.
+
 Geprüft in `tests/test-tag.js`.
 
 ### Die Monatsübersicht in der Karte *(27. September 2026)*
