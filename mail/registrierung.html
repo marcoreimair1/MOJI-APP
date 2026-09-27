@@ -41,12 +41,13 @@
   </td></tr>
   <tr><td class="m-karte" style="background:#FFFFFF;border:1px solid #ECE6F3;border-radius:24px;padding:38px 32px 34px;">
     <h1 class="m-titel" style="margin:0 0 12px;font:600 26px/1.22 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:#1A1026;">Willkommen bei MOJI</h1>
-    <p class="m-text" style="margin:0 0 26px;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5E5569;">Schön, dass du da bist. Mit diesem Code bestätigst du deine E&#8209;Mail&#8209;Adresse.</p>
+    <p class="m-text" style="margin:0 0 26px;font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5E5569;">{{ if .Data.vorname }}Hi {{ .Data.vorname }}, {{ else }}Hi, {{ end }}schön, dass du da bist. Mit diesem Code schließt du die Anmeldung ab.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td class="m-feld m-code" align="center" style="background:#F7F0FD;border:1px solid #EFE3FA;border-radius:18px;padding:22px 12px;font:600 36px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:.3em;text-indent:.3em;color:#1A1026;font-variant-numeric:tabular-nums;">{{ .Token }}</td>
     </tr></table>
-    <p style="margin:18px 0 0;font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"><a class="m-link" href="{{ .ConfirmationURL }}" style="color:#A21FE0;text-decoration:none;">Lieber per Link bestätigen&nbsp;→</a></p>
-    <p class="m-leise m-linie" style="margin:28px 0 0;padding-top:20px;border-top:1px solid #F0EBF5;font:400 12.5px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">Du hast dich nicht bei MOJI registriert? Dann ignoriere diese Mail einfach, ohne Bestätigung passiert nichts.</p>
+    <p class="m-leise" style="margin:12px 0 0;font:500 12px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:.02em;color:#A39AAF;text-align:center;">Gilt eine Stunde und nur einmal</p>
+    <p style="margin:18px 0 0;font:500 14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"><a class="m-link" href="{{ .ConfirmationURL }}" style="color:#A21FE0;text-decoration:none;">Lieber per Link abschließen&nbsp;→</a></p>
+    <p class="m-leise m-linie" style="margin:28px 0 0;padding-top:20px;border-top:1px solid #F0EBF5;font:400 12.5px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;">Du hast dich nicht bei MOJI angemeldet? Dann ignoriere diese Mail einfach, ohne den Code passiert nichts. Auf diese Adresse kann niemand antworten, Fragen gehen an <a class="m-link" href="mailto:info@studiomaru.at" style="color:#A21FE0;text-decoration:none;">info@studiomaru.at</a>.</p>
   </td></tr>
   <tr><td class="m-leise" style="padding:22px 8px 0;font:400 12px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#A39AAF;text-align:center;">
     MOJI · Mehr Zeit fürs Wesentliche<br>Eine App von Studio MARU 丸

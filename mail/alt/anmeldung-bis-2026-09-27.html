@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<meta name="supported-color-schemes" content="dark light" />
+<title>MOJI</title>
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+</head>
+<body style="margin:0;padding:0;background:#070C1E;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%" bgcolor="#070C1E">
+
+<div style="display:none;font-size:1px;color:#070C1E;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">Dein Code: {{ .Token }} &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#070C1E" style="background:#070C1E;margin:0;padding:0">
+<tr><td align="center" style="padding:32px 16px 40px 16px">
+
+  <!--[if mso]><table role="presentation" width="460" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:460px">
+
+    <tr><td align="center" style="padding:0 0 9px 0">
+      <img src="https://marcoreimair1.github.io/simply/moji-mail-wortmarke.png" width="148" height="47" alt="MOJI" style="display:block;width:148px;height:47px;border:0;outline:none;text-decoration:none" />
+    </td></tr>
+    <tr><td align="center" style="padding:0 0 24px 0">
+      <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:2.2px;color:#5F6A92;line-height:1.4;mso-line-height-rule:exactly">MEHR ZEIT F&Uuml;RS WESENTLICHE</div>
+    </td></tr>
+
+    <tr><td bgcolor="#0D1430" style="background:#0D1430;border:1px solid #1E2A54;border-radius:20px;padding:0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+        <tr><td style="padding:30px 30px 0 30px">
+          <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:20px;font-weight:600;color:#ffffff;line-height:1.35;mso-line-height-rule:exactly">{{ if .Data.vorname }}Hi {{ .Data.vorname }},{{ else }}Hi,{{ end }}</div>
+        </td></tr>
+        <tr><td style="padding:8px 30px 0 30px">
+          <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;color:#9BA5C8;line-height:1.6;mso-line-height-rule:exactly">dein Code f&uuml;r die Anmeldung. Kein Passwort n&ouml;tig.</div>
+        </td></tr>
+
+        <tr><td style="padding:22px 30px 0 30px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td align="center" bgcolor="#121B41" style="background:#121B41;border:1px solid #2A3568;border-radius:14px;padding:22px 12px 20px 12px">
+              <div style="font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace;font-size:32px;font-weight:700;letter-spacing:7px;color:#F7D774;line-height:1.15;mso-line-height-rule:exactly;white-space:nowrap">{{ .Token }}</div>
+              <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;color:#6C7799;line-height:1.4;padding-top:10px;mso-line-height-rule:exactly">G&Uuml;LTIG 60 MINUTEN</div>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:12px 30px 0 30px">
+          <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;color:#6C7799;line-height:1.6;mso-line-height-rule:exactly">Am Handy schl&auml;gt dir die Tastatur den Code von selbst vor.</div>
+        </td></tr>
+
+        <tr><td style="padding:24px 30px 0 30px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td height="1" bgcolor="#1C2750" style="background:#1C2750;height:1px;line-height:1px;font-size:0">&nbsp;</td>
+          </tr></table>
+        </td></tr>
+
+        <tr><td style="padding:22px 30px 0 30px">
+          <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;color:#9BA5C8;line-height:1.6;mso-line-height-rule:exactly">Liest du das schon am Telefon? Dann geht es auch mit einem Tipp.</div>
+        </td></tr>
+        <tr><td align="center" style="padding:16px 30px 30px 30px">
+          <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#F7D774;color:#221904;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:46px;height:46px;padding:0 30px;border-radius:14px;text-decoration:none;mso-line-height-rule:exactly">Direkt anmelden</a>
+        </td></tr>
+
+      </table>
+    </td></tr>
+
+    <tr><td style="padding:22px 8px 0 8px">
+      <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:#5A6386;line-height:1.7;mso-line-height-rule:exactly">Code und Link gelten eine Stunde und funktionieren einmal. Hast du das nicht angefordert, ignoriere diese Mail einfach &mdash; ohne den Code passiert nichts.</div>
+    </td></tr>
+
+    <tr><td style="padding:22px 8px 0 8px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="1" bgcolor="#161F42" style="background:#161F42;height:1px;line-height:1px;font-size:0">&nbsp;</td>
+      </tr></table>
+    </td></tr>
+    <tr><td align="center" style="padding:18px 8px 0 8px">
+      <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:#4E5678;line-height:1.7;mso-line-height-rule:exactly">MOJI &nbsp;&middot;&nbsp; Eine App von <span style="color:#6C7799">Studio MARU &#20024;</span></div>
+    </td></tr>
+    <tr><td align="center" style="padding:6px 8px 0 8px">
+      <div style="font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;color:#4E5678;line-height:1.7;mso-line-height-rule:exactly">Diese Adresse ist unbesetzt. Fragen gehen an <a href="mailto:info@studiomaru.at" style="color:#8A93B5;text-decoration:none">info@studiomaru.at</a></div>
+    </td></tr>
+
+  </table>
+  <!--[if mso]></td></tr></table><![endif]-->
+
+</td></tr>
+</table>
+</body>
+</html>

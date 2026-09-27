@@ -2505,8 +2505,16 @@ Code-Feld, im Knopf und im Link, dazu eine dunkle Fassung für Apple Mail und Ou
 | **Magic link or OTP** | `mail/anmeldung.html` | `{{ .Token }} ist dein MOJI-Code` |
 | **Confirm signup** | `mail/registrierung.html` | `{{ .Token }} ist dein MOJI-Code` |
 
-Eintragen: Dashboard → **Authentication** → **Emails** → **Templates** → Vorlage wählen →
-**Source** → den ganzen Inhalt der Datei einfügen → **Save**. Die Hülle muss in allen drei gleich
+**Eingetragen am 27.09.2026** über die Verwaltungsschnittstelle
+(`PATCH /v1/projects/kzduwbmiytusvlbotrrr/config/auth`, Felder `mailer_subjects_magic_link`,
+`mailer_templates_magic_link_content`, `mailer_subjects_confirmation`,
+`mailer_templates_confirmation_content`) und danach nachgelesen: gleich dem Projekt. Die
+Fassungen davor liegen in `mail/alt/`. Von dort übernommen: die Anrede mit Vornamen
+(`{{ if .Data.vorname }}Hi {{ .Data.vorname }}, {{ else }}Hi, {{ end }}`), „Gilt eine Stunde und
+nur einmal" und dass Fragen an info@studiomaru.at gehen — die Absenderadresse ist unbesetzt.
+
+Von Hand geht es auch: Dashboard → **Authentication** → **Emails** → **Templates** → Vorlage
+wählen → **Source** → den ganzen Inhalt der Datei einfügen → **Save**. Die Hülle muss in allen drei gleich
 bleiben; `tests/test-mail.js` vergleicht sie. Die Bilder (`icon-180.png`,
 `moji-mail-wort-tinte.png`, `moji-mail-wort-hell.png`) kommen von `https://moji-app.at/`.
 
@@ -2795,7 +2803,8 @@ Stand 14. September 2026, gegen `git ls-files` geprüft.
 | `monatsmail.sql` | Tabelle `mail_log` und Zeitplan dazu |
 | `monatsmail-deploy.sh` | veröffentlicht die Function vom Rechner aus |
 | `supabase/config.toml` | bindet den Ordner an das Supabase-Projekt |
-| `moji-mail-wortmarke.png` | Alte Wortmarke (weiß auf Nachtblau) der Mailvorlagen vor dem 27.09.2026. Erst löschen, wenn beide Vorlagen in Supabase durch die aus `mail/` ersetzt sind — bis dahin holen sie sie noch von `https://moji-app.at/` |
+| `moji-mail-wortmarke.png` | Alte Wortmarke (weiß auf Nachtblau) der Mailvorlagen bis 27.09.2026. Keine aktuelle Vorlage nutzt sie mehr — liegen lassen, sonst fehlt das Bild in alten Mails, die noch in den Postfächern liegen |
+| `mail/alt/` | Die beiden Supabase-Vorlagen, wie sie bis 27.09.2026 eingetragen waren |
 | `moji-mail-wort-tinte.png`, `moji-mail-wort-hell.png` | Wortmarke der Mails, dunkel für hell und hell für die dunkle Fassung. Aus `LOGO_WORD_TINTE` / `LOGO_WORD` in `index.html` |
 | `mail/anmeldung.html`, `mail/registrierung.html` | Die beiden Supabase-Mailvorlagen (Abschnitt 13) |
 | `mail-av/av-1.jpg` … `av-116.jpg` | Die Profilbilder quadratisch als JPEG (120 px, Ausschnitt wie in der App) für die Bubble-Tea-Liste der Monats-Erinnerung — Outlook zeigt kein WebP. Kommen neue Bilder dazu: hier nachziehen und `AV_MAX` in `monatsmail.ts` hochsetzen |

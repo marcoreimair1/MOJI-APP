@@ -65,9 +65,15 @@ ok('Anmeldung: der Link als Ausweg', anm.includes('href="{{ .ConfirmationURL }}"
 ok('Anmeldung: der Code steht schon in der Vorschauzeile', /mso-hide:all;opacity:0;">Dein Code für MOJI: \{\{ \.Token \}\}<\/div>/.test(anm));
 ok('Registrierung: Code und Link', /class="m-feld m-code"[^>]*>\{\{ \.Token \}\}<\/td>/.test(reg) && reg.includes('href="{{ .ConfirmationURL }}"'));
 ok('Registrierung: begruesst', reg.includes('>Willkommen bei MOJI</h1>'));
-ok('„E‑Mail‑Adresse" bricht nicht um', reg.includes('E&#8209;Mail&#8209;Adresse'));
-ok('Keine anderen Platzhalter als diese beiden',
-   [anm, reg].every(s => [...s.matchAll(/\{\{[^}]*\}\}/g)].every(m => /^\{\{ \.(Token|ConfirmationURL) \}\}$/.test(m[0]))));
+ok('Keine anderen Platzhalter als Code, Link und Vorname',
+   [anm, reg].every(s => [...s.matchAll(/\{\{[^}]*\}\}/g)].every(m =>
+     /^\{\{ (\.Token|\.ConfirmationURL|\.Data\.vorname|if \.Data\.vorname|else|end) \}\}$/.test(m[0]))));
+/* Aus den Vorlagen davor uebernommen: Anrede, Gueltigkeit, Kontakt. */
+const HI = '{{ if .Data.vorname }}Hi {{ .Data.vorname }}, {{ else }}Hi, {{ end }}';
+ok('Beide sprechen mit Vornamen an, ohne einen „Hi ,"', anm.includes(HI + 'gib diesen Code') && reg.includes(HI + 'schön, dass'));
+ok('Beide sagen, wie lange der Code gilt', [anm, reg].every(s => s.includes('>Gilt eine Stunde und nur einmal</p>')));
+ok('Und wohin Fragen gehen — die Absenderadresse ist unbesetzt',
+   [anm, reg].every(s => s.includes('href="mailto:info@studiomaru.at"')));
 
 /* ── 6 · Die Erinnerung rechnet und maskiert ──
    monatsmail.ts ist TypeScript fuer Deno; die drei Funktionen fuer den
