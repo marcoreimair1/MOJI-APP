@@ -8,6 +8,8 @@ const DATEI = process.argv[2] || path.join(__dirname, '..', 'index.html');
 const roh = fs.readFileSync(DATEI, 'utf8');
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations', '20260927090000_tee_protokoll.sql');
 const sql = fs.existsSync(MIG) ? fs.readFileSync(MIG, 'utf8') : '';
+const MIG2 = path.join(__dirname, '..', 'supabase', 'migrations', '20260927100000_tee_log_anon.sql');
+const sql2 = fs.existsSync(MIG2) ? fs.readFileSync(MIG2, 'utf8') : '';
 const vc = new VirtualConsole();
 ['jsdomError','error','warn'].forEach(e => vc.on(e, () => {}));
 
@@ -188,6 +190,8 @@ setTimeout(() => {
    ['Geschrieben wird nur ein gezaehlter Becher',
     /if not war and not dran then[\s\S]{0,500}insert into public\.tee_log \(von, an, am\) values \(ich, an, heute\);\s*\n\s*end if;/.test(sql)],
    ['Die Migration prueft sich selbst', /tee_senden schreibt nicht ins Protokoll/.test(sql)],
+   ['Anonym ist das Protokoll gar nicht abfragbar', /revoke all on public\.tee_log from anon;/.test(sql2)
+    && /has_table_privilege\('anon', 'public\.tee_log', 'select'\)/.test(sql2)],
    ['Das Protokoll zaehlt ab dem 27.09.2026', /const TEE_LOG_AB = '2026-09-27';/.test(roh)],
    ['Pruefschalter ueber die Adresse', /\[\?&\]rueckblick\\b/.test(roh)],
    ['Das Banner kommt vor dem Exportkopf', roh.indexOf('id="jr-banner"') > -1 && roh.indexOf('id="jr-banner"') < roh.indexOf('<h1 class="exh">')],
