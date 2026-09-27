@@ -155,7 +155,9 @@ ok('Der Umfang ist immer der ganze Tag', Q.scope === 'full');
 tipp(tag(10)); tipp(tag(21));
 var sum = document.querySelector('#zr-sum').textContent;
 ok('Live mitgerechnet: 10. bis 21. Maerz sind 84 h Urlaub', /11 Arbeitstage · 84,00 h Urlaub/.test(sum), sum);
-ok('Und 11 Urlaubstage — der Samstag mit 4 h ist ein ganzer', /11 Urlaubstage/.test(sum), sum);
+/* Seit 28.09.2026 rechnet das Konto in Stunden: 84 h durch 8 h, den
+   ueblichen Diensttag — der Samstag mit 4 h ist ein halber Urlaubstag. */
+ok('Und 10,5 Urlaubstage — der Samstag mit 4 h ist ein halber', /10,5 Urlaubstage/.test(sum), sum);
 tipp(document.querySelector('#zrs-von'));
 
 /* ── 8 · Eintragen ── */
@@ -182,6 +184,39 @@ ok('Die Zeile nennt die drei schon belegten',
 tipp(document.querySelector('#zr-weg'));
 ok('Abbrechen beendet den Modus', !zrModus());
 ok('Der Knopf heisst jetzt Abbrechen', document.querySelector('#zr-weg').textContent.trim() === 'Abbrechen');
+
+/* ── 9b · Freie Tage im Zeitraum tragen die Farbe, zaehlen aber nicht ──
+   Marco, 28.09.2026: der Sonntag mitten im Urlaub soll im Kalender
+   mit dazugehoeren; antippen sagt, dass er nicht verrechnet wurde. */
+CAL.y = 2025; CAL.m = 2; renderCal();
+ME.events['2025-03-23'] = { t:'zeit', za:3 };        /* an einem Sonntag gearbeitet */
+var vorM = monthSums(monthRows(ME, 2025, 2)).urlaub;
+zrAn('urlaub');
+tipp(tag(17)); tipp(tag(31));
+tipp(document.querySelector('#zr-ok'));
+var so16 = ME.events['2025-03-16'], so30 = ME.events['2025-03-30'];
+ok('Der Sonntag im Zeitraum bekommt einen Eintrag „frei"', !ME.events['2025-03-16']
+   && so30 && so30.frei === true && so30.t === 'urlaub' && so30.ser === '2025-03-17>2025-03-31', JSON.stringify(so30));
+ok('Was an einem Sonntag schon stand, bleibt stehen', ME.events['2025-03-23'].t === 'zeit' && ME.events['2025-03-23'].za === 3);
+ok('Er zaehlt nichts', evalDay(ME, 2025, 2, 30).urlaub === 0 && evalDay(ME, 2025, 2, 30).frei === true);
+ok('Und sagt es in der Zeile fuers PDF', evalDay(ME, 2025, 2, 30).note === 'Urlaub · kein Dienst');
+ok('Im Kalender traegt er die Farbe, gestrichelt', tag(30).classList.contains('frei') && tag(30).dataset.t === 'urlaub');
+ok('Gezaehlt werden nur die 13 Arbeitstage, nicht die Sonntage', /^13 Tage eingetragen/.test(document.querySelector('#toast-t').textContent),
+   document.querySelector('#toast-t').textContent);
+/* 17.–31. Maerz 2025: elf Werktage zu 8 h und zwei Samstage zu 4 h. */
+ok('Die Sonntage aendern die Stunden nicht: 96 h Urlaub mehr im Maerz', monthSums(monthRows(ME, 2025, 2)).urlaub - vorM === 96,
+   vorM + ' → ' + monthSums(monthRows(ME, 2025, 2)).urlaub);
+openSheet(2025, 2, 30);
+ok('Antippen: der Hinweis sagt, wozu er gehoert und dass er nicht zaehlt',
+   document.querySelector('#sh-frei').style.display === 'flex'
+   && document.querySelector('#sh-frei-t').textContent === 'Teil deines Urlaubs vom 17. März bis 31. März. Weil du an diesem Tag keinen Dienst hast, wird er nicht vom Urlaubskonto abgezogen.',
+   document.querySelector('#sh-frei-t').textContent);
+tipp(document.querySelector('#sh-save'));
+ok('Nochmal gespeichert bleibt er ein freier Tag der Serie', ME.events['2025-03-30'].frei === true && ME.events['2025-03-30'].ser === '2025-03-17>2025-03-31');
+openSheet(2025, 2, 18);
+ok('Ein normaler Tag hat den Hinweis nicht', document.querySelector('#sh-frei').style.display === 'none');
+closeSheet();
+Object.keys(ME.events).forEach(function(k){ if(k >= '2025-03-17' && k <= '2025-03-31') delete ME.events[k]; });
 
 /* ── 10 · Krankenstand und Vermerk ── */
 zrAn('krank');

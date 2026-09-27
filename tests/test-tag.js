@@ -181,9 +181,8 @@ var bil = document.querySelector('#sh-bil').textContent;
 ok('Vormittag Urlaub: die Bilanz zeigt 4 h Arbeit und 4 h Urlaub', /Arbeit 4,00 h/.test(bil) && /Urlaub 4,00 h/.test(bil), bil);
 ok('Und oben die Summe des Tages', document.querySelector('.shbil-kopf b').textContent === '8,00 h');
 var kz = document.querySelector('#sh-konto').textContent;
-var kzJetzt = parseFloat((kz.match(/: ([0-9,]+) von/) || [0, '0'])[1].replace(',', '.'));
-var kzNach  = parseFloat((kz.match(/nach diesem Tag ([0-9,]+)/) || [0, '0'])[1].replace(',', '.'));
-ok('Das Urlaubskonto rechnet einen halben Tag', Math.abs(kzJetzt - kzNach - 0.5) < 0.001, kz);
+var kzStd = (kz.match(/([0-9]+,[0-9]{2}) h/g) || []).map(function(x){ return parseFloat(x.replace(',', '.')); });
+ok('Das Urlaubskonto rechnet 4 h ab — einen halben Tag', kzStd.length === 2 && Math.abs(kzStd[0] - kzStd[1] - 4) < 0.001, kz);
 tipp(kachel('krank'));
 ok('Krankenstand am Vormittag: 4 h Krankenstand, 4 h Arbeit', /Krankenstand 4,00 h/.test(document.querySelector('#sh-bil').textContent)
    && /Arbeit 4,00 h/.test(document.querySelector('#sh-bil').textContent));
@@ -213,12 +212,71 @@ ok('Sammeln zaehlt als Arbeit und aufs Konto', /Arbeit 1,00 h/.test(document.que
    && document.querySelector('#sh-bil').textContent.indexOf('+1,00 h auf dein Zeitausgleich-Konto') >= 0, document.querySelector('#sh-bil').textContent);
 closeSheet();
 openSheet(2026, 9, 26);                             /* Nationalfeiertag */
-ok('Feiertag: nur der Vermerk ist waehlbar', kachel('urlaub').disabled && kachel('krank').disabled
-   && kachel('zeit').disabled && !kachel('eigen').disabled);
+ok('Feiertag: Urlaub und Krankenstand gesperrt, Zeitausgleich und Vermerk gehen',
+   kachel('urlaub').disabled && kachel('krank').disabled && !kachel('zeit').disabled && !kachel('eigen').disabled);
 tipp(kachel('eigen'));
 ok('Die Bilanz zeigt den Feiertag und sagt, dass der Eintrag nichts aendert',
    /Feiertag 8,00 h/.test(document.querySelector('#sh-bil').textContent)
    && /ein Eintrag ändert an diesem Tag nichts/.test(document.querySelector('#sh-bil').textContent));
+closeSheet();
+
+/* ── 11b · Am Feiertag gearbeitet: Zeitausgleich sammeln ──
+   Marco, 28.09.2026: im Handel hat man an manchen Feiertagen offen. */
+openSheet(2026, 9, 26); tipp(kachel('zeit'));
+ok('Einloesen ist am Feiertag gesperrt', document.querySelector('#sh-zadir [data-dir="minus"]').disabled && SH.zaDir === 'plus');
+zaSetz(6);
+var bF = document.querySelector('#sh-bil').textContent;
+ok('Die Bilanz: Feiertag 8 h und 6 h Arbeit', /Feiertag 8,00 h/.test(bF) && /Arbeit 6,00 h/.test(bF), bF);
+ok('Und die 6 h aufs Konto', bF.indexOf('+6,00 h auf dein Zeitausgleich-Konto') >= 0 && bF.indexOf('ändert an diesem Tag nichts') < 0, bF);
+var zaVor = kontenRechnen(ME).za;
+tipp(document.querySelector('#sh-save'));
+var fT = evalDay(ME, 2026, 9, 26);
+ok('Gerechnet: Feiertag bleibt, 6 h Arbeit, 6 h Zeitausgleich', fT.type === 'feier' && fT.feier === 8 && fT.work === 6 && fT.za === 6);
+ok('Die Zeile fuers PDF nennt beides', fT.note === 'Nationalfeiertag · 6,00 h gesammelt', fT.note);
+ok('Das Konto steigt um 6 h', Math.abs(kontenRechnen(ME).za - zaVor - 6) < 0.001);
+ME.events['2026-10-26'] = { t:'zeit', za:-4 };
+ok('Ein Einloesen am Feiertag zaehlt nichts', evalDay(ME, 2026, 9, 26).za === 0 && evalDay(ME, 2026, 9, 26).work === 0);
+delete ME.events['2026-10-26'];
+
+/* ── 11c · Das Urlaubskonto rechnet in Stunden ──
+   Marco, 28.09.2026: im Hintergrund immer in Viertelstunden, Tage nur
+   zum Anzeigen — umgerechnet mit dem ueblichen Diensttag. */
+ok('Der uebliche Diensttag ist 8 h, nicht der Durchschnitt 7,33 h', tagFaktor(ME) === 8, tagFaktor(ME));
+var alt = normalize({ id:'a', vorname:'A', nachname:'B', dob:'1990-01-01', av:3, konten:{ topf:25, anspruch:25 } });
+ok('Ein alter Topf in Tagen wird zu Stunden', alt.konten.topfStd === 200, alt.konten.topfStd);
+ok('25 Tage Anspruch sind 200 h', anspruchStd(alt) === 200);
+/* Anspruch in Stunden: 200 h wurden frueher mit dem Schnitt 7,25 h zu
+   27,5 Tagen. Zurueck mit demselben Schnitt, nicht mit 8 h. */
+var altStd = normalize({ id:'s', vorname:'S', nachname:'T', dob:'1990-01-01', av:3,
+  konten:{ topf:27.5, anspruch:200, anspruchEinheit:'stunden' } });
+/* Genauer als die alte Rundung auf halbe Tage geht es nicht: 27,5 x 7,25
+   = 199,375, auf die Viertelstunde 199,5 h. Mit 8 h waeren es 220 h. */
+ok('Wer in Stunden rechnete, behaelt seine Stunden (bis auf die alte Rundung)',
+   altStd.konten.topfStd === 199.5, altStd.konten.topfStd);
+alt.konten.gutJahr = new Date().getFullYear() - 1; urlaubGutschreiben(alt);
+ok('Gutgeschrieben wird in Stunden', alt.konten.topfStd === 400 && alt.konten.topf === 50, alt.konten.topfStd);
+var j = new Date().getFullYear();
+function probeKonto(ev, y, m, d){
+  var p = normalize({ id:'k', vorname:'K', nachname:'L', dob:'1990-01-01', av:3, konten:{ topfStd:200, anspruch:25, startJahr:j, gutJahr:j } });
+  if(ev) p.events[key(y, m, d)] = ev;
+  return kontenRechnen(p);
+}
+var basis = probeKonto(null);
+ok('Ohne Urlaub: 200 h, 25 Tage', basis.urlaubStd === 200 && basis.urlaub === 25);
+function samstagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 5, t).getDay() === 6) return t; } }
+function montagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 5, t).getDay() === 1) return t; } }
+var sa = probeKonto({ t:'urlaub', s:'full' }, j, 5, samstagIn(j));
+ok('Ein Samstag mit 4 h: 4 h weg, ein halber Tag', sa.urlaubStd === 196 && sa.urlaub === 24.5, sa.urlaubStd);
+var mo = probeKonto({ t:'urlaub', s:'full' }, j, 5, montagIn(j));
+ok('Ein Montag mit 8 h: ein ganzer Tag', mo.urlaubStd === 192 && mo.urlaub === 24);
+/* Ungleiche Haelften: Vormittag bis zur Mittagspause, Nachmittag danach. */
+var ung = normalize({ id:'u', vorname:'U', nachname:'V', dob:'1990-01-01', av:3, konten:{ topfStd:200, anspruch:25, startJahr:j, gutJahr:j } });
+[1,2,3,4,5].forEach(function(t){ ung.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'07:00', vmTo:'12:00', nmOn:true, nmFrom:'13:00', nmTo:'16:00' }; }); });
+ung.events[key(j, 5, montagIn(j))] = { t:'urlaub', s:'vm' };
+var uk = kontenRechnen(ung);
+ok('Vormittag 07–12 bei einem 8-h-Tag: genau 5 h weg', uk.urlaubStd === 195, uk.urlaubStd);
+ok('Das sind 0,625 Tage, angezeigt 0,6', Math.abs(uk.genommen - 0.625) < 0.001 && fmtUT(uk.genommen) === '0,6');
+ok('Immer auf die Viertelstunde', [sa, mo, uk].every(function(x){ return Math.abs(x.urlaubStd * 4 - Math.round(x.urlaubStd * 4)) < 1e-9; }));
 closeSheet();
 
 /* ── 12 · Einloesen hoechstens, was geplant ist ──

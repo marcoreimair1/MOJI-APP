@@ -801,9 +801,34 @@ Fällen nachgerechnet (Mo–Fr 4 + 4 h, Sa nur 08–12):
   gerechnet von `evalDay` auf einer Kopie (`tagMit()`), also genau wie Kalender, Monatsübersicht
   und PDF. Dazu, was auf das Zeitausgleich-Konto geht. Beim Zeitraum nennt die Zeile unter Von–Bis
   die Stunden und beim Urlaub die Urlaubstage (`zrZaehlen()`; ein Samstag mit 4 h ist ein ganzer).
-- **Offen, nicht geändert:** Bei ungleichen Hälften (z. B. 5 h vormittags, 3 h nachmittags) zählt
-  ein halber Urlaubstag anteilig 0,625 Tage, nicht 0,5. Und am Feiertag zählt auch gesammelter
-  Zeitausgleich nicht — wer an einem Feiertag arbeitet, kann das nicht eintragen.
+- **Entschieden am 28.09.2026** (Marco): *Vormittag* ist der Block bis zur Mittagspause,
+  *Nachmittag* der ab Dienstbeginn danach — genau die Zeiten aus den Dienstzeiten. Und das
+  **Urlaubskonto rechnet in Stunden**, auf die Viertelstunde:
+  - Gutgeschrieben wird der Anspruch in Stunden (`konten.topfStd`, `anspruchStd()`); genommen
+    werden die Urlaubsstunden aus `evalDay` (`monthSums().urlaub`). Ein Vormittag 07–12 sind 5 h,
+    ein Samstag mit 4 h sind 4 h.
+  - **Tage sind nur Anzeige:** Stunden geteilt durch den *üblichen* Diensttag (`tagFaktor()`,
+    die häufigste Tageslänge im Plan, bei Gleichstand die längere) — bei Mo–Fr 8 h, Sa 4 h also
+    8 h: 25 Tage sind 200 h, ein Samstag ist ein halber Tag. Nicht der Durchschnitt (7,33 h), sonst
+    stünden elf Arbeitstage als „11,5 Urlaubstage" da. Angezeigt mit einer Nachkommastelle
+    (`fmtUT()`), daneben die Stunden.
+  - Man kann weiter in Tagen einstellen (Rad in halben Tagen, Anspruch in Tagen oder Stunden);
+    gespeichert wird in Stunden.
+  - **Umstellung** in `normalize()`, einmal: `topfStd = topf × tagFaktor`. Wer den Anspruch in
+    Stunden führte, dessen Tage kamen aus dem alten Durchschnitt — zurück mit demselben
+    (`tagSchnittAlt()`), sonst wären es rund 10 % zu viel. `konten.topf` wird für ältere
+    App-Fassungen in Tagen mitgeführt.
+  - Wirkung auf die echten Konten (28.09.2026, nur gezählt): 5 Urlaubs-Samstage zählen jetzt je
+    einen halben statt einen ganzen Tag; ein Konto führt den Anspruch in Stunden.
+- **Arbeit am Feiertag** (Marco: im Handel hat man an manchen Feiertagen offen): *Zeitausgleich
+  sammeln* geht am Feiertag. Der Feiertag bleibt, die Stunden kommen als Arbeit dazu und aufs
+  Konto (`evalDay`, Zeile im PDF „Mariä Empfängnis · 6,00 h gesammelt"). Einlösen geht dort nicht.
+- **Freie Tage im Zeitraum:** Sonntage und dienstfreie Tage zwischen Von und Bis bekommen einen
+  Eintrag mit `frei: true` — gleiche Farbe, gestrichelt, zählt nichts, im PDF „Urlaub · kein
+  Dienst". Antippen sagt: „Teil deines Urlaubs vom … bis …. Weil du an diesem Tag keinen Dienst
+  hast, wird er nicht vom Urlaubskonto abgezogen." Feiertage bleiben Feiertage, und was an einem
+  freien Tag schon steht (etwa gesammelter Zeitausgleich), wird nicht überschrieben. Die
+  Meldung zählt nur die Arbeitstage; im Rückblick sind solche Tage keine Brückentage.
 
 Geprüft in `tests/test-tag.js` und `tests/test-zeitraum.js`.
 

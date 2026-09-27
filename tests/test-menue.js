@@ -288,7 +288,7 @@ window.__WEITER = function(){
      schloss.className);
 
   /* ── Zeitausgleich und Urlaubstage: Schloss und Raeder ── */
-  ME.konten.zaStart = 6.5; ME.konten.topf = 25;
+  ME.konten.zaStart = 6.5; ME.konten.topfStd = 25 * tagFaktor(ME);   /* seit 28.09.2026 in Stunden */
   var kSchloss = document.getElementById('k-lock');
   ok('Das Schloss ist dasselbe wie bei den Dienstzeiten',
      kSchloss.classList.contains('swz') && kSchloss.classList.contains('hr-schloss'),
