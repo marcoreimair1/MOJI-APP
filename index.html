@@ -7297,7 +7297,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2230';
+const APP_STAND = '2026-09-27-2300';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8847,7 +8847,7 @@ function echoDob(){
 const NOW = new Date();
 const PREV = new Date(NOW.getFullYear(), NOW.getMonth()-1, 1);
 const OB = { step:0, months:new Set([PREV.getFullYear()+'-'+PREV.getMonth()]),
-             sched:defaultSched(), mailOk:false, pkOk:false };
+             sched:defaultSched(), mailOk:true, pkOk:false };
 const STEPS = 4;
 const OB_PFEIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M12 6l6 6-6 6"/></svg>';
 
@@ -8868,7 +8868,9 @@ function obInit(){
   OB.step = 0;
   OB.months = new Set([PREV.getFullYear()+'-'+PREV.getMonth()]);
   OB.sched = defaultSched();
-  OB.mailOk = false; OB.pkOk = false;
+  /* Die Monats-Erinnerung steht bei Neuen seit 27.09.2026 von Anfang an
+     auf an — abschalten geht mit einem Tipp, hier oder im Profilmenü. */
+  OB.mailOk = true; OB.pkOk = false;
   $('#in-vn').value = ''; $('#in-nn').value = '';
   _nPrev['in-vn'] = ''; _nPrev['in-nn'] = '';
   $$('[data-dob="ob"] input').forEach(i => i.value = '');

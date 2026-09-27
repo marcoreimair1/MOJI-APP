@@ -2605,7 +2605,8 @@ Angabe nur 5 Sekunden auf die Funktion. Seither:
   `mail_log` verhindert doppelte Mails — die späteren Läufe holen nur nach, was fehlte.
 - **Zustimmung für alle** auf Marcos Wunsch: vorher 10 ja, 8 ausdrücklich nein, 3 nie gefragt.
   Die alten Antworten liegen in `mail_zustimmung_vorher` (für niemanden lesbar außer dem Dienst).
-  Abschalten geht weiter im Profilmenü.
+  Abschalten geht weiter im Profilmenü. Neue sehen den Schalter bei der Registrierung von Anfang an auf
+  *an* (`OB.mailOk = true`) und können ihn dort mit einem Tipp abschalten.
 - **Alte App-Fassungen** schreiben die Zustimmung nicht zurück: die App schreibt bei jeder
   eigenen Wahl `mailStand` (`MAIL_STAND = 2`) mit; kommt ein Profil ohne `mailStand` an, hält der
   Auslöser `records_zustimmung_halten` Zustimmung und Stand von vorher. `normalize()` darf

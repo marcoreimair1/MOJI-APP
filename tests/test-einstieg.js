@@ -171,8 +171,11 @@ obGo(2);
 ok('Schritt 3 steht',        el('ob-step').textContent === 'Schritt 3 von 4', el('ob-step').textContent);
 ok('Beide Schalter moeglich', obSchalterAnzahl() === 2, obSchalterAnzahl());
 ok('Ueberschrift passt',     el('ob-sw-h').textContent === 'Zwei Schalter', el('ob-sw-h').textContent);
-ok('Erinnerung steht auf aus', el('sw-mail').getAttribute('aria-pressed') === 'false');
+/* Seit 27.09.2026 steht die Erinnerung bei Neuen von Anfang an auf an. */
+ok('Erinnerung steht von Anfang an auf an', OB.mailOk === true && el('sw-mail').getAttribute('aria-pressed') === 'true');
 ok('Weiter-Knopf ist da',    !el('ob-nav').classList.contains('hide'));
+el('sw-mail').click();
+ok('Ein Tipp schaltet sie ab', OB.mailOk === false && el('sw-mail').getAttribute('aria-pressed') === 'false');
 el('sw-mail').click();
 ok('Erinnerung an',          OB.mailOk === true);
 ok('Regler zeigt an',        el('sw-mail').getAttribute('aria-pressed') === 'true');
@@ -576,6 +579,10 @@ const E = dom.window.__E || [];
 const roh = (name, bedingung, zusatz) =>
   E.push({ name: name, ok: !!bedingung, zusatz: zusatz === undefined ? '' : String(zusatz) });
 roh('Die Blase bekommt eine weiche Hoehe', /\.za-blase\{[^}]*transition:height/.test(HTML));
+/* 27.09.2026: die Erinnerung steht bei Neuen von Anfang an auf an —
+   beim ersten Laden und bei jedem neuen Durchlauf (obInit). */
+roh('Die Erinnerung beginnt auf an', HTML.includes('sched:defaultSched(), mailOk:true, pkOk:false };'));
+roh('Auch ein neuer Durchlauf beginnt auf an', HTML.includes('OB.mailOk = true; OB.pkOk = false;'));
 roh('Die Hoehe wird vor dem Tippen gesetzt',
     HTML.indexOf("blase.style.height = ziel + 'px'") > -1);
 roh('Getippt wird im Bildtakt', /_zaTippT = requestAnimationFrame\(schritt\)/.test(HTML));
