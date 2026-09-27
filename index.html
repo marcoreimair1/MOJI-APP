@@ -1917,16 +1917,16 @@ body.zrmodus #v-cal .card{border-color:var(--zrf,var(--line));
 /* Der Umfang ist ein Umschalter mit einem Schieber in der Farbe der
    Leistung. Vorher drei einzelne Kacheln, und „Nur Nachmittag" brach am
    Handy auf zwei Zeilen um. */
-#q-scope{position:relative;gap:0;padding:3px;border-radius:14px;
+#q-scope,#sh-scope{position:relative;gap:0;padding:3px;border-radius:14px;
   border:1px solid var(--line-2);background:rgba(var(--s-tief),.3)}
-#q-scope::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;
+#q-scope::before,#sh-scope::before{content:"";position:absolute;top:3px;bottom:3px;left:3px;
   width:calc((100% - 6px) / 3);border-radius:11px;
   background:var(--zrf-zart,rgba(var(--marke-rgb),.14));
   box-shadow:inset 0 0 0 1px var(--zrf-schwach,rgba(var(--marke-rgb),.4));
   transform:translateX(calc(100% * var(--i, 0)));transition:transform .45s var(--ease-out)}
-#q-scope button{position:relative;z-index:1;padding:10px 4px;border:0;border-radius:11px;
+#q-scope button,#sh-scope button{position:relative;z-index:1;padding:10px 4px;border:0;border-radius:11px;
   background:transparent;font-size:12px;white-space:nowrap;transition:color .24s var(--ease)}
-#q-scope button.on{background:transparent;color:var(--zrf-tx,var(--butter))}
+#q-scope button.on,#sh-scope button.on{background:transparent;color:var(--zrf-tx,var(--butter))}
 body.zrmodus #zr-ok{background:linear-gradient(120deg,var(--zrf-hell),var(--zrf));
   border-color:var(--zrf);color:var(--f-3);
   box-shadow:0 12px 34px -12px var(--zrf-schwach)}
@@ -2240,8 +2240,6 @@ body.locked #tabbar{
 .tpill[data-t=urlaub].on{background:rgba(var(--c-urlaub-rgb-f),.18);border-color:var(--c-urlaub);color:var(--c-urlaub)}
 .tpill[data-t=krank].on{background:rgba(var(--c-krank-rgb-f),.18);border-color:var(--c-krank);color:var(--c-krank)}
 .tpill[data-t=eigen].on{background:rgba(var(--c-eigen-rgb-f),.18);border-color:var(--c-eigen);color:var(--c-eigen)}
-.opt[data-t=zeit] .oi{background:rgba(var(--c-arbeit-rgb-f),.16);color:var(--c-arbeit)}
-.opt[data-t=zeit].on{border-color:var(--c-arbeit);background:rgba(var(--c-arbeit-rgb-f),.08)}
 
 /* Bereichskalender im Schnelleintrag */
 .qcal{border:1px solid var(--line-2);border-radius:var(--r-m);padding:14px;background:rgba(var(--s-tief),.22);
@@ -2619,14 +2617,95 @@ body.locked #tabbar{
 }
 
 /* ─── Tagesblatt ──────────────────────────────────────────────────────
-   Kompakter als vorher, und sobald eine Art gewählt ist, treten die
-   anderen drei weg. Die Höhe wird mitanimiert, damit das Blatt nicht
-   springt; ein Tipp auf die gewählte Art holt die anderen zurück. */
+   Neu am 27.09.2026, in der Sprache von „Mehrere Tage eintragen":
+   oben ein Kalenderblatt mit Wochentag und Tag, das die Farbe der
+   gewählten Art annimmt; darunter die vier Arten als Kacheln zwei und
+   zwei. Die gewählte leuchtet mit Haken, die anderen treten zurück,
+   bleiben aber antippbar — umentscheiden ist ein Tipp. Umfang als
+   Umschalter wie beim Zeitraum, der Knopf sagt, was er einträgt.
+   Die Farbe der Art liegt als --zrf… am Blatt selbst, damit Umschalter
+   und Knopf dieselben Regeln nutzen wie der Zeitraum. */
+#sheet{--zrf:var(--butter);--zrf-hell:var(--butter-2);--zrf-zart:rgba(var(--marke-rgb),.12);
+  --zrf-schwach:rgba(var(--marke-rgb),.32);--zrf-tx:var(--butter)}
 #sheet .sheet-card{padding:12px 20px calc(22px + env(safe-area-inset-bottom))}
-#sheet h3{font-size:21px;margin-bottom:5px}
-#sheet .sd{margin:0 0 16px}
-#sheet .sheet-actions{margin-top:20px}
-#sheet #sh-opts .opt:last-child{margin-bottom:2px}
+#sheet .sheet-actions{margin-top:18px}
+#sheet .shkonto{margin-top:12px}
+#sheet .sheet-actions .btn{min-width:0;white-space:nowrap}
+#sheet #sh-scopewrap .shlab{margin-top:16px}
+/* Beim Öffnen steigen Kopf, Kacheln und Knöpfe nacheinander herauf. */
+#sheet.frisch .shkopf,#sheet.frisch .sheet-actions,#sheet.frisch .fnote{animation:qIn .5s var(--ease-out) both}
+#sheet.frisch .shkopf{animation-delay:.06s}
+#sheet.frisch .fnote{animation-delay:.1s}
+#sheet.frisch .sheet-actions{animation-delay:.3s}
+#sheet.frisch .sho{animation:shoIn .55s var(--ease-out) both}
+#sheet.frisch .sho:nth-child(1){animation-delay:.1s}
+#sheet.frisch .sho:nth-child(2){animation-delay:.15s}
+#sheet.frisch .sho:nth-child(3){animation-delay:.2s}
+#sheet.frisch .sho:nth-child(4){animation-delay:.25s}
+@keyframes shoIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:none}}
+/* Schließen ist die kürzere Umkehrung: die Karte geht nach unten weg. */
+#sheet.zu .sheet-card{animation:shRaus .26s var(--ease) both}
+#sheet.zu .sheet-bd{animation:shGrundRaus .26s var(--ease) both}
+@keyframes shRaus{to{transform:translateY(100%)}}
+@keyframes shGrundRaus{to{opacity:0}}
+
+.shkopf{display:flex;align-items:center;gap:14px;margin:0 0 16px}
+.shblatt{flex:none;width:54px;height:60px;border-radius:17px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  background-color:var(--zrf-zart);border:1px solid var(--zrf-schwach);color:var(--zrf-tx);
+  transition:background-color .4s var(--ease),border-color .4s var(--ease),color .4s var(--ease),box-shadow .4s var(--ease)}
+.shblatt u{text-decoration:none;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+.shblatt b{font-family:var(--font-dis);font-weight:400;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+#sheet.hat .shblatt{background-color:var(--zrf);border-color:var(--zrf);color:var(--f-3);
+  box-shadow:0 12px 26px -12px var(--zrf-schwach)}
+/* Wechselt die Art, federt das Blatt kurz nach. */
+.shblatt.neu{animation:shBlatt .55s var(--ease-out)}
+@keyframes shBlatt{0%{transform:scale(.88) rotate(-5deg)}60%{transform:scale(1.06) rotate(1deg)}100%{transform:none}}
+.shkopf-t{min-width:0}
+#sheet h3{font-size:21px;line-height:1.15;margin:0 0 4px}
+#sheet .sd{display:flex;align-items:center;gap:6px;margin:0;font-size:12px}
+#sheet .sd svg{width:13px;height:13px;flex:none}
+
+/* Die vier Arten, zwei und zwei. */
+#sh-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.sho{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0;
+  padding:12px 12px 11px;border-radius:17px;border:1px solid var(--line-2);
+  background-color:rgba(var(--s-tief),.22);text-align:left;
+  transition:border-color .3s var(--ease),background-color .3s var(--ease),opacity .3s var(--ease),
+             box-shadow .3s var(--ease),scale .2s var(--ease)}
+.sho:active{scale:.96}
+.sho-i{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  color:var(--so);background:var(--so-zart);transition:background .3s var(--ease),color .3s var(--ease)}
+.sho-i svg{width:19px;height:19px}
+.sho-t{display:block;min-width:0;width:100%}
+.sho b{display:block;font-size:14px;font-weight:650;letter-spacing:-.01em;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sho small{display:block;margin-top:2px;font-size:11px;line-height:1.35;color:var(--tx-3)}
+.sho[data-t=urlaub]{--so:var(--c-urlaub);--so-zart:rgba(var(--c-urlaub-rgb-f),.16);--so-rand:rgba(var(--c-urlaub-rgb),.75)}
+.sho[data-t=krank] {--so:var(--c-krank); --so-zart:rgba(var(--c-krank-rgb-f),.16); --so-rand:rgba(var(--c-krank-rgb),.75)}
+.sho[data-t=zeit]  {--so:var(--c-zeit);  --so-zart:rgba(var(--c-zeit-rgb-f),.16);  --so-rand:rgba(var(--c-zeit-rgb),.75)}
+.sho[data-t=eigen] {--so:var(--c-eigen); --so-zart:rgba(var(--c-eigen-rgb-f),.16); --so-rand:rgba(var(--c-eigen-rgb),.75)}
+.sho.on{border-color:var(--so-rand);background-color:var(--so-zart);box-shadow:0 0 0 3px var(--so-zart)}
+.sho.on .sho-i{background:var(--so);color:var(--f-3);animation:shoPop .5s var(--ease-out)}
+@keyframes shoPop{0%{transform:scale(.8)}55%{transform:scale(1.14)}100%{transform:none}}
+#sh-opts.gewaehlt .sho:not(.on){opacity:.48}
+@media (hover:hover) and (pointer:fine){
+  .sho:hover{border-color:var(--so-rand)}
+  #sh-opts.gewaehlt .sho:not(.on):hover{opacity:.8}
+}
+/* Der Haken in der Ecke der gewählten Art. */
+.sho-haken{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;
+  display:grid;place-items:center;background:var(--so);color:var(--f-3);
+  scale:0;transition:scale .42s var(--ease-out)}
+.sho-haken svg{width:11px;height:11px}
+.sho.on .sho-haken{scale:1}
+/* Der Knopf trägt die Farbe der Art, sobald eine gewählt ist. */
+#sheet.hat #sh-save{background:linear-gradient(120deg,var(--zrf-hell),var(--zrf));
+  border-color:var(--zrf);color:var(--f-3);box-shadow:0 12px 34px -12px var(--zrf-schwach)}
+@media (prefers-reduced-motion:reduce){
+  #sheet.frisch .shkopf,#sheet.frisch .sheet-actions,#sheet.frisch .fnote,#sheet.frisch .sho,
+  .shblatt.neu,.sho.on .sho-i,#sheet.zu .sheet-card,#sheet.zu .sheet-bd{animation:none}
+}
 /* Kontingent-Zeile im Tagesblatt: was steht noch zur Verfügung, und was
    bleibt nach diesem Eintrag übrig. */
 .shkonto{margin:2px 0 0;padding:10px 12px;border-radius:13px;
@@ -2703,36 +2782,6 @@ body.locked #tabbar{
 .sheet-card.weg{transition:transform .26s ease-out}
 .sheet-card h3{font-family:var(--font-dis);font-size:25px;font-weight:400;margin:0 0 2px}
 .sheet-card .sd{color:var(--tx-3);font-size:12.5px;margin:0 0 18px}
-.opt{display:flex;align-items:center;gap:13px;width:100%;padding:14px;border-radius:16px;border:1px solid var(--line-2);
-  margin-bottom:9px;text-align:left;transition:.2s var(--ease)}
-.opt:hover{transform:translateX(3px)}
-.opt .oi{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}
-.opt b{display:block;font-size:14.5px}
-.opt small{color:var(--tx-3);font-size:11.5px}
-.opt.on{border-width:1.5px}
-.opt[data-t=urlaub] .oi{background:rgba(var(--c-urlaub-rgb-f),.16);color:var(--c-urlaub)}
-.opt[data-t=urlaub].on{border-color:var(--c-urlaub);background:rgba(var(--c-urlaub-rgb-f),.08)}
-.opt[data-t=krank] .oi{background:rgba(var(--c-krank-rgb-f),.16);color:var(--c-krank)}
-.opt[data-t=krank].on{border-color:var(--c-krank);background:rgba(var(--c-krank-rgb-f),.08)}
-.opt[data-t=eigen] .oi{background:rgba(var(--c-eigen-rgb-f),.16);color:var(--c-eigen)}
-.opt[data-t=eigen].on{border-color:var(--c-eigen);background:rgba(var(--c-eigen-rgb-f),.08)}
-.opt svg{width:19px;height:19px}
-
-/* Ist eine Art gewählt, treten die anderen weg — über die Höhe animiert. */
-.opt{overflow:hidden;max-height:130px;padding:15px 15px;margin-bottom:10px;
-  transition:max-height .34s var(--ease), opacity .2s var(--ease),
-             margin .34s var(--ease), padding .34s var(--ease),
-             border-color .2s, background .2s, transform .26s var(--ease)}
-.opt.weg{max-height:0;opacity:0;margin-bottom:0;padding-top:0;padding-bottom:0;
-  border-width:0;transform:translateY(-8px);pointer-events:none}
-/* Die allein stehende Art zeigt mit dem Pfeil, dass ein Tipp zurückführt. */
-.opt.allein{margin-bottom:14px}
-.opt .zurueck{flex:none;width:26px;height:26px;border-radius:9px;display:none;
-  place-items:center;color:var(--tx-3);border:1px solid var(--line-2)}
-.opt.allein .zurueck{display:grid}
-.opt .zurueck svg{width:13px;height:13px}
-.opt.allein:hover .zurueck{color:var(--butter);border-color:var(--butter-dim)}
-
 .scope{display:flex;gap:9px;margin:0 0 6px}
 .scope button{flex:1;padding:13px 5px;border-radius:14px;border:1px solid var(--line-2);font-size:12.5px;font-weight:500;
   color:var(--tx-3);transition:.2s}
@@ -6917,8 +6966,13 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
   <div class="sheet-bd" data-close="sheet"></div>
   <div class="sheet-card">
     <div class="sheet-grab" id="sh-grab" aria-label="Zum Schließen nach unten schieben"><div class="grip"></div></div>
-    <h3 id="sh-title">—</h3>
-    <p class="sd" id="sh-sub">—</p>
+    <div class="shkopf">
+      <span class="shblatt" id="sh-blatt" aria-hidden="true"><u id="sh-wt">—</u><b id="sh-tag">—</b></span>
+      <div class="shkopf-t">
+        <h3 id="sh-title">—</h3>
+        <p class="sd" id="sh-sub">—</p>
+      </div>
+    </div>
     <div id="sh-holiday" class="fnote" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.3 9.4l6.1-.8z"/></svg>
       <span id="sh-holiday-t"></span>
@@ -6928,10 +6982,10 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
     <p class="shkonto" id="sh-konto" style="display:none">—</p>
     <div id="sh-scopewrap" style="display:none">
       <small class="shlab">Umfang</small>
-      <div class="scope" id="sh-scope">
+      <div class="scope" id="sh-scope" style="margin:0">
         <button data-s="full">Ganzer Tag</button>
-        <button data-s="vm">Nur Vormittag</button>
-        <button data-s="nm">Nur Nachmittag</button>
+        <button data-s="vm">Vormittag</button>
+        <button data-s="nm">Nachmittag</button>
       </div>
     </div>
     <!-- Zeitausgleich: erst die Richtung, dann die Menge. Rot heißt einlösen,
@@ -6962,7 +7016,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
       <textarea id="sh-text" placeholder="z. B. Schulung, Behördenweg, Pflegefreistellung …"></textarea>
     </div>
     <div class="sheet-actions">
-      <button class="btn btn-p" id="sh-save">Übernehmen</button>
+      <button class="btn btn-p" id="sh-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg><span id="sh-save-t">Art wählen</span></button>
       <button class="btn btn-g" id="sh-del">Zurücksetzen</button>
     </div>
   </div>
@@ -7243,7 +7297,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-27-2000';
+const APP_STAND = '2026-09-27-2100';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -14381,27 +14435,65 @@ function openSheet(y, m, d){
   }
   SH._geplant = geplant;
 
-  $('#sh-title').textContent = DOWSHORT[new Date(y,m,d).getDay()] + ', ' + d + '. ' + MONTHS[m] + ' ' + y;
+  /* Kopf: das Kalenderblatt mit Wochentag und Tag, daneben ausgeschrieben
+     und darunter der Dienstplan des Tages. Das Jahr nur, wenn es nicht
+     das laufende ist. */
+  const wt = new Date(y, m, d).getDay();
+  SH.hatte = !!ev;
+  $('#sh-wt').textContent = DOWSHORT[wt];
+  $('#sh-tag').textContent = d;
+  $('#sh-title').textContent = DOWFULL[wt] + ', ' + d + '. ' + MONTHS[m]
+    + (y !== new Date().getFullYear() ? ' ' + y : '');
   const planTxt = plan.vm + plan.nm > 0
-    ? 'Dienstplan: ' + (plan.cfg.vmOn ? plan.cfg.vmFrom+'–'+plan.cfg.vmTo : '') +
+    ? (plan.cfg.vmOn ? plan.cfg.vmFrom+'–'+plan.cfg.vmTo : '') +
       (plan.cfg.vmOn && plan.cfg.nmOn ? ' · ' : '') +
       (plan.cfg.nmOn ? plan.cfg.nmFrom+'–'+plan.cfg.nmTo : '') +
-      '  ·  ' + fmtH(plan.vm + plan.nm) + ' h'
-    : 'Laut Dienstplan dienstfrei.';
-  $('#sh-sub').textContent = planTxt;
+      ' · ' + fmtH(plan.vm + plan.nm) + ' h'
+    : 'Laut Dienstplan dienstfrei';
+  $('#sh-sub').innerHTML = ICONS.zeit + '<span>' + esc(planTxt) + '</span>';
   $('#sh-holiday').style.display = hol ? 'flex' : 'none';
   if(hol) $('#sh-holiday-t').innerHTML = '<b>' + hol + '</b> — gesetzlicher Feiertag, wird automatisch gezählt.';
 
   $('#sh-opts').innerHTML = ['urlaub','krank','zeit','eigen'].map(t =>
-    '<button class="opt'+(SH.type===t?' on':'')+'" data-t="'+t+'">'
-    + '<span class="oi">'+ICONS[t]+'</span>'
-    + '<span style="flex:1;min-width:0"><b>'+TYPES[t].label+'</b><small>'+TYPES[t].desc+'</small></span>'
-    + '<span class="zurueck" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l-5 5 5 5"/><path d="M4 10h11a5 5 0 0 1 0 10h-3"/></svg></span>'
+    '<button class="sho'+(SH.type===t?' on':'')+'" data-t="'+t+'" aria-pressed="'+(SH.type===t)+'">'
+    + '<span class="sho-i">'+ICONS[t]+'</span>'
+    + '<span class="sho-t"><b>'+SHO_NAME[t]+'</b><small>'+SHO_SATZ[t]+'</small></span>'
+    + '<span class="sho-haken" aria-hidden="true">'+SHO_HAKEN+'</span>'
     + '</button>').join('');
+  _shArt = undefined;
   paintSheet();
   if(window.__sheetReset) window.__sheetReset();   /* unverschoben beginnen */
-  $('#sheet').classList.add('on');
+  const blatt = $('#sheet');
+  clearTimeout(_shZu);
+  blatt.classList.remove('zu');
+  blatt.classList.add('on', 'frisch');
+  clearTimeout(_shFrisch);
+  _shFrisch = setTimeout(() => blatt.classList.remove('frisch'), 900);
   document.body.classList.add('locked');
+}
+/* Die Kacheln sagen in einem Satz, was die Art bewirkt. */
+const SHO_NAME = { urlaub:'Urlaub', krank:'Krankenstand', zeit:'Zeitausgleich', eigen:'Eigener Vermerk' };
+const SHO_SATZ = { urlaub:'Vom Urlaub abgezogen', krank:'Ohne Abzug vom Urlaub',
+                   zeit:'Sammeln oder einlösen', eigen:'Freier Text, z.\u00a0B. Schulung' };
+const SHO_HAKEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" '
+  + 'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7"/></svg>';
+let _shZu = null, _shFrisch = null, _shArt;
+/* Die Farbe der gewählten Art geht aufs Blatt — Kalenderblatt, Umschalter
+   und Knopf lesen sie von dort. Aus den Farbmarken der Fassung, damit sie
+   im Hellen wie im Dunkeln stimmt. */
+function shFarbe(){
+  const bl = $('#sheet');
+  const namen = ['--zrf', '--zrf-hell', '--zrf-schwach', '--zrf-zart', '--zrf-tx'];
+  if(!SH.type){ namen.forEach(n => bl.style.removeProperty(n)); return; }
+  let c = '';
+  try{ c = getComputedStyle(document.documentElement).getPropertyValue('--c-' + SH.type).trim(); }catch(e){}
+  if(!/^#[0-9a-f]{6}$/i.test(c)) c = (TYPES[SH.type] || TYPES.urlaub).color;
+  const dunkel = document.documentElement.dataset.theme === 'dark';
+  bl.style.setProperty('--zrf', c);
+  bl.style.setProperty('--zrf-hell', mischWeiss(c, .34));
+  bl.style.setProperty('--zrf-schwach', rgba(c, .32));
+  bl.style.setProperty('--zrf-zart', rgba(c, .14));
+  bl.style.setProperty('--zrf-tx', dunkel ? c : mischSchwarz(c, .3));
 }
 /* Zeigt oder versteckt einen Bereich im Tagesblatt. Beim Zeigen blendet er
    sanft ein, damit der Wechsel zu den passenden Knöpfen nicht hart wirkt. */
@@ -14461,12 +14553,28 @@ function paintSheet(){
   /* Ist eine Art gewählt, treten die anderen weg — mitanimiert über die
      Höhe, damit das Blatt nicht springt. Ein Tipp auf die gewählte Art
      holt alle zurück. */
-  $$('#sh-opts .opt').forEach(o => {
+  /* Die gewählte Art leuchtet mit Haken, die anderen treten zurück und
+     bleiben antippbar. */
+  $$('#sh-opts .sho').forEach(o => {
     const dran = o.dataset.t === SH.type;
     o.classList.toggle('on', dran);
-    o.classList.toggle('weg', !!SH.type && !dran);
-    o.classList.toggle('allein', dran);
+    o.setAttribute('aria-pressed', dran ? 'true' : 'false');
   });
+  $('#sh-opts').classList.toggle('gewaehlt', !!SH.type);
+  $('#sheet').classList.toggle('hat', !!SH.type);
+  if(_shArt !== SH.type){
+    shFarbe();
+    /* Beim Öffnen steht das Blatt still; erst ein Wechsel federt es nach. */
+    if(_shArt !== undefined){
+      const b = $('#sh-blatt');
+      b.classList.remove('neu'); void b.offsetWidth; b.classList.add('neu');
+    }
+    _shArt = SH.type;
+  }
+  $('#sh-scope').style.setProperty('--i', Math.max(0, ['full', 'vm', 'nm'].indexOf(SH.scope)));
+  /* Kurz, damit es neben „Abbrechen" passt — welche Art, sagt die Farbe. */
+  $('#sh-save-t').textContent = !SH.type ? 'Art wählen' : SH.hatte ? 'Speichern' : 'Eintragen';
+  $('#sh-del').textContent = SH.hatte ? 'Zurücksetzen' : 'Abbrechen';
   /* Beim Zeitausgleich entscheidet die Zahl, nicht Vormittag oder Nachmittag. */
   zeigen('#sh-scopewrap', !!SH.type && !za);
   $$('#sh-scope button').forEach(b => b.classList.toggle('on', b.dataset.s === SH.scope));
@@ -14503,7 +14611,28 @@ function malZa(){
       + '<b>Ganzer Tag</b><small>' + (geplant > 0 ? fmtH(geplant) + ' h' : 'dienstfrei') + '</small></button>';
 }
 
-function closeSheet(){ $('#sheet').classList.remove('on'); document.body.classList.remove('locked'); }
+/* Schließen: die Karte geht nach unten weg, erst dann ist das Blatt zu.
+   Kam sie schon mit dem Finger nach unten geworfen (.weg), ist sie
+   bereits draußen — dann sofort. */
+function closeSheet(){
+  const bl = $('#sheet');
+  document.body.classList.remove('locked');
+  clearTimeout(_shZu);
+  let still = false;
+  try{ still = matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  const karte = bl.querySelector('.sheet-card');
+  if(!bl.classList.contains('on') || still || (karte && karte.classList.contains('weg'))){
+    bl.classList.remove('on', 'zu', 'frisch'); return;
+  }
+  bl.classList.add('zu');
+  _shZu = setTimeout(() => bl.classList.remove('on', 'zu', 'frisch'), 250);
+}
+/* Nach dem Eintragen blitzt der Tag im Kalender kurz auf — wie beim Zeitraum. */
+function tagBlitz(k){
+  FLASH = new Set([k]); FLASH_ORDER = [k];
+  renderCal();
+  setTimeout(() => { FLASH = new Set(); FLASH_ORDER = []; }, 1400);
+}
 
 /* ─── Nach unten schieben zum Schließen ──────────────────────────────────
    Ziehen geht überall auf der Karte, nicht nur am Griff. Damit das
@@ -14634,7 +14763,7 @@ window.__codeReset  = wireSheetDrag('code-grab', 'lg-codestep', () => blattZu('l
                                     null, '.blatt-karte', '.blatt-grund');
 $('#sh-opts').addEventListener('click', e => {
   const b = e.target.closest('[data-t]'); if(!b) return;
-  /* Nochmal auf die gewählte Art tippen holt die anderen drei zurück. */
+  /* Ein Tipp auf eine andere Art wechselt, nochmal auf die gewählte nimmt sie zurück. */
   SH.type = SH.type === b.dataset.t ? null : b.dataset.t;
   paintSheet();
 });
@@ -14669,14 +14798,14 @@ $('#sh-save').addEventListener('click', () => {
     }
     const za = r25(SH.zaDir === 'minus' ? -SH.zaH : SH.zaH);
     ME.events[k] = { t:'zeit', za:za };
-    save(); closeSheet(); renderCal();
+    save(); closeSheet(); tagBlitz(k);
     toast(za > 0
       ? fmtH(za) + ' h gesammelt'
       : fmtH(Math.min(-za, SH._geplant)) + ' h eingelöst');
     return;
   }  ME.events[k] = { t:SH.type, s:SH.scope, text:SH.type === 'eigen' ? SH.text.trim() : '', aw:SH.type === 'eigen' ? SH.aw : false };
-  save(); closeSheet(); renderCal();
-  toast('Eintrag gespeichert');
+  save(); closeSheet(); tagBlitz(k);
+  toast((SH.type === 'eigen' ? (SH.text.trim() || 'Vermerk') : TYPES[SH.type].label) + ' eingetragen');
 });
 /* ═════════════════════════════════════════════════════════════════
    SERIEN — ein Zeitraum ist mehr als seine einzelnen Tage
@@ -14793,6 +14922,8 @@ $('#serbar').addEventListener('click', e => {
 });
 
 $('#sh-del').addEventListener('click', () => {
+  /* Ohne Eintrag gibt es nichts zurückzusetzen — dann schließt der Knopf nur. */
+  if(!SH.hatte){ closeSheet(); return; }
   const serie = serieVon(SH.y, SH.m, SH.d);
   /* Nur fragen, wenn es etwas zu entscheiden gibt. */
   if(serie.length > 1){ serFrage(serie); return; }

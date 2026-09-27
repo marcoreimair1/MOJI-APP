@@ -747,6 +747,28 @@ Pille sah aus wie ein Suchfeld. Neu gebaut:
 Das Rechnen ist unverändert: Sonntage, Feiertage und dienstfreie Tage werden übersprungen, alle
 Tage bekommen eine gemeinsame Serien-Kennung. Geprüft in `tests/test-zeitraum.js`.
 
+### Das Tagesblatt *(27. September 2026)*
+
+Das Blatt, das ein Tipp auf einen Tag öffnet, spricht jetzt dieselbe Sprache wie *Mehrere Tage
+eintragen*:
+
+- **Kopf:** ein Kalenderblatt mit Wochentag und Tag (`.shblatt`), daneben ausgeschrieben
+  *Mittwoch, 16. September* (Jahr nur, wenn nicht das laufende) und der Dienstplan mit Uhr.
+  Ist eine Art gewählt, nimmt das Kalenderblatt ihre Farbe an und federt kurz nach.
+- **Die vier Arten als Kacheln zwei und zwei** (`.sho`): Zeichen, Name, ein Satz, was sie
+  bewirkt (*Vom Urlaub abgezogen*, *Ohne Abzug vom Urlaub* …). Die gewählte leuchtet mit Haken,
+  die anderen treten zurück, bleiben aber antippbar — umentscheiden ist ein Tipp. Vorher
+  klappten die übrigen weg und man musste die gewählte erst wieder abwählen.
+- **Farbe am Blatt:** `shFarbe()` legt `--zrf…` aus den Farbmarken der Fassung auf `#sheet`;
+  Umschalter (dieselben Regeln wie `#q-scope`) und Knopf lesen sie von dort.
+- **Knöpfe:** *Art wählen* (aus) → *Eintragen*, bei bestehendem Eintrag *Speichern*. Daneben
+  *Abbrechen* an einem leeren Tag, *Zurücksetzen* nur, wenn es etwas zurückzusetzen gibt.
+- **Bewegung:** beim Öffnen steigen Kopf, Kacheln und Knöpfe gestaffelt herauf (`#sheet.frisch`),
+  Schließen gleitet nach unten weg (`#sheet.zu`, 250 ms; nach einem Wurf mit dem Finger sofort),
+  und der eingetragene Tag blitzt im Kalender auf (`tagBlitz()`). Die Meldung nennt die Art.
+
+Geprüft in `tests/test-tag.js`.
+
 ### Die Monatsübersicht in der Karte *(27. September 2026)*
 
 Unter dem Kalender stand eine Zeile *Monatsdetails* mit einem dünnen grauen Balken; die Zahlen

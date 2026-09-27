@@ -208,7 +208,7 @@ const E = dom.window.__E || [];
  ['Das Band wischt mit clip-path, nicht mit scaleX', /@keyframes zrBand\{from\{clip-path:inset\(0 100% 0 0/],
  ['Die Tage im Band haben keinen eigenen Kasten',
   /body\.zrmodus \.cell\.zr-mid\{background:transparent;border-color:transparent\}/],
- ['Der Umfang hat einen Schieber', /#q-scope::before\{/],
+ ['Der Umfang hat einen Schieber', /#q-scope::before,#sh-scope::before\{/],
  ['Andruecken ueber scale, nicht transform', /\.zrk:active\{scale:\.985\}/],
  ['Weniger Bewegung: Kachel und Wahl ruhig',
   /prefers-reduced-motion:reduce\)\{\s*\n\s*\.zrk::before,\.zrk-arten i\{animation:none\}/],
