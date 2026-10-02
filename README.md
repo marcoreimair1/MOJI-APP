@@ -884,6 +884,34 @@ Geprüft in `tests/test-rechnung.js`, `tests/test-tag.js` (11c), `tests/test-men
 
 Geprüft in `tests/test-serie.js` (6b), `tests/test-tag.js` (13), `tests/test-zeitraum.js`.
 
+**Schritt 4 · Dienstplan und Pause**
+- *Welche Woche läuft?* Bei 2 bis 4 Wochen fragte der Assistent „Nehmen wir an, es ist Woche 1" —
+  welche Woche wirklich läuft, nie. Der Kalender lag damit oft eine Woche daneben. Jetzt sind die
+  Wochen des Assistenten echte Wochen: Woche 1 ist diese (am Wochenende die nächste, mit KW und
+  Datum), Woche 2 die darauf; `zaFertig()` setzt den Versatz danach (`zaBezugMontag()`).
+  Bestehende Konten mit 2 bis 4 Wochen (am 02.10.2026: 11 von 21, nur gezählt) werden **einmal**
+  gefragt (`#rotbar`, `rotFrageNoetig()`): „Für diese Woche rechnet MOJI mit Woche 2 — stimmt das?",
+  je Woche ein Knopf mit ihren Stunden. Antwort oder Wegtippen setzt `sched.rotOk`; die Karte
+  „Diese Woche" im Profilmenü setzt es ebenso.
+- *Planwechsel ab einem Datum* mit 2 bis 4 Wochen fragt nach der Woche **am Stichtag** (vorher galt
+  die Karte für heute, wo noch der alte Plan läuft), vorgewählt mit dem bisherigen Versatz
+  (`sabRotMalen()`); das Datum wird in Ortszeit gelesen.
+- *Prüfung der Blöcke* (`zeitFehler()`, `schedFehler()`): ein Block, der vor seinem Beginn endet, oder
+  ein Nachmittag, der vor dem Ende des Vormittags beginnt (auch vertauscht), sperrt *Weiter* im
+  Assistenten und *Speichern* im Profilmenü — der Tag geht auf, die Meldung nennt ihn. Altdaten
+  rechnet `tagBloecke()` weiter mit einmal gezählter Überschneidung; Editor, Wochensumme
+  (`weekTotal`) und Zeile (`hrTagH`) rechnen jetzt genauso.
+- *Pause* (§ 11 Abs 1 AZG): über 6 h Arbeit mit weniger als 30 Minuten Lücke zeigt der Editor einen
+  Hinweis (`pauseFehlt()`, in echten Minuten), sperrt aber nicht — die Pause darf auch geteilt im
+  Block liegen.
+- *Zwei Wechsel ab demselben Tag* ersetzen die Fassung, statt eine abzulegen, die nie gegolten hat
+  (der Verlauf zeigte „01.10. bis 30.09.").
+- Der Kommentar zur einmaligen Umrechnung des Versatzes sagt jetzt, was wirklich geschah: bei
+  3-Wochen-Plänen zeigt MOJI ganz 2025 eine Rhythmuswoche anders als die alte App (die alte Zählung
+  brach an fast jedem Jahreswechsel); abgegebene Blätter bleiben, wie sie sind.
+
+Geprüft in `tests/test-dienstzeiten.js` (12) und `tests/test-einstieg.js` (11d, 11e).
+
 ### Ganze und halbe Tage — nachgerechnet *(27. September 2026)*
 
 Gerechnet wird jeder Tag in `evalDay()`: *Ganzer Tag* nimmt alle geplanten Stunden, *Vormittag*

@@ -1686,6 +1686,14 @@ body.nobar .topbar{display:none}
 }
 #serbar .pkbar-ja:hover{ background:rgba(var(--za-minus-rgb-f),.24) }
 #serbar .pkbar-i svg{ width:20px; height:20px }
+/* Welche Woche läuft gerade? Ein Knopf je Woche, mit ihren Stunden —
+   so erkennt man die eigene wieder. */
+#rotbar .pkbar-in{ flex-wrap:wrap; row-gap:11px }
+#rotbar .pkbar-txt{ flex:1 1 auto }
+#rotbar .pkbar-btns{ flex:1 0 100%; display:flex; gap:8px }
+#rotbar .pkbar-btns button{ flex:1; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:2px }
+#rotbar .pkbar-btns small{ font-size:10.5px; font-weight:600; opacity:.72 }
+#rotbar .pkbar-i{ color:var(--butter); border-color:var(--butter-dim); background:rgba(var(--marke-rgb),.09) }
 
 /* Trenner zwischen Passkey und E-Mail */
 .mi.done svg{color:var(--c-eigen)}
@@ -1747,6 +1755,14 @@ body.nobar .topbar{display:none}
   border:1px solid var(--line-2);background:rgba(var(--s-auf),.04);color:var(--tx);
   font:inherit;font-size:13px;color-scheme:dark}
 .sab-datum input[type="date"]:focus{outline:none;border-color:var(--butter-dim)}
+.sab-rot{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:8px}
+.sab-rot small{flex:0 0 100%;font-size:12.5px;line-height:1.4;color:var(--tx-2)}
+.sab-rot-w{flex:1;display:flex;gap:8px}
+.sab-rot-w button{flex:1;padding:9px 6px;border-radius:12px;border:1px solid var(--line-2);
+  background:rgba(var(--s-auf),.04);color:var(--tx-2);font:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;transition:transform .16s var(--ease-out),border-color .2s,background .2s,color .2s}
+.sab-rot-w button:active{transform:scale(.95)}
+.sab-rot-w button.on{border-color:var(--butter-dim);background:rgba(var(--marke-rgb),.12);color:var(--butter)}
 /* Verlauf der Dienstplan-Fassungen */
 .shist{margin-top:14px}
 .shist-z{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:14px;
@@ -5906,6 +5922,10 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
 .za-summe{ display:flex; align-items:center; gap:5px; margin:3px 3px 0;
   font-size:12.5px; color:var(--tx-3) }
 .za-summe b{ color:var(--tx); font-weight:650; font-variant-numeric:tabular-nums }
+/* Unter der Summe: was so nicht geht (rot, sperrt Weiter und Speichern)
+   und der Hinweis auf die gesetzliche Pause (nur ein Hinweis). */
+.za-hinw{ margin:8px 3px 0; font-size:11.5px; line-height:1.45; color:var(--warn) }
+.za-hinw.fehler{ color:var(--za-minus); font-weight:600 }
 /* Der Trenner zwischen Arbeitszeit und Pause. */
 .za-summe u{ text-decoration:none; width:3px; height:3px; border-radius:50%;
   background:var(--tx-3); margin:0 4px }
@@ -6877,11 +6897,26 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
     <span class="sab-datum" id="sab-schritt2" hidden>
       <label for="sab-ab">Neue Zeiten gelten ab</label>
       <input type="date" id="sab-ab">
+      <span class="sab-rot" id="sab-rot" hidden>
+        <small id="sab-rot-t">—</small>
+        <span class="sab-rot-w" id="sab-rot-w"></span>
+      </span>
       <span class="pkbar-btns">
         <button class="pkbar-no" id="sab-zurueck">Zurück</button>
         <button class="pkbar-ja" id="sab-ok">Übernehmen</button>
       </span>
     </span>
+  </div>
+</div>
+
+<!-- Einmal fragen, welche Rhythmuswoche gerade läuft (Konten mit 2 bis 4
+     Wochen, deren Assistent das nie gefragt hat). -->
+<div class="pkbar" id="rotbar" aria-hidden="true">
+  <div class="pkbar-hg" data-close="rotbar"></div>
+  <div class="pkbar-in" role="dialog" aria-modal="true" aria-labelledby="rot-b">
+    <span class="pkbar-i" id="rot-i"></span>
+    <span class="pkbar-txt"><b id="rot-b">—</b><small id="rot-s">—</small></span>
+    <span class="pkbar-btns" id="rot-btns"></span>
   </div>
 </div>
 
@@ -7452,6 +7487,41 @@ function tagBloecke(cfg){
   }
   return { vm:vm, nm:nm };
 }
+/* Ein Tag, der sich so nicht rechnen laesst: ein Block, der endet, bevor
+   er beginnt, oder ein Nachmittag, der vor dem Ende des Vormittags
+   anfaengt (Pruefung 02.10.2026 — die Raeder liessen beides zu, die
+   Ueberschneidung zaehlte doppelt). '' heisst: in Ordnung. */
+function zeitFehler(cfg){
+  if(!cfg) return '';
+  const vm = !!(cfg.vmOn && cfg.vmFrom && cfg.vmTo), nm = !!(cfg.nmOn && cfg.nmFrom && cfg.nmTo);
+  if(vm && t2m(cfg.vmTo) < t2m(cfg.vmFrom)) return 'Beim Vormittag liegt das Ende vor dem Beginn.';
+  if(nm && t2m(cfg.nmTo) < t2m(cfg.nmFrom)) return 'Beim Nachmittag liegt das Ende vor dem Beginn.';
+  if(vm && nm && t2m(cfg.nmTo) > t2m(cfg.nmFrom) && t2m(cfg.vmTo) > t2m(cfg.vmFrom)
+     && t2m(cfg.nmFrom) < t2m(cfg.vmTo)) return 'Der Nachmittag beginnt vor dem Ende des Vormittags.';
+  return '';
+}
+/* Mehr als 6 h Arbeit mit weniger als 30 Minuten Pause dazwischen
+   (§ 11 Abs 1 AZG). In echten Minuten, nicht in den gerundeten Stunden.
+   Nur ein Hinweis: die Pause darf auch geteilt im Block liegen. */
+function pauseFehlt(cfg){
+  if(!cfg) return false;
+  const min = (an, a, b) => an && a && b ? Math.max(0, t2m(b) - t2m(a)) : 0;
+  const vm = min(cfg.vmOn, cfg.vmFrom, cfg.vmTo), nm = min(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+  const luecke = vm > 0 && nm > 0 ? Math.max(0, t2m(cfg.nmFrom) - t2m(cfg.vmTo)) : 0;
+  return vm + nm > 360 && luecke < 30;
+}
+/* Der erste fehlerhafte Tag eines Plans: { w, d, text } oder null. */
+function schedFehler(sched){
+  if(!sched || !Array.isArray(sched.weeks)) return null;
+  const wc = clamp(sched.weekCount || 1, 1, 4);
+  for(let w = 0; w < wc; w++){
+    for(const d of WORKDAYS){
+      const t = zeitFehler((sched.weeks[w] || {})[d]);
+      if(t) return { w:w, d:d, text:t };
+    }
+  }
+  return null;
+}
 function dayPlan(sched, date){
   const dow = date.getDay();
   if(dow === 0) return { vm:0, nm:0, pause:0, cfg:null, wi:0 };
@@ -7526,6 +7596,10 @@ function schedLetzteGrenze(p){
 function schedWechsel(p, abIso, neu){
   const grenze = schedLetzteGrenze(p);
   if(grenze && abIso <= grenze) return false;     /* würde eine Fassung überdecken */
+  /* Noch ein Wechsel ab demselben Tag: die Fassung, die ab dort gelten
+     sollte, hat nie einen Tag gegolten — sie wird ersetzt, nicht
+     abgelegt (sonst stand im Verlauf „01.10. bis 30.09."). */
+  if(grenze && tagDavor(abIso) === grenze){ p.sched = JSON.parse(JSON.stringify(neu)); return true; }
   if(!Array.isArray(p.schedAlt)) p.schedAlt = [];
   p.schedAlt.push({ bis: tagDavor(abIso), sched: JSON.parse(JSON.stringify(p.sched)) });
   p.sched = JSON.parse(JSON.stringify(neu));
@@ -7567,7 +7641,8 @@ function weekTotal(sched, wi){
   const w = sched.weeks[wi] || {};
   return WORKDAYS.reduce((s,d) => {
     const c = w[d]; if(!c) return s;
-    return s + segH(c.vmOn,c.vmFrom,c.vmTo) + segH(c.nmOn,c.nmFrom,c.nmTo);
+    const b = tagBloecke(c);
+    return s + b.vm + b.nm;
   }, 0);
 }
 
@@ -7983,8 +8058,10 @@ function normalize(p){
       return e;
     })
     .sort((a, b) => a.bis.localeCompare(b.bis));
-  /* Zwei Fassungen mit demselben Enddatum wären eine zu viel — die jüngere
-     gewinnt, die ältere hätte ohnehin keinen einzigen Tag abgedeckt. */
+  /* Zwei Fassungen mit demselben Enddatum wären eine zu viel — die zuerst
+     eingetragene bleibt (sie ist die, die schedFuer ohnehin nimmt), die
+     spätere hat nie einen Tag gegolten. Seit 02.10.2026 entsteht das
+     nicht mehr: schedWechsel ersetzt dann die laufende Fassung. */
   p.schedAlt = p.schedAlt.filter((e, i) => i === 0 || e.bis !== p.schedAlt[i-1].bis);
   /* ─── Einmalige Umrechnung des Wochenversatzes ───
      Bis September 2026 zählte der Rhythmus gegen die Kalenderwoche. Jetzt
@@ -7992,11 +8069,15 @@ function normalize(p){
      der Versatz einmal umgerechnet werden — sonst springt allen Leuten die
      laufende Woche um, und zwar mitten im Monat.
 
-     Umgerechnet wird so, dass HEUTE dieselbe Woche läuft wie vorher. Für
-     die Zukunft ist damit alles in der Reihe; vergangene Monate, die über
-     einen Jahreswechsel mit 53 Wochen hinweg gerechnet wurden, bleiben so
-     stehen, wie sie damals exportiert wurden. Das ist Absicht: ein bereits
-     abgegebenes Blatt nachträglich umzurechnen hilft niemandem.
+     Umgerechnet wird so, dass HEUTE dieselbe Woche läuft wie vorher. Davor
+     und danach läuft der Rhythmus jetzt lückenlos. Die alte Zählung brach
+     an jedem Jahreswechsel, dessen Zahl der Kalenderwochen nicht durch den
+     Rhythmus teilbar ist: bei 2 und 4 Wochen nur nach Jahren mit 53
+     Wochen, bei 3 Wochen an fast jedem (auch 2025/26 — bei 3-Wochen-Plänen
+     zeigt MOJI ganz 2025 darum eine Rhythmuswoche anders als die alte
+     App; die alte Anzeige war dort schon eine Woche daneben, Pruefung
+     02.10.2026). Schon abgegebene Blätter bleiben, wie sie abgegeben
+     wurden; neu exportiert stimmen sie mit der fortlaufenden Zählung.
 
      Läuft genau einmal, danach steht basis auf 'lauf'. */
   function versatzUmrechnen(s, stichtag){
@@ -8815,7 +8896,8 @@ function hrZeitText(cfg){
   return t.length ? t.join(' · ') : 'frei';
 }
 function hrTagH(cfg){
-  return segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo) + segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+  const b = tagBloecke(cfg);
+  return b.vm + b.nm;
 }
 
 function renderZeiten(host, sched, onChange){
@@ -8928,6 +9010,7 @@ function renderZeiten(host, sched, onChange){
       const will = +b.dataset.rot;
       sched.offset = (((will - wochenNr(new Date())) % wc) + wc) % wc;
       sched.basis = 'lauf';
+      sched.rotOk = true;
       neu(); return;
     }
     if(b.dataset.tab !== undefined){
@@ -9764,7 +9847,7 @@ function zaWackeln(){
 
 /* ─── Los ─────────────────────────────────────────────────────────── */
 function zaStart(){
-  ZA.wc = 1; ZA.wi = 0; ZA.idx = 0;
+  ZA.wc = 1; ZA.wi = 0; ZA.idx = 0; ZA.bezug = null;
   ZA.tage = [[],[],[],[]]; ZA.gesetzt = {}; _zaGesteN = 0;
   ZA.sched = defaultSched();
   /* Alle Tage erst einmal frei — was gearbeitet wird, setzt der Weg. */
@@ -9856,14 +9939,33 @@ function zaWochen(){
       + zaHilfeHtml());
   });
 }
+/* Bei 2 bis 4 Wochen sind die Wochen des Assistenten echte Wochen: Woche 1
+   ist diese (am Wochenende die naechste), Woche 2 die darauf. Vorher hiess
+   es „Nehmen wir an, es ist Woche 1" — welche Woche wirklich laeuft, fragte
+   niemand, und der Kalender lag mit Wahrscheinlichkeit 1/2 bis 3/4 eine
+   Woche daneben (Pruefung 02.10.2026). */
+function zaBezugMontag(){
+  const h = new Date(), dn = (h.getDay() + 6) % 7;        /* Montag = 0 */
+  return new Date(h.getFullYear(), h.getMonth(), h.getDate() - dn + (dn >= 5 ? 7 : 0));
+}
+function zaWocheAb(wi){
+  const m = ZA.bezug || zaBezugMontag();
+  return new Date(m.getFullYear(), m.getMonth(), m.getDate() + 7 * wi);
+}
 function zaTageFrage(){
   ZA.schritt = 'tage'; ZA.idx = 0;
   zaMoji('oben'); zaFarbe(); zaFortschritt();
   const jetzt = new Date();
+  if(!ZA.bezug) ZA.bezug = zaBezugMontag();
+  const ab = zaWocheAb(ZA.wi);
+  const abTxt = 'KW ' + isoWeek(ab) + ', ab Montag, ' + ab.getDate() + '. ' + MONTHS[ab.getMonth()];
+  const wochenende = (jetzt.getDay() + 6) % 7 >= 5;
   /* "Heute ist Montag. An welchen Tagen arbeitest du?" war kein Satz,
      der eine Woche meint — die Kalenderwoche macht daraus einen. */
   const frage = ZA.wc > 1
-    ? 'Nehmen wir an, es ist *Woche ' + (ZA.wi + 1) + '*. An welchen Tagen arbeitest du da?'
+    ? (ZA.wi === 0
+        ? 'Wir fangen mit *' + (wochenende ? 'nächster Woche' : 'dieser Woche') + '* an (' + abTxt + '). An welchen Tagen arbeitest du da?'
+        : 'Und in der Woche darauf (' + abTxt + ')? An welchen Tagen arbeitest du da?')
     : 'Heute ist *' + DOWFULL[jetzt.getDay()] + '* in der *KW ' + isoWeek(jetzt)
       + '*. An welchen Tagen arbeitest du diese Woche?';
   mojiSagt(frage, () => {
@@ -9930,9 +10032,9 @@ function zaTagBild(){
   nav.className = 'navrow';
   nav.innerHTML = '<button class="einb prim" data-za="tagok">'
     + (ZA.idx === ZA.tage[wi].length - 1 && ZA.wi === ZA.wc - 1 ? 'Fertig' : 'Weiter') + '</button>';
-  host.appendChild(zeitBlock(cfg, std => {
+  host.appendChild(zeitBlock(cfg, (std, fehler) => {
     const ok = $('[data-za="tagok"]', host);
-    if(ok) ok.disabled = std <= 0;
+    if(ok) ok.disabled = std <= 0 || !!fehler;
   }));
   $('.za-summe', host).id = 'za-summe';
   host.appendChild(nav);
@@ -9996,9 +10098,13 @@ function zeitBlock(cfg, aendert){
   box.className = 'zblock';
   const summe = document.createElement('p');
   summe.className = 'za-summe';
+  /* Darunter, eigens: was so nicht geht (sperrt das Speichern) und was
+     nur ein Hinweis ist (die gesetzliche Pause). */
+  const hinw = document.createElement('p');
+  hinw.className = 'za-hinw';
+  hinw.hidden = true;
   const mal = () => {
-    const vm = segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo);
-    const nm = segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+    const { vm, nm } = tagBloecke(cfg);
     let pause = 0;
     if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0){
       const p = (t2m(cfg.nmFrom) - t2m(cfg.vmTo)) / 60;
@@ -10014,11 +10120,20 @@ function zeitBlock(cfg, aendert){
       ? '<b>' + fmtH(std) + ' h</b> Arbeitszeit'
         + (pause > 0 ? '<u></u><b>' + fmtH(pause) + ' h</b> Pause' : '')
       : 'An dem Tag ist frei.';
-    if(aendert) aendert(std);
+    const fehler = zeitFehler(cfg);
+    const ohnePause = !fehler && pauseFehlt(cfg);
+    hinw.hidden = !fehler && !ohnePause;
+    hinw.classList.toggle('fehler', !!fehler);
+    hinw.textContent = fehler || (ohnePause
+      ? 'Mehr als 6 h Arbeit: vorgeschrieben sind mindestens 30 Minuten Pause (§ 11 AZG). '
+        + 'Hältst du sie, trag sie als Lücke zwischen Vormittag und Nachmittag ein — sonst zählt sie als Arbeitszeit.'
+      : '');
+    if(aendert) aendert(std, fehler);
   };
   box.appendChild(zaSegment('Vormittag',  cfg, 'vm', mal));
   box.appendChild(zaSegment('Nachmittag', cfg, 'nm', mal));
   box.appendChild(summe);
+  box.appendChild(hinw);
   mal();
   return box;
 }
@@ -10030,6 +10145,14 @@ function zaFertig(){
   OB.sched = JSON.parse(JSON.stringify(ZA.sched));
   OB.sched.weekCount = ZA.wc;
   OB.sched.tab = 0;
+  /* Woche 1 ist die Woche ab dem Bezugsmontag — der Versatz zaehlt gegen
+     die fortlaufende Wochennummer (rhythmusWoche). */
+  if(ZA.wc > 1){
+    const bezug = ZA.bezug || zaBezugMontag();
+    OB.sched.offset = (((0 - wochenNr(bezug)) % ZA.wc) + ZA.wc) % ZA.wc;
+    OB.sched.basis = 'lauf';
+  }
+  OB.sched.rotOk = true;
   mojiSagt([
     'Super, *' + zaName() + '*! Deine Arbeitszeiten stehen.',
     'Ab jetzt trägst du nur noch *Urlaub und Krankenstand* im Kalender ein — den Rest rechne ich.',
@@ -10121,6 +10244,8 @@ $('#za-inhalt').addEventListener('click', e => {
       break;
     case 'tagok': {
       const liste = ZA.tage[ZA.wi];
+      const fehler = zeitFehler(ZA.sched.weeks[ZA.wi][liste[ZA.idx]]);
+      if(fehler){ toast(fehler); return; }
       if(ZA.idx < liste.length - 1){ ZA.idx++; zaTagFrage(); break; }
       if(ZA.wi < ZA.wc - 1){ ZA.wi++; zaTageFrage(); break; }
       zaFertig();
@@ -10505,6 +10630,63 @@ $('#lg-vn').addEventListener('keydown', e => { if(e.key === 'Enter') $('[data-do
 const CAL = { y:NOW.getFullYear(), m:NOW.getMonth() };
 const EX  = { year:PREV.getFullYear(), set:new Set() };
 
+/* Konten, die vor dem 02.10.2026 mit 2 bis 4 Wochen angelegt wurden: der
+   Assistent fragte nie, welche Woche gerade laeuft. Einmal fragen — nur,
+   wenn der aktuelle Plan heute gilt und nichts anderes offen ist. */
+function rotFrageNoetig(){
+  if(!ME || !ME.sched || ME.sched.rotOk) return false;
+  return clamp(ME.sched.weekCount || 1, 1, 4) > 1 && schedFuer(ME, new Date()) === ME.sched;
+}
+function rotBarSpaeter(n){
+  clearTimeout(rotBarSpaeter._t);
+  rotBarSpaeter._t = setTimeout(() => {
+    if(!rotFrageNoetig()) return;
+    const v = $('#v-cal');
+    const frei = !document.querySelector('.pkbar.on') && !gruessend() && v && v.classList.contains('on')
+      && !$('#sheet').classList.contains('on') && !document.body.classList.contains('menuauf');
+    if(frei) rotBarAuf(); else if((n || 0) < 4) rotBarSpaeter((n || 0) + 1);
+  }, 2600);
+}
+function rotBarAuf(){
+  const el = $('#rotbar'); if(!el || !ME) return;
+  const wc = clamp(ME.sched.weekCount || 1, 1, 4), heute = new Date();
+  const cur = rhythmusWoche(ME.sched, heute);
+  $('#rot-i').innerHTML = ICONS.zeit || '';
+  $('#rot-b').textContent = 'Welche deiner Wochen läuft gerade?';
+  $('#rot-s').textContent = 'Dein Dienstplan wechselt alle ' + wc + ' Wochen. Für diese Woche (KW '
+    + isoWeek(heute) + ') rechnet MOJI mit Woche ' + (cur + 1) + ' — stimmt das?';
+  $('#rot-btns').innerHTML = Array.from({ length:wc }, (_, i) => '<button class="'
+    + (i === cur ? 'pkbar-ja' : 'pkbar-no') + '" data-rotw="' + i + '">Woche ' + (i + 1)
+    + '<small>' + fmtH(weekTotal(ME.sched, i)) + ' h</small></button>').join('');
+  el.classList.add('on');
+  el.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => el.classList.add('da'));
+}
+function rotBarZu(){
+  const el = $('#rotbar'); if(!el || !el.classList.contains('on')) return;
+  el.classList.remove('da');
+  el.setAttribute('aria-hidden', 'true');
+  setTimeout(() => el.classList.remove('on'), 300);
+}
+$('#rotbar').addEventListener('click', e => {
+  if(!ME) return;
+  const b = e.target.closest('[data-rotw]');
+  if(!b && !e.target.closest('[data-close="rotbar"]')) return;
+  const wc = clamp(ME.sched.weekCount || 1, 1, 4), heute = new Date();
+  const cur = rhythmusWoche(ME.sched, heute);
+  /* Auch Wegtippen ist eine Antwort — gefragt wird nur einmal; die Karte
+     „Diese Woche" im Profilmenue bleibt. */
+  ME.sched.rotOk = true;
+  if(b){
+    const will = +b.dataset.rotw;
+    ME.sched.offset = (((will - wochenNr(heute)) % wc) + wc) % wc;
+    ME.sched.basis = 'lauf';
+    rotBarZu(); save(); renderCal();
+    toast(will === cur ? 'Danke — dann bleibt es so.' : 'Umgestellt: diese Woche ist Woche ' + (will + 1) + '.');
+    return;
+  }
+  rotBarZu(); save();
+});
 function enterApp(){
   try{ if(window.erscheinungAusProfil) window.erscheinungAusProfil(); }catch(e){}
   /* Beim Start gutschreiben, was seit dem letzten Mal an Jahreswechseln
@@ -10534,6 +10716,7 @@ function enterApp(){
   malErinnerung();
   exYear(); renderCal();
   setTimeout(pruefeStand, 3500);
+  if(rotFrageNoetig()) rotBarSpaeter(0);
   /* Wer vom PDF zurueckkommt, will dort weitermachen, wo er war. */
   go(ZURUECK_VOM_PDF && !enterApp._schonDa ? 'v-export' : 'v-cal');
   enterApp._schonDa = true;
@@ -17142,6 +17325,15 @@ function hoursSichern(abIso){
 }
 $('#hr-save').addEventListener('click', () => {
   if(!DRAFT) return;
+  /* Ein Tag, der sich nicht rechnen laesst, wird nicht gesichert: er geht
+     auf, und die Meldung sagt, was nicht passt. */
+  const f = schedFehler(DRAFT);
+  if(f){
+    DRAFT.tab = f.w; _hrOffen = f.w + '-' + f.d;
+    renderZeiten($('#sched-edit'), DRAFT, null);
+    toast(DOWFULL[f.d] + (clamp(DRAFT.weekCount || 1, 1, 4) > 1 ? ' in Woche ' + (f.w + 1) : '') + ': ' + f.text);
+    return;
+  }
   if(schedGleich(ME.sched, DRAFT)){ hoursSichern(null); return; }
   sabAuf();
 });
@@ -17294,15 +17486,52 @@ function sabSchritt(n){
     /* Früher als der letzte Wechsel geht nicht — sonst wäre nicht mehr
        klar, welcher Plan dazwischen gegolten hat. */
     feld.min = grenze ? tagDanach(grenze) : '2015-01-01';
+    sabRotMalen();
     setTimeout(() => feld.focus(), 60);
   }
 }
+/* Bei 2 bis 4 Wochen: nach welcher Woche wird in der Woche des Stichtags
+   gearbeitet? Vorher galt die Karte „Diese Woche" — also heute, wo noch
+   der alte Plan gilt (Pruefung 02.10.2026). Vorgewaehlt ist, was mit dem
+   bisherigen Versatz liefe; ein Rhythmus, der einfach weiterlaeuft,
+   braucht nur die Bestaetigung. */
+function sabAbDatum(){
+  const v = $('#sab-ab') && $('#sab-ab').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return null;
+  const t = v.split('-').map(Number);
+  return new Date(t[0], t[1] - 1, t[2]);                  /* Ortszeit, nicht UTC */
+}
+function sabRotMalen(){
+  const box = $('#sab-rot'); if(!box) return;
+  const wc = DRAFT ? clamp(DRAFT.weekCount || 1, 1, 4) : 1;
+  const ab = sabAbDatum();
+  box.hidden = !(wc > 1 && ab);
+  if(box.hidden) return;
+  const mo = new Date(ab.getFullYear(), ab.getMonth(), ab.getDate() - (ab.getDay() + 6) % 7);
+  const cur = rhythmusWoche(DRAFT, ab);
+  $('#sab-rot-t').textContent = 'In der Woche ab Montag, ' + mo.getDate() + '. ' + MONTHS[mo.getMonth()]
+    + ' (KW ' + isoWeek(mo) + '), arbeitest du nach';
+  $('#sab-rot-w').innerHTML = Array.from({ length:wc }, (_, i) => '<button data-sabrot="' + i + '"'
+    + (i === cur ? ' class="on"' : '') + '>Woche ' + (i + 1) + '</button>').join('');
+}
+$('#sab-ab').addEventListener('input', sabRotMalen);
+$('#sab-ab').addEventListener('change', sabRotMalen);
+$('#sab-rot-w').addEventListener('click', e => {
+  const b = e.target.closest('[data-sabrot]'); if(!b || !DRAFT) return;
+  const ab = sabAbDatum(); if(!ab) return;
+  const wc = clamp(DRAFT.weekCount || 1, 1, 4), will = +b.dataset.sabrot;
+  DRAFT.offset = (((will - wochenNr(ab)) % wc) + wc) % wc;
+  DRAFT.basis = 'lauf';
+  sabRotMalen();
+});
 $('#sab-korr').addEventListener('click', () => { if(hoursSichern(null)) sabZu(); });
 $('#sab-wechsel').addEventListener('click', () => sabSchritt(2));
 $('#sab-zurueck').addEventListener('click', () => sabSchritt(1));
 $('#sab-ok').addEventListener('click', () => {
   const v = $('#sab-ab').value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ toast('Bitte ein Datum wählen.'); return; }
+  /* Die Woche am Stichtag stand vor Augen — damit ist sie bestaetigt. */
+  if(DRAFT && clamp(DRAFT.weekCount || 1, 1, 4) > 1) DRAFT.rotOk = true;
   if(hoursSichern(v)) sabZu();
 });
 $('#sab').addEventListener('click', e => { if(e.target.dataset.close === 'sab') sabZu(); });

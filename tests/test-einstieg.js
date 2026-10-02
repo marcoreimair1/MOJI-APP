@@ -350,6 +350,13 @@ ok('Weitermachen laesst alles stehen', ZA.schritt === 'wochen');
    Der Sprung nach der Wochenwahl laeuft ueber eine kurze Pause, damit
    man die Auswahl noch sieht — hier wird direkt weitergeschaltet. */
 ZA.wc = 2; zaTageFrage(); durch();
+/* Seit 02.10.2026 sind die Wochen echte Wochen: Woche 1 ist diese (am
+   Wochenende die naechste) — vorher hiess es „Nehmen wir an, es ist
+   Woche 1", und welche Woche laeuft, fragte niemand. */
+ok('Woche 1 ist eine echte Woche mit Datum',
+   /(dieser|nächster) Woche/.test(el('za-text').textContent)
+   && el('za-text').textContent.indexOf('(KW ' + isoWeek(zaWocheAb(0)) + ', ab Montag, ' + zaWocheAb(0).getDate() + '. ') >= 0,
+   el('za-text').textContent);
 [1,2,3].forEach(d => document.querySelector('[data-tag="' + d + '"]').click());
 ok('Drei Tage gemerkt',       ZA.tage[0].join(',') === '1,2,3', ZA.tage[0].join(','));
 document.querySelector('[data-za="tageok"]').click(); durch();
@@ -374,6 +381,8 @@ ok('Der naechste Tag uebernimmt', ZA.sched.weeks[0][2].vmFrom === '06:00',
    ZA.sched.weeks[0][2].vmFrom);
 for(let i = 0; i < 2; i++){ document.querySelector('[data-za="tagok"]').click(); durch(); }
 ok('Danach Woche 2',          ZA.wi === 1 && ZA.schritt === 'tage', ZA.schritt + ' w' + ZA.wi);
+ok('Und zwar die Woche darauf', el('za-text').textContent.indexOf('Und in der Woche darauf (KW ' + isoWeek(zaWocheAb(1))) >= 0,
+   el('za-text').textContent);
 document.querySelector('[data-tag="1"]').click();
 document.querySelector('[data-za="tageok"]').click(); durch();
 /* Eine neue Woche faengt wieder bei der Vorgabe an, nicht bei den
@@ -394,6 +403,9 @@ ok('Und am Ende steht oben nichts', el('v-zeitassi').classList.contains('ohnekop
 
 /* ── 11e · Was am Ende im Plan steht ── */
 ok('Das Intervall steht',     OB.sched.weekCount === 2, OB.sched.weekCount);
+ok('Die erste Woche des Assistenten ist Woche 1 im Kalender, die darauf Woche 2',
+   rhythmusWoche(OB.sched, zaWocheAb(0)) === 0 && rhythmusWoche(OB.sched, zaWocheAb(1)) === 1 && OB.sched.rotOk === true,
+   OB.sched.offset);
 ok('Woche 1 traegt drei Tage', [1,2,3].every(d => OB.sched.weeks[0][d].vmOn)
    && !OB.sched.weeks[0][4].vmOn && !OB.sched.weeks[0][4].nmOn);
 ok('Woche 2 traegt einen',    OB.sched.weeks[1][1].vmOn && !OB.sched.weeks[1][2].vmOn);
