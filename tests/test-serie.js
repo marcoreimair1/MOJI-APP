@@ -79,6 +79,34 @@ ME.events = { '2026-09-16': { t:'urlaub', s:'full', text:'', aw:false } };
 ok('Einzelner Tag: Serie der Laenge 1', serieVon(2026, 8, 16).length === 1);
 ok('Leerer Tag: gar keine Serie', serieVon(2026, 8, 17).length === 0);
 
+/* ── 6b · Befunde der Pruefung vom 02.10.2026 ── */
+/* Zeitausgleich gibt es nur je Tag: drei Tage nebeneinander sind keine Serie. */
+ME.events = { '2026-09-14': { t:'zeit', za:2 }, '2026-09-15': { t:'zeit', za:-3 }, '2026-09-16': { t:'zeit', za:1.5 } };
+ok('Zeitausgleich nebeneinander: jeder Tag fuer sich',
+   serieVon(2026, 8, 14).length === 1 && serieVon(2026, 8, 15).length === 1 && serieVon(2026, 8, 16).length === 1);
+/* Altbestand ohne Kennung direkt neben einer Serie mit Kennung. */
+ME.events = {};
+['07','08','09','10','11','12'].forEach(function(d){ ME.events['2026-09-' + d] = { t:'urlaub', s:'full', text:'', aw:false }; });
+['14','15','16','17','18'].forEach(function(d){ ME.events['2026-09-' + d] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-14>2026-09-18' }; });
+ok('Vom Altbestand aus: nur die eigenen 6 Tage', serieVon(2026, 8, 9).length === 6, serieVon(2026, 8, 9).join(' '));
+ok('Von der neuen Serie aus: ihre 5', serieVon(2026, 8, 15).length === 5);
+/* Gleiche Kennung, andere Art (altes Datenbild): gehoert nicht dazu. */
+ME.events['2026-09-17'] = { t:'krank', s:'full', text:'', aw:false, ser:'2026-09-14>2026-09-18' };
+ok('Gleiche Kennung, andere Art: nicht mitgezaehlt', serieVon(2026, 8, 15).length === 4 && serieVon(2026, 8, 17).length === 1);
+/* Freie Tage zaehlen beim Fragen nicht mit — wie beim Eintragen. */
+setzen(true);
+ME.events['2026-09-20'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-14>2026-09-25', frei:true };
+ok('12 Eintraege, davon 11 Tage', serieVon(2026, 8, 16).length === 12 && serieTageZahl(serieVon(2026, 8, 16)) === 11);
+/* Ein freier Tag ohne Arbeitstage seiner Serie auf beiden Seiten faellt weg. */
+['21','22','23','24','25'].forEach(function(d){ delete ME.events['2026-09-' + d]; });
+ok('Aufraeumen: der Sonntag am Rand geht mit', freiAufraeumen() === 1 && !ME.events['2026-09-20']);
+setzen(true);
+ME.events['2026-09-20'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-14>2026-09-25', frei:true };
+ok('Liegt er dazwischen, bleibt er', freiAufraeumen() === 0 && !!ME.events['2026-09-20']);
+ME.events['2026-09-13'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-01>2026-09-12', frei:true };
+ok('Ein freier Tag einer verschwundenen Serie geht', freiAufraeumen() === 1 && !ME.events['2026-09-13']);
+ME.events = { '2026-09-16': { t:'urlaub', s:'full', text:'', aw:false } };   /* fuer 7 */
+
 /* ── 7 · Die Rueckfrage kommt nur, wenn es etwas zu entscheiden gibt ── */
 CAL.y = 2026; CAL.m = 8;
 var bar = document.querySelector('#serbar');

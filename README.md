@@ -854,6 +854,36 @@ Schritten mit eigenen Tests.
 Geprüft in `tests/test-rechnung.js`, `tests/test-tag.js` (11c), `tests/test-menue.js`,
 `tests/test-zeitraum.js`.
 
+**Schritt 3 · Zeitraum, Serien und Tagesblatt**
+- *Serien:* Zeitausgleich ist nie eine Serie (zwei Tage nebeneinander, +2 h und −3 h, ließen sich
+  mit „Alle 2 Tage" gemeinsam löschen). Die Suche ohne Kennung (Altbestand) läuft nicht mehr in eine
+  Serie mit Kennung hinein; mit Kennung zählt nur dieselbe Art. Ein Serientag, im Tagesblatt
+  unverändert gespeichert, behält seine Kennung (`SH._ser`); wird er eine andere Art, gehört er
+  nicht mehr dazu.
+- *Freie Tage:* Ein freier Tag eines früheren Zeitraums wird beim neuen Zeitraum mit überschrieben
+  (vorher blieb ein Urlaubs-Sonntag mitten im Krankenstand). `freiAufraeumen()` entfernt freie
+  Tage, die nicht mehr zwischen Arbeitstagen ihrer Serie liegen — nach Eintragen, Löschen und
+  Speichern. Gezählt werden sie nirgends: Rückfrage und Meldung nennen dieselbe Zahl wie beim
+  Eintragen (`serieTageZahl()`, „12 Tage", nicht 13).
+- *Zeitraum über Jahresgrenzen:* die Zeile sagt, was erst am 1. Jänner abgeht und was vor dem
+  Beginn des Kontos liegt (in der Einheit des Kontos).
+- *Zeitausgleich im Tagesblatt:* Eine gespeicherte Einlösung an einem Tag ohne Dienst oder am
+  Feiertag wurde beim Öffnen still zu „Sammeln" — Speichern buchte dann +4 h statt 0. Jetzt bleibt
+  sie Einlösung, der Hinweis sagt „zählt 0 h", Speichern ist aus, bis man bewusst *Sammeln* wählt
+  (dann ab 1 h) oder zurücksetzt. Ohne gültige Menge steht 0 da statt still 1 h. Die Korrekturen
+  laufen vor der Konto-Zeile, damit Zeile und Bilanz denselben Eintrag rechnen.
+- *Sammeln* höchstens, was der Tag hergibt: 24 h − Plan − Pause (`zaOben()`, gleich in `evalDay`),
+  am Feiertag 24 h. Über 12 h Arbeit warnt die Bilanz (§ 9 AZG), sperrt aber nicht.
+- *Einlösen* an einem Tag mit zwei ungleichen Blöcken bietet *Vormittag* und *Nachmittag* aus dem
+  Dienstplan an — wie beim Urlaub.
+- *„Bisher gezählt":* Zählt ein gespeicherter Eintrag anders, als Speichern ihn schriebe (etwa ein
+  alter „Nachmittag" am Samstag) oder wechselt man die Art, steht der bisherige Stand in der Bilanz.
+- *Vermerk am Feiertag:* steht in der PDF-Zeile („Mariä Empfängnis · Inventur") und als Punkt in der
+  Kalenderzelle; die Bilanz sagt, dass er keine Stunden zählt.
+- Das Zeitausgleich-Rad läuft um den Stand herum (vorher sprang ein Stand über 100 h auf 100).
+
+Geprüft in `tests/test-serie.js` (6b), `tests/test-tag.js` (13), `tests/test-zeitraum.js`.
+
 ### Ganze und halbe Tage — nachgerechnet *(27. September 2026)*
 
 Gerechnet wird jeder Tag in `evalDay()`: *Ganzer Tag* nimmt alle geplanten Stunden, *Vormittag*

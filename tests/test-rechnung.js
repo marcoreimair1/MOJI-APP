@@ -67,7 +67,7 @@ var so = tag(pZ, '2026-09-20');
 ok('Einloesen am Sonntag: nichts, und kein -0', so.za === 0 && !Object.is(so.za, -0), so.za);
 ok('Und die Zeile sagt es', so.note === 'Zeitausgleich · kein Dienst, nichts eingelöst', so.note);
 var mo = tag(pZ, '2026-09-21');
-ok('Sammeln am Montag: hoechstens 24 − 8 = 16 h', mo.za === 16 && mo.work === 24, mo.za + ' / ' + mo.work);
+ok('Sammeln am Montag: hoechstens 24 − 8 h − 1 h Pause = 15 h', mo.za === 15 && mo.work === 23, mo.za + ' / ' + mo.work);
 ok('Einloesen hoechstens, was geplant ist', tag(pZ, '2026-09-22').za === -8 && tag(pZ, '2026-09-22').work === 0);
 
 /* ── 5 · Vermerk als Arbeitszeit behaelt Uhrzeiten und Pause ── */

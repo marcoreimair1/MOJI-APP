@@ -159,6 +159,8 @@ ok('Live mitgerechnet: 10. bis 21. Maerz sind 84 h Urlaub', /11 Arbeitstage · 8
    Stunden, Urlaubstage stehen nicht dabei. Im Tagekonto ist jeder
    Diensttag ein Tag, auch der kurze Samstag (OGH 9 ObA 78/24x). */
 ok('Im Stundenkonto ohne Urlaubstage', !/Urlaubstag/.test(sum), sum);
+/* Maerz 2025 liegt vor dem Beginn des Kontos — die Zeile sagt es. */
+ok('Vor Kontobeginn: wird nicht abgezogen', sum.indexOf('davon 84,00 h vor Beginn deines Urlaubskontos (' + ME.konten.startJahr + ') — wird nicht abgezogen') >= 0, sum);
 tipp(document.querySelector('#zrs-von'));
 ME.konten.modus = 'tage';
 tipp(tag(10)); tipp(tag(21));
@@ -223,6 +225,21 @@ ok('Nochmal gespeichert bleibt er ein freier Tag der Serie', ME.events['2025-03-
 openSheet(2025, 2, 18);
 ok('Ein normaler Tag hat den Hinweis nicht', document.querySelector('#sh-frei').style.display === 'none');
 closeSheet();
+/* Derselbe Zeitraum als Krankenstand: auch der freie Sonntag wird einer
+   (vorher blieb er „Teil deines Urlaubs" mitten im Krankenstand). */
+_qBusy = false;
+zrAn('krank');
+tipp(tag(17)); tipp(tag(31));
+tipp(document.querySelector('#zr-ok'));
+ok('Der freie Sonntag wechselt mit', ME.events['2025-03-30'].t === 'krank' && ME.events['2025-03-30'].frei === true, JSON.stringify(ME.events['2025-03-30']));
+ok('Der Zeitausgleich am Sonntag bleibt', ME.events['2025-03-23'].t === 'zeit');
+_qBusy = false;
+/* Kuerzer neu eingetragen: der Sonntag am Rand gehoert zu keiner Serie mehr. */
+Object.keys(ME.events).forEach(function(k){ if(k >= '2025-03-17' && k <= '2025-03-31' && k !== '2025-03-23') delete ME.events[k]; });
+zrAn('urlaub'); tipp(tag(17)); tipp(tag(31)); tipp(document.querySelector('#zr-ok')); _qBusy = false;
+zrAn('krank'); tipp(tag(31)); tipp(tag(31)); tipp(document.querySelector('#zr-ok')); _qBusy = false;
+ok('Kuerzer: Urlaub bis 29., Krankenstand am 31.', ME.events['2025-03-29'].t === 'urlaub' && ME.events['2025-03-31'].t === 'krank');
+ok('Der Sonntag dazwischen liegt nicht mehr im Urlaub und geht', !ME.events['2025-03-30'], JSON.stringify(ME.events['2025-03-30']));
 Object.keys(ME.events).forEach(function(k){ if(k >= '2025-03-17' && k <= '2025-03-31') delete ME.events[k]; });
 
 /* ── 10 · Krankenstand und Vermerk ── */

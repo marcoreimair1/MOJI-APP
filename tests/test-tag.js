@@ -215,9 +215,12 @@ openSheet(2026, 9, 26);                             /* Nationalfeiertag */
 ok('Feiertag: Urlaub und Krankenstand gesperrt, Zeitausgleich und Vermerk gehen',
    kachel('urlaub').disabled && kachel('krank').disabled && !kachel('zeit').disabled && !kachel('eigen').disabled);
 tipp(kachel('eigen'));
-ok('Die Bilanz zeigt den Feiertag und sagt, dass der Eintrag nichts aendert',
+/* Seit 02.10.2026 steht der Vermerk am Feiertag in der PDF-Zeile
+   („Nationalfeiertag · Inventur") und als Punkt im Kalender. */
+ok('Die Bilanz zeigt den Feiertag und sagt, dass der Vermerk keine Stunden zaehlt',
    /Feiertag 8,00 h/.test(document.querySelector('#sh-bil').textContent)
-   && /ein Eintrag ändert an diesem Tag nichts/.test(document.querySelector('#sh-bil').textContent));
+   && document.querySelector('#sh-bil').textContent.indexOf('der Vermerk steht im PDF, zählt aber keine Stunden') >= 0,
+   document.querySelector('#sh-bil').textContent);
 closeSheet();
 
 /* ── 11b · Am Feiertag gearbeitet: Zeitausgleich sammeln ──
@@ -396,6 +399,84 @@ ok('Und rechnet 18 h Arbeit', /Arbeit 18,00 h/.test(document.querySelector('#sh-
 tipp(document.querySelector('#sh-zadir [data-dir="minus"]'));
 ok('Zurueck auf Einloesen: wieder hoechstens 8', SH.zaH === 8, SH.zaH);
 closeSheet();
+
+/* ── 13 · Befunde der Pruefung vom 02.10.2026 ── */
+var zaH = function(){ return document.querySelector('#sh-za-h'); };
+/* nicht save nennen, das ist die Speicherfunktion der App */
+var spKnopf = function(){ return document.querySelector('#sh-save'); };
+/* a · Eine gespeicherte Einloesung am Sonntag und am Feiertag zaehlt 0 h.
+   Frueher drehte das Blatt sie still zu „Sammeln" — Speichern buchte +4 h. */
+[[2026, 10, 8, 'Sonntag'], [2026, 11, 8, 'Feiertag']].forEach(function(f){
+  var k = key(f[0], f[1], f[2]);
+  ME.events[k] = { t:'zeit', za:-4 };
+  var zaVor = kontenRechnen(ME).za;
+  openSheet(f[0], f[1], f[2]);
+  ok(f[3] + ': die Einloesung bleibt Einloesung', SH.zaDir === 'minus' && SH.zaH === 4, SH.zaDir + ' ' + SH.zaH);
+  ok(f[3] + ': der Hinweis sagt, dass sie 0 h zaehlt', !zaH().hidden && zaH().textContent.indexOf('der Eintrag zählt 0 h') >= 0, zaH().textContent);
+  ok(f[3] + ': Speichern ist aus', spKnopf().disabled);
+  tipp(spKnopf());
+  ok(f[3] + ': nichts gebucht', ME.events[k].za === -4 && kontenRechnen(ME).za === zaVor);
+  tipp(document.querySelector('#sh-zadir [data-dir="plus"]'));
+  ok(f[3] + ': bewusst Sammeln faengt bei 1 h an', SH.zaDir === 'plus' && SH.zaH === 1 && !spKnopf().disabled && zaH().hidden);
+  closeSheet(); delete ME.events[k];
+});
+/* b · Zeitausgleich ohne gueltige Menge: nicht still 1 h vorbelegen. */
+ME.events['2026-11-10'] = { t:'zeit', za:0 };
+openSheet(2026, 10, 10);
+ok('Ohne Menge steht 0 da, Speichern ist aus', SH.zaH === 0 && spKnopf().disabled);
+closeSheet(); delete ME.events['2026-11-10'];
+/* c · Sammeln: hoechstens, was der Tag hergibt. */
+openSheet(2026, 10, 11); tipp(kachel('zeit'));
+zaSetz(30);
+ok('Am 8-h-Tag mit 1 h Pause hoechstens 15 h', SH.zaH === 15 && document.querySelector('#sh-zaplus').disabled, SH.zaH);
+ok('Ueber 12 h Arbeit warnt die Bilanz (§ 9 AZG)', !!document.querySelector('#sh-bil .shbil-warn'));
+zaSetz(2);
+ok('Bei 10 h nicht', !document.querySelector('#sh-bil .shbil-warn'));
+closeSheet();
+openSheet(2026, 11, 8); tipp(kachel('zeit')); zaSetz(30);
+ok('Am Feiertag hoechstens 24 h', SH.zaH === 24, SH.zaH);
+closeSheet();
+/* d · Einloesen an zwei ungleichen Bloecken: Vormittag und Nachmittag. */
+var schedVor = JSON.parse(JSON.stringify(ME.sched));
+ME.sched.weeks.forEach(function(w){ w[3] = { vmOn:true, vmFrom:'08:00', vmTo:'13:00', nmOn:true, nmFrom:'14:00', nmTo:'17:00' }; });
+openSheet(2026, 10, 11); tipp(kachel('zeit')); tipp(document.querySelector('#sh-zadir [data-dir="minus"]'));
+var kn = Array.prototype.map.call(document.querySelectorAll('#sh-zatag button'), function(b){ return b.textContent; });
+ok('Einloesen: Vormittag 5 h, Nachmittag 3 h, ganzer Tag 8 h',
+   kn.join('|') === 'Vormittag5,00 h|Nachmittag3,00 h|Ganzer Tag8,00 h', kn.join('|'));
+tipp(document.querySelector('#sh-zadir [data-dir="plus"]'));
+ok('Sammeln: halber und ganzer Tag', document.querySelectorAll('#sh-zatag button').length === 2);
+closeSheet();
+ME.sched = schedVor;
+/* e · Zaehlt der gespeicherte Eintrag anders, steht der bisherige Stand dabei. */
+ME.events['2026-11-14'] = { t:'urlaub', s:'nm', text:'', aw:false };     /* Samstag, nur 08–12 */
+openSheet(2026, 10, 14);
+var bis = document.querySelector('#sh-bil .shbil-bisher');
+ok('Alter „Nachmittag" am Samstag: Bisher gezaehlt 4 h Arbeit', !!bis && bis.textContent === 'Bisher gezählt: Arbeit 4,00 h', bis && bis.textContent);
+closeSheet();
+ME.events['2026-11-14'] = { t:'urlaub', s:'full', text:'', aw:false };
+openSheet(2026, 10, 14);
+ok('Zaehlt er gleich, steht nichts dabei', !document.querySelector('#sh-bil .shbil-bisher'));
+tipp(kachel('krank'));
+ok('Ein Wechsel der Art zeigt, was bisher galt', document.querySelector('#sh-bil .shbil-bisher').textContent === 'Bisher gezählt: Urlaub 4,00 h');
+closeSheet(); delete ME.events['2026-11-14'];
+/* f · Der Vermerk am Feiertag ist im Kalender zu sehen. */
+ME.events['2026-12-08'] = { t:'eigen', s:'full', text:'Inventur', aw:false };
+CAL.y = 2026; CAL.m = 11; renderCal();
+var z8 = document.querySelector('#cal-grid .cell[data-d="8"]');
+ok('Feiertag mit Vermerk: Punkt in der Zelle', z8.classList.contains('vermerk') && z8.dataset.t === 'feier');
+ok('Ohne Vermerk keiner', !document.querySelector('#cal-grid .cell[data-d="25"]').classList.contains('vermerk'));
+delete ME.events['2026-12-08'];
+/* g · Ein Serientag, unveraendert gespeichert, bleibt in der Serie. */
+ME.events['2026-11-16'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-11-16>2026-11-17' };
+ME.events['2026-11-17'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-11-16>2026-11-17' };
+openSheet(2026, 10, 17); tipp(kachel('urlaub')); tipp(kachel('urlaub'));
+ok('Vor dem Speichern noch Urlaub gewaehlt', SH.type === 'urlaub');
+tipp(spKnopf());
+ok('Unveraendert gespeichert: Kennung bleibt', ME.events['2026-11-17'].ser === '2026-11-16>2026-11-17');
+openSheet(2026, 10, 17); tipp(kachel('krank')); tipp(spKnopf());
+ok('Zu Krankenstand geaendert: nicht mehr Teil des Urlaubs', !ME.events['2026-11-17'].ser && serieVon(2026, 10, 16).length === 1);
+delete ME.events['2026-11-16']; delete ME.events['2026-11-17'];
+CAL.y = 2026; CAL.m = 8; renderCal();
 
 window.__WEITER = function(){
   ok('Nach dem Wegschliessen ist es ganz zu', !bl.classList.contains('on') && !bl.classList.contains('zu'));

@@ -1482,6 +1482,8 @@ h1.dis i{font-style:italic;color:var(--butter)}
 .shbil-teile b{font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums}
 .shbil-leer,.shbil-zusatz{margin:0;font-size:12px;line-height:1.5;color:var(--tx-3)}
 .shbil-zusatz{margin-top:7px}
+.shbil-warn{margin:7px 0 0;font-size:12px;line-height:1.5;color:var(--warn);font-weight:600}
+.shbil-bisher{margin:7px 0 0;padding-top:7px;border-top:1px dashed var(--line-2);font-size:12px;line-height:1.5;color:var(--tx-3)}
 .shhinweis{margin:8px 2px 0;font-size:11.5px;line-height:1.45;color:var(--tx-3)}
 .fnote.shfrei{background:rgba(var(--tx-rgb),.04);border-color:var(--line-2);line-height:1.5;color:var(--tx-2)}
 .fnote.shfrei svg{color:var(--tx-3);align-self:flex-start;margin-top:1px}
@@ -1588,6 +1590,9 @@ body.nobar .topbar{display:none}
    gestricheltem Rand — er gehoert dazu, zaehlt aber nicht. */
 .cell.frei[data-t]{border-style:dashed;background-image:linear-gradient(rgba(var(--s-tief),.28),rgba(var(--s-tief),.28))}
 .cell.frei[data-t] .ico{opacity:.55}
+/* Ein Vermerk am Feiertag: der Feiertag bleibt, ein Punkt in der Farbe
+   des Vermerks sagt, dass dort etwas steht (im PDF steht der Text). */
+.cell.vermerk::before{content:"";position:absolute;top:5px;left:5px;width:5px;height:5px;border-radius:50%;background:var(--c-eigen)}
 @media(max-width:520px){.cell{border-radius:11px;padding:5px 3px 4px}.cell .num{font-size:12px}.cell .hrs{font-size:8.5px}.cell .ico{width:13px;height:13px}}
 
 /* ─── Geschenk im Kalender ───
@@ -7045,6 +7050,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         </button>
       </div>
       <div class="zatag" id="sh-zatag"></div>
+      <p class="shhinweis" id="sh-za-h" hidden></p>
     </div>
     <div id="sh-textwrap" style="display:none">
       <small class="shlab">Vermerk</small>
@@ -7635,8 +7641,9 @@ function evalDay(profile, y, m, d){
       out.note = weg > 0 ? 'Zeitausgleich · ' + fmtH(weg) + ' h eingelöst'
                          : 'Zeitausgleich · kein Dienst, nichts eingelöst';
     } else if(za > 0){
-      /* Ein Tag hat 24 Stunden: mehr als 24 − Plan laesst sich nicht sammeln. */
-      const plus = Math.min(za, Math.max(0, r25(24 - (plan.vm + plan.nm))));
+      /* Ein Tag hat 24 Stunden: mehr als 24 − Plan − Pause laesst sich
+         nicht sammeln (zaOben im Tagesblatt rechnet genauso). */
+      const plus = Math.min(za, Math.max(0, r25(24 - (plan.vm + plan.nm) - (plan.pause || 0))));
       out.work = r25(plan.vm + plan.nm + plus);
       out.za = plus;
       out.note = 'Zeitausgleich · ' + fmtH(plus) + ' h gesammelt';
@@ -13936,7 +13943,10 @@ function kRaeder(auf){
   /* Das Rad stellt den STAND ein, nicht den unsichtbaren Grundwert.
      Was daraus fuer zaStart folgt, rechnet die App zurueck: der Teil
      aus den Eintraegen (zaRoh) aendert sich dabei ja nicht. */
-  _kRad.za = radZahl(-100, 100, 0.25, st.za || 0,
+  /* Um den Stand herum — ein Stand ueber 100 h sprang sonst beim ersten
+     Tick auf 100. */
+  const zaIst = st.za || 0;
+  _kRad.za = radZahl(Math.min(-100, Math.floor(zaIst) - 50), Math.max(100, Math.ceil(zaIst) + 50), 0.25, zaIst,
     v => fmtVz(v) + ' h',
     v => { ME.konten.zaStart = r25(v - (st.zaRoh || 0)); malKonten(false); kBaldSichern(); });
   hZa.appendChild(_kRad.za);
@@ -14312,7 +14322,7 @@ function renderCal(){
         if(x >= a && x <= b) zr += (x === a || x === b) ? ' zr-edge' : ' zr-mid';
       } else if(a !== null && x === a) zr += ' zr-edge';
     }
-    html += '<button class="cell'+(isSun?' sun':'')+(isToday?' today':'')+(r.frei?' frei':'')
+    html += '<button class="cell'+(isSun?' sun':'')+(isToday?' today':'')+(r.frei?' frei':'')+(r.vermerk?' vermerk':'')
       +(fl?' flash':'')+(wg?' weg':'')+zr+'"'
       /* Nacheinander, nicht alle auf einmal — gedeckelt, damit ein
          Urlaub ueber drei Wochen nicht sekundenlang abraeumt. */
@@ -14712,14 +14722,24 @@ function openSheet(y, m, d){
   if(ev && ev.t === 'zeit'){
     const za = r25(+ev.za || 0);
     SH.zaDir = za < 0 ? 'minus' : 'plus';
-    SH.zaH = Math.abs(za) || ZA_START;
+    /* Ohne gueltige Menge nicht still 1,00 h vorbelegen: Speichern ohne
+       Aenderung schriebe sonst etwas, das niemand gewaehlt hat. */
+    SH.zaH = Math.abs(za);
   } else {
     SH.zaDir = 'plus';
     SH.zaH = ZA_START;
   }
   SH._geplant = geplant;
   SH._plan = { vm: r25(plan.vm), nm: r25(plan.nm) };
+  SH._pause = geplant > 0 ? r25(plan.pause || 0) : 0;
   SH._feiertag = !!hol;
+  /* Eine gespeicherte Einloesung an einem Tag, an dem nichts einzuloesen
+     ist (Feiertag, kein Dienst — etwa nach einem Planwechsel), zaehlt
+     0 h. Sie wurde frueher still zu „Sammeln" gedreht; Speichern buchte
+     dann +X h aufs Konto (Pruefung 02.10.2026). */
+  SH._zaTot = !!(ev && ev.t === 'zeit' && r25(+ev.za || 0) < 0 && (geplant <= 0 || !!hol));
+  /* Wie der Tag bisher zaehlt — weicht das ab, sagt es die Bilanz. */
+  SH._bisher = ev ? evalDay(ME, y, m, d) : null;
   SH._planText = plan.cfg ? { vm: plan.cfg.vmOn && plan.vm > 0 ? plan.cfg.vmFrom + '–' + plan.cfg.vmTo : '',
                               nm: plan.cfg.nmOn && plan.nm > 0 ? plan.cfg.nmFrom + '–' + plan.cfg.nmTo : '' } : { vm:'', nm:'' };
 
@@ -14927,23 +14947,34 @@ function paintSheet(){
     $('#sh-aw-zeile').classList.toggle('aus', std <= 0);
   }
 
+  /* Einloesen geht nur, wo Dienst ist, und hoechstens so viel, wie
+     geplant ist — evalDay zieht nie mehr ab. Sammeln hoechstens, was der
+     Tag noch hergibt (zaOben). Erst richten, dann rechnen: Konto-Zeile
+     und Bilanz zeigen sonst verschiedene Eintraege. */
+  const minusGeht = geplant > 0 && !SH._feiertag;
+  const zaTot = za && SH._zaTot && SH.zaDir === 'minus';
+  if(za && !zaTot){
+    if(!minusGeht && SH.zaDir === 'minus') SH.zaDir = 'plus';
+    if(SH.zaH > zaOben()) SH.zaH = zaOben();
+  }
   malKontingent();
   zeigen('#sh-zawrap', za);
   if(za){
-    /* Einloesen geht nur, wo Dienst ist, und hoechstens so viel, wie
-       geplant ist — evalDay zieht nie mehr ab. Vorher liess sich −10 h
-       einstellen, abgezogen wurden 8. */
-    const minusGeht = geplant > 0 && !SH._feiertag;
-    if(!minusGeht && SH.zaDir === 'minus') SH.zaDir = 'plus';
-    if(SH.zaDir === 'minus' && SH.zaH > geplant) SH.zaH = r25(geplant);
     const mb = $('#sh-zadir [data-dir="minus"]');
     mb.disabled = !minusGeht;
     mb.title = minusGeht ? '' : 'An diesem Tag hast du keinen Dienst — nichts einzulösen';
-    $('#sh-zaplus').disabled = SH.zaDir === 'minus' && SH.zaH >= geplant;
+    $('#sh-zaplus').disabled = zaTot || SH.zaH >= zaOben();
+    $('#sh-zaminus').disabled = zaTot;
+    const zh = $('#sh-za-h');
+    zh.hidden = !zaTot;
+    if(zaTot) zh.textContent = (SH._feiertag ? 'Am Feiertag gibt es nichts einzulösen'
+      : 'An diesem Tag hast du keinen Dienst, es gibt nichts einzulösen')
+      + ' — der Eintrag zählt 0 h. Wähle Sammeln oder setze ihn zurück.';
     malZa();
   }
   malBilanz();
-  $('#sh-save').disabled = !SH.type || (za && SH.zaH <= 0) || (!!SH.type && !SH.hatte && !!shGesperrt(SH.type));
+  $('#sh-save').disabled = !SH.type || (za && SH.zaH <= 0) || zaTot
+    || (!!SH.type && !SH.hatte && !!shGesperrt(SH.type));
 }
 
 /* Richtung, Menge und die beiden Tagesknöpfe. Rot steht für eingelöst,
@@ -14960,13 +14991,24 @@ function malZa(){
   w.classList.toggle('minus', minus);
   w.classList.toggle('plus', !minus);
 
-  $('#sh-zatag').innerHTML =
-      '<button data-tag="' + halb + '"' + (halb > 0 ? '' : ' disabled')
-      + (Math.abs(SH.zaH - halb) < 0.001 && halb > 0 ? ' class="on"' : '') + '>'
-      + '<b>Halber Tag</b><small>' + (halb > 0 ? fmtH(halb) + ' h' : 'dienstfrei') + '</small></button>'
-    + '<button data-tag="' + geplant + '"' + (geplant > 0 ? '' : ' disabled')
-      + (Math.abs(SH.zaH - geplant) < 0.001 && geplant > 0 ? ' class="on"' : '') + '>'
-      + '<b>Ganzer Tag</b><small>' + (geplant > 0 ? fmtH(geplant) + ' h' : 'dienstfrei') + '</small></button>';
+  const knopf = (wert, name) => '<button data-tag="' + wert + '"' + (wert > 0 ? '' : ' disabled')
+      + (Math.abs(SH.zaH - wert) < 0.001 && wert > 0 ? ' class="on"' : '') + '>'
+      + '<b>' + name + '</b><small>' + (wert > 0 ? fmtH(wert) + ' h' : 'dienstfrei') + '</small></button>';
+  /* Beim Einloesen an einem Tag mit zwei ungleichen Bloecken genau die
+     Bloecke aus dem Dienstplan — wie beim Urlaub (Vormittag bis zur
+     Mittagspause). Sonst die Haelfte der Stunden. */
+  const p = SH._plan || { vm:0, nm:0 };
+  const bloecke = minus && shHalbGeht() && Math.abs(p.vm - p.nm) > 0.001;
+  $('#sh-zatag').innerHTML = (bloecke ? knopf(p.vm, 'Vormittag') + knopf(p.nm, 'Nachmittag') : knopf(halb, 'Halber Tag'))
+    + knopf(geplant, 'Ganzer Tag');
+}
+/* Wie viel sich an diesem Tag eintragen laesst. Einloesen: hoechstens
+   die geplanten Stunden. Sammeln: was der Tag noch hergibt — 24 h minus
+   Plan und Pause (wie evalDay), am Feiertag 24 h. */
+function zaOben(){
+  const g = SH._geplant || 0;
+  if(SH.zaDir === 'minus') return Math.max(ZA_SCHRITT, g);
+  return Math.max(ZA_SCHRITT, SH._feiertag ? 24 : r25(24 - g - (SH._pause || 0)));
 }
 
 /* Schließen: die Karte geht nach unten weg, erst dann ist das Blatt zu.
@@ -15035,8 +15077,24 @@ function malBilanz(){
   const extra = [];
   if(r.za > 0.004) extra.push('+' + fmtH(r.za) + ' h auf dein Zeitausgleich-Konto');
   if(r.za < -0.004) extra.push(fmtH(-r.za) + ' h aus deinem Zeitausgleich-Konto');
-  if(SH._feiertag && !(r.work > 0.004) && !(r.za > 0.004)) extra.push('Feiertag — ein Eintrag ändert an diesem Tag nichts.');
+  if(SH._feiertag && !(r.work > 0.004) && !(r.za > 0.004)) extra.push(ev.t === 'eigen'
+    ? 'Feiertag — der Vermerk steht im PDF, zählt aber keine Stunden.'
+    : 'Feiertag — ein Eintrag ändert an diesem Tag nichts.');
   if(extra.length) h += '<p class="shbil-zusatz">' + extra.join(' · ') + '</p>';
+  /* Mehr als 12 h am Tag: warnen, nicht sperren — tatsaechlich
+     geleistete Stunden gehoeren trotzdem aufgezeichnet. */
+  if(r.work > 12.004) h += '<p class="shbil-warn">Mehr als 12 h Arbeit an einem Tag — gesetzlich sind höchstens 12 h erlaubt (§ 9 AZG). Bitte prüfen.</p>';
+  /* Zaehlt der gespeicherte Eintrag anders, als Speichern ihn schriebe
+     (etwa ein alter „Nachmittag" am Samstag), steht der bisherige Stand
+     dabei — Speichern aendert sonst still Stunden. */
+  const b = SH.hatte && SH._bisher;
+  const feld = ['work', 'urlaub', 'krank', 'sonst', 'zeit', 'feier', 'za'];
+  if(b && feld.some(f => Math.abs((r[f] || 0) - (b[f] || 0)) > 0.004)){
+    const teile = BIL_TEILE.filter(t => b[t[0]] > 0.004).map(t => t[2] + ' ' + fmtH(b[t[0]]) + ' h');
+    if(b.za > 0.004) teile.push('+' + fmtH(b.za) + ' h aufs Konto');
+    if(b.za < -0.004) teile.push(fmtH(-b.za) + ' h vom Konto');
+    h += '<p class="shbil-bisher">Bisher gezählt: ' + (teile.length ? teile.join(' · ') : 'nichts') + '</p>';
+  }
   el.innerHTML = h;
   el.style.display = 'block';
 }
@@ -15215,12 +15273,14 @@ $('#sh-text').addEventListener('input', e => SH.text = e.target.value);
    Viertelstunden, nie unter eine Viertelstunde — und beim Einlösen nie
    über die Stunden, die an dem Tag geplant sind. */
 function zaSetz(v){
-  const oben = SH.zaDir === 'minus' ? Math.max(ZA_SCHRITT, SH._geplant || 0) : 24;
-  SH.zaH = Math.max(ZA_SCHRITT, Math.min(oben, r25(v)));
+  SH.zaH = Math.max(ZA_SCHRITT, Math.min(zaOben(), r25(v)));
   paintSheet();
 }
 $('#sh-zadir').addEventListener('click', e => {
   const b = e.target.closest('[data-dir]'); if(!b || b.disabled) return;
+  /* Von einer Einloesung, die nichts zaehlte, bewusst zu Sammeln: mit
+     einer Stunde neu anfangen, nicht die alte Menge umdrehen. */
+  if(SH._zaTot && b.dataset.dir === 'plus' && SH.zaDir === 'minus'){ SH._zaTot = false; SH.zaH = ZA_START; }
   SH.zaDir = b.dataset.dir; paintSheet();
 });
 $('#sh-zaminus').addEventListener('click', () => zaSetz(SH.zaH - ZA_SCHRITT));
@@ -15236,12 +15296,13 @@ $('#sh-save').addEventListener('click', () => {
   const k = key(SH.y, SH.m, SH.d);
   if(SH.type === 'zeit'){
     if(SH.zaH <= 0){ toast('Bitte Stunden wählen'); return; }
-    if(SH.zaDir === 'minus' && (SH._geplant || 0) <= 0){
-      toast('An einem dienstfreien Tag gibt es nichts einzulösen');
+    if(SH.zaDir === 'minus' && ((SH._geplant || 0) <= 0 || SH._feiertag)){
+      toast(SH._feiertag ? 'Am Feiertag gibt es nichts einzulösen' : 'An einem dienstfreien Tag gibt es nichts einzulösen');
       return;
     }
     const za = r25(SH.zaDir === 'minus' ? -SH.zaH : SH.zaH);
     ME.events[k] = { t:'zeit', za:za };
+    freiAufraeumen();
     save(); closeSheet(); tagBlitz(k);
     toast(za > 0
       ? fmtH(za) + ' h gesammelt'
@@ -15254,6 +15315,7 @@ $('#sh-save').addEventListener('click', () => {
      „Alle N Tage zuruecksetzen" ihn nach einem Speichern stehen. */
   if(SH._ser && SH._ser.t === SH.type) ME.events[k].ser = SH._ser.ser;
   if(SH._frei && SH._frei.t === SH.type) ME.events[k].frei = true;
+  freiAufraeumen();
   save(); closeSheet(); tagBlitz(k);
   toast((SH.type === 'eigen' ? (SH.text.trim() || 'Vermerk') : TYPES[SH.type].label) + ' eingetragen');
 });
@@ -15290,8 +15352,12 @@ function serieVon(y, m, d){
   const k0 = key(y, m, d);
   const e0 = ME.events[k0];
   if(!e0) return [];
+  /* Zeitausgleich gibt es nur je Tag, nie als Zeitraum — zwei Tage
+     nebeneinander (+2 h, −3 h) sind keine Serie (Pruefung 02.10.2026). */
+  if(e0.t === 'zeit') return [k0];
   if(e0.ser){
-    const mit = Object.keys(ME.events).filter(k => ME.events[k] && ME.events[k].ser === e0.ser);
+    const mit = Object.keys(ME.events).filter(k => ME.events[k] && ME.events[k].ser === e0.ser
+                                               && ME.events[k].t === e0.t);
     if(mit.length) return mit.sort();
   }
   const gefunden = [k0];
@@ -15304,6 +15370,9 @@ function serieVon(y, m, d){
       if(Math.abs(dd - start) > 400 * 864e5) return;
       const k = key(dd.getFullYear(), dd.getMonth(), dd.getDate());
       const e = ME.events[k];
+      /* Eine Serie mit Kennung gehoert sich selbst: nicht hineinlaufen,
+         sonst loeschte „Alle Tage" vom alten Urlaub aus den neuen mit. */
+      if(e && e.ser) return;
       if(evGleich(e0, e)){ gefunden.push(k); continue; }
       if(e) return;                   /* etwas anderes steht da */
       if(qTouched(new Date(dd))) return;   /* freier Arbeitstag: Serie zu Ende */
@@ -15313,6 +15382,32 @@ function serieVon(y, m, d){
   return gefunden.sort();
 }
 
+/* Freie Tage (frei:true) gehoeren zu ihrer Serie nur, solange sie
+   zwischen deren Arbeitstagen liegen. Wird ein Teil ueberschrieben,
+   geloescht oder zu einer anderen Art, bliebe sonst ein Sonntag „Teil
+   deines Urlaubs vom …" stehen, den es so nicht mehr gibt. */
+function freiAufraeumen(p){
+  p = p || ME; if(!p || !p.events) return 0;
+  const ev = p.events, spanne = {};
+  Object.keys(ev).forEach(k => {
+    const e = ev[k]; if(!e || !e.ser || e.frei) return;
+    const id = e.ser + '|' + e.t, s = spanne[id] || (spanne[id] = [k, k]);
+    if(k < s[0]) s[0] = k; if(k > s[1]) s[1] = k;
+  });
+  let weg = 0;
+  Object.keys(ev).forEach(k => {
+    const e = ev[k]; if(!e || !e.frei || !e.ser) return;
+    const s = spanne[e.ser + '|' + e.t];
+    if(!s || k < s[0] || k > s[1]){ delete ev[k]; weg++; }
+  });
+  return weg;
+}
+/* Wie viele Tage einer Serie zaehlen: ohne die freien — so wie beim
+   Eintragen gemeldet („12 Tage eingetragen", nicht 13). */
+function serieTageZahl(keys){
+  const n = keys.filter(k => { const t = k.split('-').map(Number); return !evalDay(ME, t[0], t[1] - 1, t[2]).frei; }).length;
+  return n || keys.length;
+}
 /* Tage wegfliegen lassen und erst dann loeschen. Umgekehrt schrumpften
    leere Kacheln — das Zeichen muss noch da sein, waehrend es geht. */
 let _wegBusy = false;
@@ -15324,6 +15419,7 @@ function tageLoeschen(keys, wort){
   const dauer = 460 + Math.min(keys.length - 1, 11) * 45 + 60;
   setTimeout(() => {
     keys.forEach(k => { delete ME.events[k]; });
+    freiAufraeumen();
     save();
     WEG = new Set(); WEG_ORDER = [];
     renderCal();
@@ -15343,10 +15439,11 @@ function serFrage(keys){
   const i = $('#ser-i');
   i.innerHTML = ICONS[e.t] || '';
   i.style.color = (TYPES[e.t] && TYPES[e.t].color) || '';
-  $('#ser-b').textContent = art + ' · ' + keys.length + ' Tage';
+  const n = serieTageZahl(keys);
+  $('#ser-b').textContent = art + ' · ' + n + (n === 1 ? ' Tag' : ' Tage');
   $('#ser-s').textContent = fmtDay(datAusKey(keys[0])) + ' bis '
                           + fmtDay(datAusKey(keys[keys.length - 1]));
-  $('#ser-alle').textContent = 'Alle ' + keys.length + ' Tage';
+  $('#ser-alle').textContent = 'Alle ' + n + (n === 1 ? ' Tag' : ' Tage');
   el.classList.add('on');
   el.setAttribute('aria-hidden','false');
   requestAnimationFrame(() => el.classList.add('da'));
@@ -15365,9 +15462,9 @@ $('#serbar').addEventListener('click', e => {
     return;
   }
   if(e.target.closest('#ser-alle')){
-    const n = SER_KEYS.length;
+    const n = serieTageZahl(SER_KEYS);
     serBarZu(); closeSheet();
-    tageLoeschen(SER_KEYS.slice(), n + ' Tage zurückgesetzt');
+    tageLoeschen(SER_KEYS.slice(), n + (n === 1 ? ' Tag zurückgesetzt' : ' Tage zurückgesetzt'));
   }
 });
 
@@ -15406,7 +15503,7 @@ function qEach(fn){
    nicht, sie werden beim Eintragen übersprungen. */
 function zrZaehlen(){
   const r = qRange(); let tage = 0, belegt = 0, stunden = 0;
-  if(!r) return { tage: 0, belegt: 0, stunden: 0, urlaubTage: 0 };
+  if(!r) return { tage: 0, belegt: 0, stunden: 0, urlaubTage: 0, spaeter: { std:0, tage:0 }, vorher: { std:0, tage:0 } };
   /* Auf einer Kopie mit den Eintraegen, die „Eintragen" schreiben wuerde —
      gerechnet von evalDay, wie spaeter im Kalender. */
   const p = Object.assign({}, ME, { events: Object.assign({}, ME.events),
@@ -15424,18 +15521,23 @@ function zrZaehlen(){
   /* Was das Konto dafuer nimmt, je Tag wie im Konto (urlaubAnteil):
      im Stunden-Modus die Planstunden, im Tage-Modus ein Tag je Diensttag.
      Was in einem spaeteren Jahr liegt, geht erst dann ab. */
-  const jahr = new Date().getFullYear();
-  let urlaubTage = 0, spaeterStd = 0;
+  const jahr = new Date().getFullYear(), start = ME.konten.startJahr;
+  let urlaubTage = 0;
+  const spaeter = { std:0, tage:0 }, vorher = { std:0, tage:0 };
   tageListe.forEach(d => {
     const row = evalDay(p, d.getFullYear(), d.getMonth(), d.getDate());
     stunden += row[feld];
     if(Q.type === 'urlaub'){
-      urlaubTage += urlaubAnteil(p, row).t;
-      if(d.getFullYear() > jahr) spaeterStd += row.urlaub;
+      const a = urlaubAnteil(p, row), y = d.getFullYear();
+      urlaubTage += a.t;
+      /* Das Konto zaehlt vom Startjahr bis heute: spaetere Tage gehen erst
+         am 1. Jaenner ab, fruehere gar nicht. */
+      const topf = y > jahr ? spaeter : y < start ? vorher : null;
+      if(topf){ topf.std += row.urlaub; topf.tage += a.t; }
     }
   });
   return { tage: tage, belegt: belegt, stunden: r25(stunden), urlaubTage: urlaubTage,
-           spaeterStd: r25(spaeterStd), spaeterJahr: jahr + 1 };
+           spaeter: spaeter, vorher: vorher, spaeterJahr: jahr + 1, startJahr: start };
 }
 /* Ein Tag im Von-bis-Feld: kurz, das Jahr nur, wenn es nicht das laufende ist. */
 function zrTag(d){
@@ -15477,10 +15579,12 @@ function qSummary(){
        Urlaubstage (ein Diensttag ist ein Tag, auch ein kurzer Samstag). */
     const art = Q.type === 'urlaub' ? 'Urlaub' : Q.type === 'krank' ? 'Krankenstand' : 'Vermerk';
     const tageModus = kontoModus(ME) === 'tage';
+    const menge = t => tageModus ? fmtUT(t.tage) + ' ' + wortUT(t.tage) : fmtH(r25(t.std)) + ' h';
     el.innerHTML = '<b>' + z.tage + (z.tage === 1 ? ' Arbeitstag' : ' Arbeitstage') + '</b>'
       + ' · ' + fmtH(z.stunden) + ' h ' + art
       + (Q.type === 'urlaub' && tageModus ? ' · <b>' + fmtUT(z.urlaubTage) + (wortUT(z.urlaubTage) === 'Tag' ? ' Urlaubstag' : ' Urlaubstage') + '</b>' : '')
-      + (z.spaeterStd > 0 ? '<br><i>davon ' + fmtH(z.spaeterStd) + ' h in ' + z.spaeterJahr + ' — gehen ab 1. Jänner ab</i>' : '')
+      + (z.spaeter.std > 0 ? '<br><i>davon ' + menge(z.spaeter) + ' ab ' + z.spaeterJahr + ' — die zieht das Konto erst am 1. Jänner ab</i>' : '')
+      + (z.vorher.std > 0 ? '<br><i>davon ' + menge(z.vorher) + ' vor Beginn deines Urlaubskontos (' + z.startJahr + ') — wird nicht abgezogen</i>' : '')
       + (z.belegt ? '<br><i>' + z.belegt + ' schon belegt, ' + (z.belegt === 1 ? 'wird' : 'werden') + ' ersetzt</i>' : '')
       + '<br><i>Sonntage, Feiertage und freie Tage zählen nicht.</i>';
   }
@@ -15685,9 +15789,11 @@ $('#zr-ok').addEventListener('click', () => {
       /* Freie Tage mitten im Zeitraum (Sonntag, dienstfrei) bekommen die
          Farbe mit, damit der Zeitraum im Kalender als ein Stueck dasteht —
          gezaehlt werden sie nicht (frei). Feiertage bleiben Feiertage, und
-         was dort schon steht, wird nicht ueberschrieben. */
+         was dort schon steht, wird nicht ueberschrieben — ausser es ist
+         selbst nur ein freier Tag eines frueheren Zeitraums (sonst blieb
+         der Urlaubs-Sonntag mitten im neuen Krankenstand stehen). */
       const hol = holidays(d.getFullYear())[k];
-      if(!hol && !ME.events[k]) frei.push([k, { t:Q.type, s:'full', text:text, aw:false, ser:ser, frei:true }]);
+      if(!hol && (!ME.events[k] || ME.events[k].frei)) frei.push([k, { t:Q.type, s:'full', text:text, aw:false, ser:ser, frei:true }]);
       return false;
     }
     ME.events[k] = { t:Q.type, s:'full', text:text, aw:false, ser:ser };
@@ -15696,6 +15802,7 @@ $('#zr-ok').addEventListener('click', () => {
   if(!hit.length){ toast('In diesem Zeitraum liegt kein Arbeitstag'); return; }
   frei.forEach(([k, ev]) => { ME.events[k] = ev; hit.push(k); });
   hit.sort();
+  freiAufraeumen();
   save();
   _qBusy = true;
   const label = Q.type === 'eigen' ? ($('#q-text').value.trim() || 'Vermerk') : TYPES[Q.type].label;
