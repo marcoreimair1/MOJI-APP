@@ -109,6 +109,29 @@ pU.sched.weeks.forEach(function(w){ w[3] = { vmOn:true, vmFrom:'08:00', vmTo:'16
 var u2 = dayPlan(pU.sched, new Date(2026, 8, 16));
 ok('Ein Nachmittag ganz im Vormittag zaehlt nicht dazu', u2.vm + u2.nm === 8, u2.vm + ' + ' + u2.nm);
 
+/* ── 8b · Ein halber Tag zaehlt 0,5, auch bei ungleichen Haelften ──
+   Vorher zaehlte er seinen Stundenanteil: 5 + 3 h, Vormittag Urlaub = 0,625,
+   zwei davon im PDF „1,5 Tage". */
+var pH2 = profil({ '2026-09-16': { t:'urlaub', s:'vm' }, '2026-09-17': { t:'urlaub', s:'vm' }, '2026-09-18': { t:'krank', s:'nm' } });
+[1,2,3,4,5].forEach(function(t){ pH2.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'08:00', vmTo:'13:00', nmOn:true, nmFrom:'14:00', nmTo:'17:00' }; }); });
+var sH = monthSums(monthRows(pH2, 2026, 8));
+ok('Zwei Vormittage Urlaub (je 5 h): genau 1 Urlaubstag', Math.abs(sH.dUrlaub - 1) < 1e-9 && sH.urlaub === 10, sH.dUrlaub);
+ok('Ein Nachmittag Krankenstand (3 h): 0,5 Tage', Math.abs(sH.dKrank - 0.5) < 1e-9 && sH.krank === 3, sH.dKrank);
+ok('Die Tage ergeben weiter die Kalendertage', Math.abs(sH.dWork + sH.dUrlaub + sH.dKrank + sH.dFeier + sH.dSonst + sH.dZeit - sH.dTotal) < 1e-9);
+var pZ2 = profil({ '2026-09-16': { t:'zeit', za:-1 } });
+ok('Zeitausgleich bleibt anteilig: 1 von 8 h', Math.abs(monthSums(monthRows(pZ2, 2026, 8)).dZeit - 0.125) < 1e-9);
+/* Einloesen genau eines (eindeutigen) Blocks: der Block faellt weg. */
+var pB2 = profil({ '2026-09-16': { t:'zeit', za:-3 }, '2026-09-17': { t:'zeit', za:-5 }, '2026-09-18': { t:'zeit', za:-2 } });
+[1,2,3,4,5].forEach(function(t){ pB2.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'08:00', vmTo:'13:00', nmOn:true, nmFrom:'14:00', nmTo:'17:00' }; }); });
+var b16 = tag(pB2, '2026-09-16'), b17 = tag(pB2, '2026-09-17'), b18 = tag(pB2, '2026-09-18');
+ok('Nachmittag (3 h) eingeloest: nur der Vormittag steht, keine Pause',
+   b16.vmFrom === '08:00' && !b16.nmFrom && b16.pause === 0 && b16.work === 5 && !b16.zeiten, JSON.stringify([b16.vmFrom, b16.nmFrom, b16.pause]));
+ok('Vormittag (5 h) eingeloest: nur der Nachmittag', !b17.vmFrom && b17.nmFrom === '14:00' && b17.pause === 0 && b17.work === 3);
+ok('2 h eingeloest: Zeiten laut Plan, vermerkt', b18.vmFrom === '08:00' && b18.nmFrom === '14:00' && b18.zeiten === 'plan' && b18.work === 6);
+var pG = profil({ '2026-09-16': { t:'zeit', za:-4 } });
+ok('Gleich lange Haelften: welche frei war, ist offen — Zeiten laut Plan', tag(pG, '2026-09-16').zeiten === 'plan' && tag(pG, '2026-09-16').nmFrom === '13:00');
+ok('Sammeln am Sonntag: Zeiten nicht erfasst', tag(profil({ '2026-09-20': { t:'zeit', za:3 } }), '2026-09-20').zeiten === 'fehlt');
+
 /* ── 9 · Die Kalenderzelle zeigt eingeloesten Zeitausgleich mit ── */
 ME = profil({ '2026-09-16': { t:'zeit', za:-3 } });
 enterApp(); CAL.y = 2026; CAL.m = 8; renderCal();

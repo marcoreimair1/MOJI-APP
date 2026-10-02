@@ -912,6 +912,36 @@ Geprüft in `tests/test-serie.js` (6b), `tests/test-tag.js` (13), `tests/test-ze
 
 Geprüft in `tests/test-dienstzeiten.js` (12) und `tests/test-einstieg.js` (11d, 11e).
 
+**Schritt 5 · PDF und Jahresrückblick**
+- *Ein halber Tag zählt 0,5* (`monthSums`), egal wie lang der Block ist — die andere Hälfte ist
+  Arbeit. Vorher zählte er seinen Stundenanteil (bei 5 + 3 h ein Vormittag 0,625, zwei davon im PDF
+  „1,5 Tage"). Damit sind Urlaubstage im PDF und im Rückblick Diensttage, wie im Gesetz: ein
+  Samstag mit 4 h ist ein Urlaubstag. Zeitausgleich zählt weiter seinen Stundenanteil.
+- *Kacheln:* Tage auf 0,1, verteilt nach dem größten Rest (`pdfZehntel()`), so ergeben die Teile
+  genau „Gesamt" (vorher „1,00 h · keine Tage" und 26 + 0,5 neben 26). Unter einem Zehntel steht
+  „unter 0,1 Tag".
+- *Vermerk-Spalte einzeilig:* erst kleiner (bis 5,8 pt), dann gekürzt mit „…" — der Stundenteil
+  bleibt immer ganz. Vorher brach der Text um und schrieb in die nächste Tageszeile.
+- *Feiertag mit Arbeit:* „Mariä Empfängnis · 8,00 h · +6,00 h ZA" statt zweier unbenannter 8,00 h.
+- *Zeitausgleich:* Wird genau ein (eindeutiger) Block eingelöst, fällt er weg wie beim halben
+  Urlaub, ohne Pause. Sonst bleiben die Plan-Zeiten, und die Zeile sagt „Zeiten laut Plan" (bzw.
+  „Zeiten nicht erfasst" an einem Tag ohne Plan) — MOJI erfindet keine Uhrzeiten. Unter den Kacheln
+  eine Zeile „Zeitausgleich: gesammelt x h (davon y h an Feiertagen), in der Arbeitszeit enthalten ·
+  eingelöst z h" (`pdfZaZeile()`); die Unterschrift rechnet ihre Höhe ab der letzten Zeile.
+- *Rückblick:* „Abgegeben" und „pünktlich" nach dem **ersten** Export je Monat (`expErst`; vorher
+  machte ein späteres Jahres-PDF jeden Monat „verspätet", und Aufstiege rutschten ins neue Jahr).
+  Monate vor dem Beitritt zählen nur, wenn sie abgegeben wurden. Ein Monat ist erst nach seiner
+  Frist (5. des Folgemonats) offen — im Dezember fehlte sonst „Lückenlos". Brückentag nur neben
+  einem Feiertag, der ein freier Diensttag war. Der längste Urlaub läuft nicht über einen
+  gearbeiteten Feiertag und wird von einem mitgewählten Sonntag am Rand nicht verlängert; er endet
+  am Jahreswechsel (Absicht). „Volle Wochen" teilt durch die mittlere Woche der Pläne des Jahres.
+
+Geprüft in `tests/test-rechnung.js` (8b), `tests/test-export.js` (7), `tests/test-jahr.js` (2b).
+
+Bewusst nicht geändert: `segH` rundet krumme Minuten aus Altdaten je Block (solche Daten entstehen
+nicht mehr, und abgegebene Monate behalten ihre Stunden); Krankenstand im Urlaub (Marco: wie
+bisher); Arbeit am Feiertag geht 1 : 1 aufs Zeitausgleich-Konto (Marco: wie jetzt).
+
 ### Ganze und halbe Tage — nachgerechnet *(27. September 2026)*
 
 Gerechnet wird jeder Tag in `evalDay()`: *Ganzer Tag* nimmt alle geplanten Stunden, *Vormittag*

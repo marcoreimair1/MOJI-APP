@@ -7677,7 +7677,7 @@ function evalDay(profile, y, m, d){
   out.pause = plan.pause;
 
   if(hol){
-    out.type = 'feier'; out.note = hol; out.scope = 'full';
+    out.type = 'feier'; out.note = hol; out.hol = hol; out.scope = 'full';
     out.feier = plan.vm + plan.nm; out.work = 0; out.pause = 0;
     out.vmFrom = out.vmTo = out.nmFrom = out.nmTo = '';
     /* Seit 28.09.2026: wer an einem Feiertag arbeitet — der Handel hat
@@ -7688,6 +7688,7 @@ function evalDay(profile, y, m, d){
       const za = Math.min(r25(+ev.za), 24);
       out.work = za; out.za = za;
       out.note = hol + ' · ' + fmtH(za) + ' h gesammelt';
+      out.zeiten = 'fehlt';                /* wann gearbeitet wurde, weiss MOJI nicht */
     }
     /* Ein Vermerk aendert am Feiertag keine Stunden, sein Text soll aber
        im Kalender und im PDF stehen. */
@@ -7712,6 +7713,20 @@ function evalDay(profile, y, m, d){
       if(out.work <= 0){
         out.work = 0; out.pause = 0;
         out.vmFrom = out.vmTo = out.nmFrom = out.nmTo = '';
+      } else if(weg > 0 && plan.vm > 0 && plan.nm > 0 && Math.abs(plan.vm - plan.nm) > 1e-9
+                && Math.abs(weg - plan.nm) < 1e-9){
+        /* Genau der Nachmittag eingeloest (die Bloecke sind verschieden
+           lang, also eindeutig): wie ein halber Urlaubstag — der Block
+           faellt weg, und ohne zweiten Block keine Pause. */
+        out.nmFrom = out.nmTo = ''; out.pause = 0;
+      } else if(weg > 0 && plan.vm > 0 && plan.nm > 0 && Math.abs(plan.vm - plan.nm) > 1e-9
+                && Math.abs(weg - plan.vm) < 1e-9){
+        out.vmFrom = out.vmTo = ''; out.pause = 0;
+      } else if(weg > 0){
+        /* Ein Teil eines Blocks: wann genau, weiss MOJI nicht. Die Zeiten
+           bleiben die des Plans — das PDF sagt es dazu (Pruefung
+           02.10.2026: Beginn, Ende und Stunden widersprachen sich still). */
+        out.zeiten = 'plan';
       }
       out.note = weg > 0 ? 'Zeitausgleich · ' + fmtH(weg) + ' h eingelöst'
                          : 'Zeitausgleich · kein Dienst, nichts eingelöst';
@@ -7722,6 +7737,7 @@ function evalDay(profile, y, m, d){
       out.work = r25(plan.vm + plan.nm + plus);
       out.za = plus;
       out.note = 'Zeitausgleich · ' + fmtH(plus) + ' h gesammelt';
+      out.zeiten = plan.vm + plan.nm > 0 ? 'plan' : 'fehlt';
     } else {
       out.type = null;
     }
@@ -7778,7 +7794,19 @@ function monthSums(rows){
       if(r.work > 0){ s.feierArbeit += r.work; s.dFeierArbeit += 1; }
       return;
     }
-    /* Sonst Tage anteilig nach Stunden: ein halber Tag zählt seinen Anteil. */
+    /* Ein halber Tag zählt 0,5 — der Block bis zur Mittagspause oder der
+       danach, egal wie lang (Entscheidung 28.09.2026), die andere Hälfte
+       ist Arbeit. Vorher zählte er seinen Stundenanteil: bei 5 + 3 h ein
+       Vormittag 0,625, zwei davon im PDF „1,5 Tage" (Prüfung 02.10.2026).
+       So sind Urlaubstage im PDF Diensttage, wie im Gesetz (OGH 9 ObA 78/24x). */
+    const teil = r.urlaub + r.krank + r.sonst;
+    if((r.scope === 'vm' || r.scope === 'nm') && teil > 0 && r.work > 0 && !(r.zeit > 0) && !(r.feier > 0)){
+      s.dWork += 0.5;
+      s.dUrlaub += 0.5 * r.urlaub / teil; s.dKrank += 0.5 * r.krank / teil; s.dSonst += 0.5 * r.sonst / teil;
+      s.dTotal += 1;
+      return;
+    }
+    /* Sonst Tage anteilig nach Stunden (Zeitausgleich: sein Stundenanteil). */
     const tag = r.work + r.urlaub + r.krank + r.feier + r.sonst + r.zeit;
     if(tag > 0){
       s.dWork   += r.work   / tag;
@@ -8101,6 +8129,12 @@ function normalize(p){
   /* Exportbuch: Monat → Zeitstempel des letzten Exports. Jeder Monat steht
      nur einmal darin, doppeltes Exportieren zählt also nicht doppelt. */
   if(!p.exp || typeof p.exp !== 'object' || Array.isArray(p.exp)) p.exp = {};
+  /* Der ERSTE Export je Monat — exp haelt nur den letzten, und ein
+     spaeteres Jahres-PDF machte im Rueckblick jeden Monat „verspaetet"
+     (Pruefung 02.10.2026). Was schon im Buch steht, kennt nur den letzten
+     Zeitpunkt; der ist die beste Auskunft, die es dafuer gibt. */
+  if(!p.expErst || typeof p.expErst !== 'object' || Array.isArray(p.expErst)) p.expErst = {};
+  Object.keys(p.exp).forEach(k => { if(!(p.expErst[k] > 0)) p.expErst[k] = p.exp[k]; });
   /* Ein noch nicht angesehener Stufenaufstieg: {von, bis}. Bleibt liegen,
      bis die Feier gelaufen ist — auch über einen Neustart hinweg. */
   if(p.auf && !(p.auf.bis > p.auf.von)) delete p.auf;
@@ -11155,8 +11189,13 @@ function merkeExporte(list){
   if(!ME || !Array.isArray(list) || !list.length) return;
   const vorher = stufe();
   if(!ME.exp) ME.exp = {};
+  if(!ME.expErst) ME.expErst = {};
   const jetzt = Date.now();
-  list.forEach(o => { ME.exp[o.y + '-' + o.m] = jetzt; });
+  list.forEach(o => {
+    const k = o.y + '-' + o.m;
+    ME.exp[k] = jetzt;
+    if(!(ME.expErst[k] > 0)) ME.expErst[k] = jetzt;
+  });
   save();
   malRang();
   const nachher = stufe();
@@ -12831,23 +12870,39 @@ function jrDaten(y, heute){
   const h = heute || new Date();
   const bis = new Date(h.getFullYear(), h.getMonth(), h.getDate(), 23, 59, 59);
   const buch = expBuch();
+  /* Abgegeben heisst: zum ersten Mal exportiert (expErst). */
+  const erst = Object.assign({}, buch, (ME && ME.expErst) || {});
   const d = { y:y, monate:[], work:0, urlaub:0, feier:0, samstage:0, zaPlus:0, bruecken:0,
               urlaubLang:0, frueh:'', verfuegbar:0, abgegeben:0, puenktlich:0 };
-  let lauf = null, letzterUrlaub = null;
-  const frei = r => r.type === 'feier' || (r.work + r.urlaub + r.krank + r.sonst + r.zeit) === 0;
+  let lauf = null, letzterUrlaub = null, wochenStd = 0, wochenN = 0;
+  /* Frei ist ein Tag ohne Stunden — ein Feiertag mit Arbeit ist es nicht
+     (vorher lief der laengste Urlaub ueber ihn hinweg). */
+  const frei = r => (r.work + r.urlaub + r.krank + r.sonst + r.zeit) === 0;
+  /* Monate vor dem Beitritt zaehlen nur, wenn sie abgegeben wurden —
+     sonst standen dort reine Planstunden ohne Urlaub oder Krankenstand,
+     und „x/12" war nie erreichbar. */
+  const beitritt = ME && ME.seit ? new Date(ME.seit) : null;
   for(let m = 0; m < 12; m++){
     const vor = y < START.y || (y === START.y && m < START.m);
     const zuk = new Date(y, m, 1) > bis;
-    if(vor || zuk){ d.monate.push(null); continue; }
+    const k = y + '-' + m;
+    const vorBeitritt = !!beitritt && (y < beitritt.getFullYear() || (y === beitritt.getFullYear() && m < beitritt.getMonth())) && !buch[k];
+    if(vor || zuk || vorBeitritt){ d.monate.push(null); continue; }
     const rows = monthRows(ME, y, m).filter(r => r.date <= bis);
     const s = monthSums(rows);
-    const ab = buch[y + '-' + m];
+    const ab = erst[k];
+    const frist = new Date(y, m + 1, 5, 23, 59, 59).getTime();
     d.monate.push({ m:m, work:s.work, abgegeben:!!ab });
-    d.verfuegbar++;
+    /* Offen ist ein Monat erst, wenn seine Frist (5. des Folgemonats)
+       vorbei ist — im Dezember zaehlte sonst der laufende Monat schon als
+       „nicht abgegeben". */
+    if(ab || frist < h.getTime()) d.verfuegbar++;
     if(ab){
       d.abgegeben++;
-      if(ab <= new Date(y, m + 1, 5, 23, 59, 59).getTime()) d.puenktlich++;
+      if(ab <= frist) d.puenktlich++;
     }
+    const pw = planWoche(schedFuer(ME, new Date(y, m, 15)));
+    if(pw.std > 0){ wochenStd += pw.std; wochenN++; }
     d.work += s.work; d.urlaub += s.dUrlaub; d.feier += s.dFeier;
     rows.forEach(r => {
       if(r.dow === 6 && r.work > 0) d.samstage++;
@@ -12856,18 +12911,24 @@ function jrDaten(y, heute){
         const beginn = r.vmFrom || r.nmFrom;
         if(beginn && (!d.frueh || beginn < d.frueh)) d.frueh = beginn;
       }
-      if(r.type === 'urlaub'){
-        /* Brueckentag: Urlaub direkt neben einem Feiertag. */
+      if(r.type === 'urlaub' && !r.frei){
+        /* Brueckentag: Urlaub direkt neben einem Feiertag, der selbst ein
+           freier Diensttag war — nicht neben einem Sonntagsfeiertag oder
+           einem, an dem gearbeitet wurde. */
         const nachbar = t => { const x = new Date(r.date); x.setDate(x.getDate() + t);
-          return !!holidays(x.getFullYear())[key(x.getFullYear(), x.getMonth(), x.getDate())]; };
-        if(r.scope === 'full' && !r.frei && (nachbar(-1) || nachbar(1))) d.bruecken++;
+          if(!holidays(x.getFullYear())[key(x.getFullYear(), x.getMonth(), x.getDate())]) return false;
+          const n = evalDay(ME, x.getFullYear(), x.getMonth(), x.getDate());
+          return n.feier > 0 && !(n.work > 0); };
+        if(r.scope === 'full' && (nachbar(-1) || nachbar(1))) d.bruecken++;
         /* Laengster Urlaub am Stueck: vom ersten bis zum letzten
-           Urlaubstag, freie Tage dazwischen zaehlen mit. */
+           Urlaubstag mit Dienst, freie Tage dazwischen zaehlen mit — ein
+           mitgewaehlter Sonntag am Rand verlaengert ihn nicht. Er endet am
+           Jahreswechsel; das ist Absicht, es ist der Rueckblick eines Jahres. */
         if(!lauf) lauf = r.date;
         letzterUrlaub = r.date;
         const tage = Math.round((letzterUrlaub - lauf) / 864e5) + 1;
         if(tage > d.urlaubLang) d.urlaubLang = tage;
-      } else if(!frei(r)){
+      } else if(!frei(r) && !(r.type === 'urlaub' && r.frei)){
         lauf = null;
       }
     });
@@ -12875,8 +12936,10 @@ function jrDaten(y, heute){
   /* Staerkster Monat */
   d.top = d.monate.reduce((t, x) => (x && (!t || x.work > t.work)) ? x : t, null);
   /* Aufstiege im Jahr: Stufe am Jahresanfang gegen Stufe am Jahresende. */
-  const zeiten = Object.values(buch);
-  const stufeBis = t => Math.min(RAENGE.length, Math.floor(zeiten.filter(z => z < t).length / PRO_STUFE) + 1);
+  /* Mit dem ersten Export je Monat — ein spaeterer Export verschob sonst
+     Aufstiege ins neue Jahr. */
+  const zeitenErst = Object.keys(buch).map(k => erst[k] || buch[k]);
+  const stufeBis = t => Math.min(RAENGE.length, Math.floor(zeitenErst.filter(z => z < t).length / PRO_STUFE) + 1);
   d.stufeAnfang = stufeBis(new Date(y, 0, 1).getTime());
   d.stufe = stufeBis(Math.min(bis.getTime() + 1, new Date(y + 1, 0, 1).getTime()));
   d.aufstiege = Math.max(0, d.stufe - d.stufeAnfang);
@@ -12888,8 +12951,9 @@ function jrDaten(y, heute){
   /* Laengste Tagesserie in diesem Jahr — seit 27.09.2026 gemerkt. */
   const se = ME.serie || {};
   d.serie = Math.max((se.best && se.best[y]) || 0, (se.letzt && se.letzt.slice(0, 4) === String(y)) ? (se.tage || 0) : 0);
-  /* Vergleich fuer die Stunden */
-  const woche = weekTotal(ME.sched, 0) || 40;
+  /* Vergleich fuer die Stunden: die mittlere Woche der Plaene, die im Jahr
+     galten — nicht Woche 1 des heutigen (Pruefung 02.10.2026). */
+  const woche = (wochenN ? wochenStd / wochenN : 0) || 40;
   d.tageAmStueck = Math.round(d.work / 24);
   d.wochen = Math.round(d.work / woche);
   d.tee = null;
@@ -16300,6 +16364,29 @@ function verlauf(doc, x, y, w, h, oben, unten, n){
   }
 }
 
+/* Zehntel je Kachel, deren Summe genau die Gesamttage ergibt (Methode des
+   groessten Rests). */
+function pdfZehntel(werte, gesamt){
+  const z = werte.map(v => Math.floor(v * 10 + 1e-9));
+  let fehlt = Math.round(gesamt * 10) - z.reduce((a, x) => a + x, 0);
+  werte.map((v, i) => [v * 10 - z[i], i]).sort((a, b) => b[0] - a[0])
+       .forEach(([, i]) => { if(fehlt > 0){ z[i]++; fehlt--; } });
+  return z;
+}
+function pdfTage(t, std){
+  if(t > 0.04) return fmtUT(t) + ' ' + wortUT(t);
+  return std > 0.004 ? 'unter 0,1 Tag' : 'keine Tage';
+}
+/* Die Zeile zum Zeitausgleich: gesammelt (davon am Feiertag) und eingeloest. */
+function pdfZaZeile(s){
+  if(!(s.zaPlus > 0.004) && !(s.zaMinus > 0.004)) return '';
+  const t = [];
+  if(s.zaPlus > 0.004) t.push('gesammelt ' + fmtH(s.zaPlus) + ' h'
+    + (s.feierArbeit > 0.004 ? ' (davon ' + fmtH(s.feierArbeit) + ' h an ' + s.dFeierArbeit
+      + (s.dFeierArbeit === 1 ? ' Feiertag' : ' Feiertagen') + ')' : '') + ', in der Arbeitszeit enthalten');
+  if(s.zaMinus > 0.004) t.push('eingelöst ' + fmtH(s.zaMinus) + ' h');
+  return 'Zeitausgleich: ' + t.join('  ·  ');
+}
 function drawPage(doc, p, y, m){
   const L = 14, R = 196, W = R - L;
   const rows = monthRows(p, y, m), s = monthSums(rows);
@@ -16422,8 +16509,33 @@ function drawPage(doc, p, y, m){
     doc.setFont('helvetica','normal');
     if(r.type){
       pdfIcon(doc, r.type, cx[6] + 3, ry + rowH/2, 1.5, TYPES[r.type].pdf);
-      setT(PAP.tinte); doc.setFontSize(6.8);
-      doc.text(r.note + (credit > 0 ? '  ·  ' + fmtH(credit) + ' h' : ''), cx[6] + 7.2, ty, { maxWidth: cw[6] - 9 });
+      setT(PAP.tinte);
+      /* Eine Zeile, immer. Brach der Text um, stand die zweite Zeile in der
+         naechsten Tageszeile (Pruefung 02.10.2026). Erst kleiner, dann
+         kuerzen — den Stundenteil nie, den braucht die Lohnverrechnung. */
+      let txt = String(r.note || '').replace(/\s*\n\s*/g, ' '), suf = credit > 0 ? '  ·  ' + fmtH(credit) + ' h' : '';
+      /* Am Feiertag mit Arbeit: der Feiertag und, benannt, was aufs Konto
+         geht — vorher standen zwei „8,00 h" ohne Unterschied hintereinander. */
+      if(r.type === 'feier' && r.za > 0){
+        txt = r.hol || txt;
+        suf = '  ·  ' + fmtH(r.feier) + ' h  ·  +' + fmtH(r.za) + ' h ZA';
+      }
+      /* Zeitausgleich kurz, damit dahinter Platz bleibt fuer die Herkunft
+         der Uhrzeiten (die Stunden gelten, die Lage kennt MOJI nicht). */
+      if(r.type === 'zeit' && (r.za > 0 || r.zeit > 0)){
+        txt = 'Zeitausgleich ' + (r.za > 0 ? '+' + fmtH(r.za) : '–' + fmtH(r.zeit)) + ' h';
+        if(r.zeiten === 'plan') suf += ' · Zeiten laut Plan';
+        if(r.zeiten === 'fehlt') suf += ' · Zeiten nicht erfasst';
+      }
+      const breit = cw[6] - 9;
+      let gr = 6.8; doc.setFontSize(gr);
+      while(gr > 5.8 && doc.getTextWidth(txt + suf) > breit){ gr = Math.round((gr - 0.2) * 10) / 10; doc.setFontSize(gr); }
+      if(doc.getTextWidth(txt + suf) > breit){
+        while(txt.length > 1 && doc.getTextWidth(txt + '…' + suf) > breit) txt = txt.slice(0, -1);
+        txt = txt.replace(/[\s·]+$/, '') + '…';
+      }
+      doc.text(txt + suf, cx[6] + 7.2, ty);
+      doc.setFontSize(7);
     }
   });
 
@@ -16451,6 +16563,11 @@ function drawPage(doc, p, y, m){
   if(s.sonst > 0) boxes.push(['Sonstige', s.sonst, s.dSonst, TYPES.eigen.pdf]);
   if(s.zeit  > 0) boxes.push(['Zeitausgleich', s.zeit, s.dZeit, TYPES.zeit.pdf]);
   boxes.push(['Gesamt', s.total, s.dTotal, PAP.marke]);
+  /* Tage je Kachel auf 0,1, verteilt nach dem groessten Rest — so ergeben
+     die Teile genau „Gesamt". Vorher rundete jede Kachel fuer sich auf
+     halbe Tage: „1,00 h · keine Tage", und 26 + 0,5 standen neben 26. */
+  const zehntel = pdfZehntel(boxes.slice(0, -1).map(b => b[2]), s.dTotal);
+  boxes.forEach((b, i) => { b[4] = i < zehntel.length ? zehntel[i] / 10 : Math.round(s.dTotal * 10) / 10; });
   const by = tEnd + 7, bh = 18.6, bw = W / boxes.length;
   boxes.forEach((b, i) => {
     const x = L + i * bw, bx = x + 0.7, bwi = bw - 1.4;
@@ -16482,13 +16599,18 @@ function drawPage(doc, p, y, m){
 
     /* Dieselbe Summe in Tagen — anteilig, ein halber Tag zaehlt 0,5 */
     doc.setFontSize(5.8); setT(PAP.leise);
-    doc.text(fmtT(b[2]), bx + bwi/2, by + 16.7, { align:'center' });
+    doc.text(pdfTage(b[4], b[1]), bx + bwi/2, by + 16.7, { align:'center' });
   });
 
   doc.setFont('helvetica','normal'); doc.setFontSize(6.2); setT(PAP.grau);
   doc.text('Arbeitsstunden = tatsächlich geleistete Arbeitszeit ohne Pausen. Urlaub, Krankenstand, Feiertag, Sonstige und eingelöster Zeitausgleich sind gesondert ausgewiesen.', L, by + bh + 4.2);
-  doc.text('Stunden gerundet auf 0,25 h  ·  Tage anteilig, ein halber Tag zählt 0,5  ·  Pausen gesamt: '
+  doc.text('Stunden gerundet auf 0,25 h  ·  Tage je Kalendertag anteilig, ein halber Tag zählt 0,5, auf 0,1 gerundet  ·  Pausen gesamt: '
     + fmtH(s.pause) + ' h', L, by + bh + 7.4);
+  /* Gesammelter Zeitausgleich steckt in der Arbeitszeit, steht aber in
+     keiner Kachel — die Lohnverrechnung muesste die Zeilen zusammenzaehlen. */
+  let fussUnten = by + bh + 7.4;
+  const zaZeile = pdfZaZeile(s);
+  if(zaZeile){ fussUnten += 3.2; doc.text(zaZeile, L, fussUnten); }
 
   /* ─── Unterschrift ───
      Nur die der Person; der Dienstgeber zeichnet nicht mit. Der Name
@@ -16518,7 +16640,7 @@ function drawPage(doc, p, y, m){
        hohe, schmale Unterschrift zu wenig — die kam winzig heraus, weil
        ihre Breite an der Hoehe haengt. */
     const maxB = 58;
-    const maxH = clamp((sy + 2) - (by + bh + 7.4) - 1.6, 9, 15);
+    const maxH = clamp((sy + 2) - fussUnten - 1.6, 9, 15);
     let bre = maxB, hoch = bre / (SIG_VERH || 3.4);
     if(hoch > maxH){ hoch = maxH; bre = hoch * (SIG_VERH || 3.4); }
     /* Und die Leiste richtet sich nach der Unterschrift, nicht umgekehrt.

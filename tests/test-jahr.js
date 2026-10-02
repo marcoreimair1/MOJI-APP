@@ -72,11 +72,71 @@ ok('Tage am Stueck als Vergleich', d.tageAmStueck === Math.round(d.work / 24), d
 
 /* Im laufenden Jahr nur bis heute */
 const d2 = jrDaten(2025, new Date(2025, 5, 15, 12));
-ok('Im laufenden Jahr zaehlt nur bis heute', d2.verfuegbar === 6 && d2.monate[6] === null, d2.verfuegbar);
+/* Seit 02.10.2026 ist ein Monat erst nach seiner Frist (5. des Folgemonats)
+   offen: am 15. Juni zaehlen Jaenner bis Mai, der Juni noch nicht. */
+ok('Im laufenden Jahr zaehlt nur bis heute', d2.verfuegbar === 5 && d2.monate[5] !== null && d2.monate[6] === null, d2.verfuegbar);
 let bisHeute = 0;
 for(let m = 0; m < 5; m++) bisHeute += monthSums(monthRows(ME, 2025, m)).work;
 bisHeute += monthSums(monthRows(ME, 2025, 5).filter(r => r.day <= 15)).work;
 ok('Und der Juni nur bis zum 15.', Math.abs(d2.work - bisHeute) < 0.001, d2.work + ' / ' + bisHeute);
+
+/* ── 2b · Befunde der Pruefung vom 02.10.2026 ── */
+{
+  const MEvor = ME;
+  const mk = (o) => normalize(Object.assign({ id:'r', vorname:'R', nachname:'S', dob:'1990-01-01', av:3,
+                                              seit: new Date(2025, 0, 2, 12).getTime() }, o));
+  /* a · Abgegeben zaehlt der ERSTE Export — ein spaeteres Jahres-PDF macht
+     den Jaenner nicht nachtraeglich verspaetet. */
+  ME = mk({ exp:{ '2025-0': new Date(2025, 11, 20, 12).getTime() }, expErst:{ '2025-0': new Date(2025, 1, 2, 12).getTime() } });
+  ok('Erster Export zaehlt fuer puenktlich', jrDaten(2025, new Date(2026, 0, 15, 12)).puenktlich === 1);
+  const n1 = normalize({ id:'n', vorname:'N', dob:'1990-01-01', exp:{ '2025-3': 123 } });
+  ok('Altbestand: der bekannte Zeitpunkt wird der erste', n1.expErst['2025-3'] === 123);
+  ME = mk({}); ME.exp = {}; ME.expErst = {};
+  merkeExporte([{ y:2025, m:4 }]);
+  const erst = ME.expErst['2025-4'];
+  ME.exp['2025-4'] = erst + 1000; merkeExporte([{ y:2025, m:4 }]);
+  ok('Ein zweiter Export aendert den ersten nicht', ME.expErst['2025-4'] === erst && ME.exp['2025-4'] >= erst);
+  /* b · Monate vor dem Beitritt zaehlen nicht, ausser sie wurden abgegeben. */
+  ME = mk({ seit: new Date(2025, 6, 10, 12).getTime(), exp:{ '2025-2': new Date(2025, 3, 2, 12).getTime() } });
+  const db = jrDaten(2025, new Date(2026, 0, 15, 12));
+  ok('Beitritt im Juli: Jaenner bis Juni zaehlen nicht', db.monate[0] === null && db.monate[5] === null && db.monate[6] !== null);
+  ok('Ausser der abgegebene Maerz', db.monate[2] !== null && db.verfuegbar === 7 && db.abgegeben === 1, db.verfuegbar);
+  /* c · Brueckentag nur neben einem freien Diensttag-Feiertag. */
+  ME = mk({ events:{
+    '2025-10-27':{ t:'urlaub', s:'full' },               /* Mo nach dem Nationalfeiertag am Sonntag */
+    '2025-12-08':{ t:'zeit', za:6 },                     /* am Feiertag gearbeitet */
+    '2025-12-09':{ t:'urlaub', s:'full' },
+    '2025-05-02':{ t:'urlaub', s:'full' }                /* Fr nach dem 1. Mai: echt */
+  }});
+  const dc = jrDaten(2025, new Date(2026, 0, 15, 12));
+  ok('Nur der Freitag nach dem 1. Mai ist ein Brueckentag', dc.bruecken === 1, dc.bruecken);
+  /* d · Laengster Urlaub: nicht ueber einen gearbeiteten Feiertag, nicht
+     verlaengert durch einen mitgewaehlten Sonntag am Rand. */
+  ME = mk({ events:{
+    '2025-12-04':{ t:'urlaub', s:'full' }, '2025-12-05':{ t:'urlaub', s:'full' }, '2025-12-06':{ t:'urlaub', s:'full' },
+    '2025-12-08':{ t:'zeit', za:6 },
+    '2025-12-09':{ t:'urlaub', s:'full' }, '2025-12-10':{ t:'urlaub', s:'full' },
+    '2025-03-10':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' }, '2025-03-11':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' },
+    '2025-03-12':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' }, '2025-03-13':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' },
+    '2025-03-14':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' }, '2025-03-15':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16' },
+    '2025-03-16':{ t:'urlaub', s:'full', ser:'2025-03-10>2025-03-16', frei:true }
+  }});
+  const dd = jrDaten(2025, new Date(2026, 0, 15, 12));
+  ok('Mo–Sa mit Sonntag am Rand: 6 Tage, nicht 7', dd.urlaubLang === 6, dd.urlaubLang);
+  /* e · Volle Wochen: die mittlere Woche des Plans (44 h), nicht Woche 1 allein. */
+  ME = mk({}); ME.sched.weekCount = 2;
+  [1,2,3,4,5,6].forEach(function(t){ ME.sched.weeks[1][t] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+  const de = jrDaten(2025, new Date(2026, 0, 15, 12));
+  ok('Zwei Wochen, eine davon frei: geteilt durch 22 h', de.wochen === Math.round(de.work / 22), de.wochen + ' / ' + de.work);
+  /* f · Im Dezember ist der Dezember noch nicht offen. */
+  ME = mk({ exp:{} });
+  for(let m = 0; m < 11; m++) ME.exp['2025-' + m] = new Date(2025, m + 1, 2, 12).getTime();
+  normalize(ME);
+  const df = jrDaten(2025, new Date(2025, 11, 10, 12));
+  ok('Am 10. Dezember: 11/11, lueckenlos', df.verfuegbar === 11 && df.abgegeben === 11, df.abgegeben + '/' + df.verfuegbar);
+  ok('Und das Abzeichen kommt', jrAbzeichen(df).some(function(a){ return a.t === 'Lückenlos abgegeben'; }));
+  ME = MEvor;
+}
 
 /* ── 3 · Die laengste Tagesserie je Jahr ── */
 ME.serie = { tage:5, letzt:'2025-06-10' };

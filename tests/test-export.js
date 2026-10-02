@@ -165,6 +165,44 @@ if (window.jspdf && window.jspdf.jsPDF) {
      startY + n31 * rowH + 7 + 18.6 + 8 < 272,
      (startY + n31 * rowH + 33.6).toFixed(1) + ' mm');
   ok('Und bleiben lesbar hoch', rowH >= 4.6, rowH.toFixed(2) + ' mm');
+
+  /* Pruefung 02.10.2026: der Vermerk bleibt einzeilig, der Stundenteil
+     ganz; Feiertagsarbeit und Zeitausgleich stehen in einer Zeile. */
+  ME.events['2026-12-08'] = { t:'zeit', za:6 };
+  ME.events['2026-12-09'] = { t:'eigen', s:'full', text:'Schulung Kontaktlinsen und Brillenglaeser beim Lieferanten in Wien', aw:false };
+  ME.events['2026-12-10'] = { t:'zeit', za:-1 };
+  ME.events['2026-12-11'] = { t:'zeit', za:2 };
+  var doc2 = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait', compress:true });
+  var texte = [], echt = doc2.text.bind(doc2);
+  doc2.text = function(t, x, y, o){ texte.push({ t:String(t), x:x, w:doc2.getTextWidth(String(t)), o:o }); return echt(t, x, y, o); };
+  var knall2 = null;
+  try { drawPage(doc2, ME, 2026, 11); } catch(e){ knall2 = String(e); }
+  ok('Dezember baut sich', !knall2, knall2);
+  var vm = texte.filter(function(e){ return Math.abs(e.x - 149.2) < 0.01; });
+  ok('Jeder Vermerk passt in eine Zeile, ohne Umbruch',
+     vm.length >= 4 && vm.every(function(e){ return e.w <= 45.01 && !(e.o && e.o.maxWidth); }),
+     vm.map(function(e){ return e.t + ' ' + e.w.toFixed(1); }).join(' | '));
+  ok('Feiertag mit Arbeit: beide Stunden benannt',
+     vm.some(function(e){ return e.t === 'Mariä Empfängnis  ·  8,00 h  ·  +6,00 h ZA'; }),
+     vm.map(function(e){ return e.t; }).join(' | '));
+  ok('Ein langer Vermerk wird gekuerzt, die Stunden bleiben',
+     vm.some(function(e){ return e.t.indexOf('Schulung Kontaktlinsen') === 0 && e.t.indexOf('…  ·  8,00 h') > 0; }));
+  ok('Teilweise eingeloest: die Zeiten sind die des Plans, und es steht dabei',
+     vm.some(function(e){ return e.t === 'Zeitausgleich –1,00 h · Zeiten laut Plan'; }));
+  ok('Gesammelt an einem Diensttag ebenso',
+     vm.some(function(e){ return e.t === 'Zeitausgleich +2,00 h · Zeiten laut Plan'; }));
+  ok('Die Zeile zum Zeitausgleich',
+     texte.some(function(e){ return e.t === 'Zeitausgleich: gesammelt 8,00 h (davon 6,00 h an 1 Feiertag), in der Arbeitszeit enthalten  ·  eingelöst 1,00 h'; }),
+     texte.filter(function(e){ return e.t.indexOf('Zeitausgleich:') === 0; }).map(function(e){ return e.t; }).join(' | '));
+  ok('Der Fusstext sagt, wie Tage zaehlen',
+     texte.some(function(e){ return e.t.indexOf('Tage je Kalendertag anteilig, ein halber Tag zählt 0,5, auf 0,1 gerundet') >= 0; }));
+  ['2026-12-08','2026-12-09','2026-12-10','2026-12-11'].forEach(function(k){ delete ME.events[k]; });
+  /* Tage je Kachel: die Teile ergeben Gesamt. */
+  ok('Groesster Rest: 25,75 + 0,25 werden 25,8 + 0,2', pdfZehntel([25.75, 0.25], 26).join(',') === '258,2', pdfZehntel([25.75, 0.25], 26).join(','));
+  ok('25,875 + 0,125 werden 25,9 + 0,1', pdfZehntel([25.875, 0.125], 26).join(',') === '259,1');
+  ok('Halbe Tage bleiben halbe', pdfZehntel([20.5, 2.5, 1, 3], 27).join(',') === '205,25,10,30');
+  ok('Stunden ohne ganzes Zehntel: „unter 0,1 Tag"', pdfTage(0, 0.25) === 'unter 0,1 Tag' && pdfTage(0, 0) === 'keine Tage'
+     && pdfTage(1, 8) === '1 Tag' && pdfTage(2.5, 20) === '2,5 Tage');
 } else {
   ok('jsPDF fehlt — Seitenpruefungen ausgelassen', false, 'npm i jspdf');
 }
@@ -402,8 +440,11 @@ setTimeout(() => {
    ['Und nicht verzerrt', /if\(hoch > maxH\)\{ hoch = maxH; bre = hoch \* \(SIG_VERH \|\| 3\.4\); \}/.test(roh)],
    /* Die Leiste war 86 mm lang und die Unterschrift bis 15 mm hoch —
       das sah nach Formularfeld aus, nicht nach Unterschrift. */
+   /* Seit 02.10.2026 kann unter den Summen eine dritte Zeile stehen
+      (Zeitausgleich) — die Hoehe rechnet ab der letzten. */
    ['Die Unterschrift nutzt die Hoehe',
-    /const maxH = clamp\(\(sy \+ 2\) - \(by \+ bh \+ 7\.4\) - 1\.6, 9, 15\);/.test(roh)],
+    /let fussUnten = by \+ bh \+ 7\.4;/.test(roh)
+    && /const maxH = clamp\(\(sy \+ 2\) - fussUnten - 1\.6, 9, 15\);/.test(roh)],
    /* Eine hohe, schmale Unterschrift kann nur so breit werden, wie die
       Hoehe es zulaesst — auf einer festen Linie sah sie verloren aus. */
    ['Die Leiste richtet sich nach der Unterschrift',
