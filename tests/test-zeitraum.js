@@ -155,10 +155,17 @@ ok('Der Umfang ist immer der ganze Tag', Q.scope === 'full');
 tipp(tag(10)); tipp(tag(21));
 var sum = document.querySelector('#zr-sum').textContent;
 ok('Live mitgerechnet: 10. bis 21. Maerz sind 84 h Urlaub', /11 Arbeitstage · 84,00 h Urlaub/.test(sum), sum);
-/* Seit 28.09.2026 rechnet das Konto in Stunden: 84 h durch 8 h, den
-   ueblichen Diensttag — der Samstag mit 4 h ist ein halber Urlaubstag. */
-ok('Und 10,5 Urlaubstage — der Samstag mit 4 h ist ein halber', /10,5 Urlaubstage/.test(sum), sum);
+/* Seit 02.10.2026 wertneutral: im Stundenkonto (Vorgabe) zaehlen die
+   Stunden, Urlaubstage stehen nicht dabei. Im Tagekonto ist jeder
+   Diensttag ein Tag, auch der kurze Samstag (OGH 9 ObA 78/24x). */
+ok('Im Stundenkonto ohne Urlaubstage', !/Urlaubstag/.test(sum), sum);
 tipp(document.querySelector('#zrs-von'));
+ME.konten.modus = 'tage';
+tipp(tag(10)); tipp(tag(21));
+sum = document.querySelector('#zr-sum').textContent;
+ok('Im Tagekonto: 11 Urlaubstage, der Samstag ist ein ganzer', /11 Arbeitstage · 84,00 h Urlaub · 11 Urlaubstage/.test(sum), sum);
+tipp(document.querySelector('#zrs-von'));
+ME.konten.modus = 'stunden';
 
 /* ── 8 · Eintragen ── */
 tipp(tag(10)); tipp(tag(12));

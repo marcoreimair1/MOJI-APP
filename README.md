@@ -776,6 +776,84 @@ wo es Stunden gibt.
 
 Geprüft in `tests/test-tag.js`.
 
+### Alle Rechnungen geprüft *(2. Oktober 2026)*
+
+Marco: *„Das muss 100 % passen, der ganze Kalender basiert darauf."* Geprüft wurde jede Rechnung —
+Tag, Monat, Konten, Zeitraum, Tagesblatt, Dienstplan, PDF und Rückblick — gegen das
+österreichische Recht. Recherche und Prüfung liefen als Workflow (ein Prüfer je Bereich, jeder
+Befund zweimal gegengeprüft); bestätigt wurden die unten genannten Fehler, behoben in fünf
+Schritten mit eigenen Tests.
+
+**Die Rechtslage, auf der MOJI rechnet**
+
+| Thema | Regel | Quelle |
+|---|---|---|
+| Feiertage | genau 13: 1.1., 6.1., Ostermontag, 1.5., Christi Himmelfahrt, Pfingstmontag, Fronleichnam, 15.8., 26.10., 1.11., 8.12., 25.12., 26.12. — kein Karfreitag, nicht 24./31.12. | § 7 Abs 2 ARG |
+| Urlaubsanspruch | 5 Wochen im Jahr (ab dem 26. Dienstjahr 6), unabhängig von Lage und Ausmaß der Arbeitszeit | § 2 UrlG |
+| Ein Urlaubstag | kostet je *Diensttag* einen Tag, egal wie lang die Schicht ist | OGH 9 ObA 78/24x |
+| Urlaub in Stunden | erlaubt, wenn vereinbart und **wertneutral**: Anspruch = Wochen × Wochenstunden, Abzug = Planstunden des Tages | OGH 9 ObA 78/24x |
+| Planwechsel | die Zahl der **Wochen** bleibt, Tage bzw. Stunden rechnen sich um | OGH 8 ObA 35/12y, 9 ObA 20/14b |
+| wechselnde Wochen | der Schnitt über den Rhythmus | OGH 9 ObA 54/20m |
+| Arbeit am Feiertag | wird bezahlt (Feiertagsentgelt + Arbeit); MOJI bucht sie — so entschieden — 1 : 1 aufs Zeitausgleich-Konto | § 9 ARG |
+| Pause | über 6 h Arbeit am Tag mindestens 30 min | § 11 AZG |
+
+**Schritt 1 · Die Tagesrechnung** (`evalDay`, `dayPlan`, `monthSums`; `tests/test-rechnung.js`)
+- Nur echte Eintragsarten (`ARTEN`: urlaub, krank, eigen, zeit). Ein gespeicherter Eintrag
+  `feier` löschte die Planstunden eines normalen Tages; ein unbekannter Umfang zählte als
+  Nachmittag. `normalize()` wirft so etwas hinaus, `evalDay` übergeht es.
+- Überlappende Blöcke (08–13 und 12–17) zählten doppelt: `tagBloecke()` zählt den Nachmittag
+  erst ab dem Ende des Vormittags.
+- Am Feiertag: gesammelter Zeitausgleich höchstens 24 h; ein Vermerk steht in der Zeile
+  („Mariä Empfängnis · Inventur"), ändert aber keine Stunden.
+- Zeitausgleich: Einlösen an einem Tag ohne Dienst gibt 0 (kein −0) und sagt es in der Zeile;
+  Sammeln höchstens bis 24 h am Tag.
+- Vermerk *als Arbeitszeit* behält Uhrzeiten und Pause des Plans.
+- „Freier" Tag im Zeitraum folgt dem Plan: bekam er später Dienst, zählt er als Urlaubstag.
+- Ein Feiertag mit Arbeit ist im Monat ein ganzer Feiertag (vorher fiel er aus der Zählung);
+  dazu `feierArbeit`, `zaPlus`, `zaMinus`.
+- Die Kalenderzelle zeigt eingelösten Zeitausgleich mit — wie Bilanz und Monatssumme.
+
+**Schritt 2 · Das Urlaubskonto, wertneutral in Urlaubswochen**
+- Entschieden (Marco): *„in Stunden als wertneutral … standard als Stunden, weil wir haben ja auch
+  Teilzeitkräfte, Geringfügige"*; später soll **MOJI-PRO** (Filialleiter-Werkzeug) je Mitarbeiter
+  zwischen Stunden und Tagen umschalten.
+- Darum führt das Konto **Wochen** (`konten.topfW`). `konten.modus` = `'stunden'` (Vorgabe) oder
+  `'tage'`:
+  - *stunden:* ein Urlaubstag kostet Planstunden ÷ Wochenstunden — ein Samstag mit 4 h also 4 h;
+  - *tage:* ein Diensttag kostet 1 ÷ Diensttage pro Woche, ein halber 0,5 ÷ … — ein Samstag ist ein
+    ganzer Urlaubstag.
+  Eine ganze Woche Urlaub kostet in beiden genau eine Woche.
+- `planWoche(sched)` = Wochenstunden und Diensttage, gemittelt über den Rhythmus; `urlaubAnteil()`
+  rechnet jeden Urlaubstag mit dem Plan, der an jenem Tag galt. Angezeigt wird mit dem heute
+  geltenden Plan (`urlaubText()`: die Einheit des Kontos vorn, die andere ungefähr dahinter).
+- Gutgeschrieben wird jeden 1. Jänner der Anspruch (in Tagen oder Stunden eingegeben), umgerechnet
+  mit dem Plan vom 1. Jänner (`anspruchWochen()`, Zähler `gutJahrW`). `topf`, `topfStd` und
+  `gutJahr` werden für ältere App-Fassungen mitgeführt.
+- **Umstellung** in `normalize()`, einmal: die bisherigen Tage bleiben Tage
+  (`topfW = Tage ÷ Diensttage pro Woche`; aus der Fassung vom 28.09. `topfStd ÷ tagLaengeAlt()`).
+  Wertneutral heißt beim Standardplan (Mo–Fr 8 h, Sa 4 h = 44 h an 6 Tagen): 5 Wochen sind
+  220 h; die 200 h der Fassung vom 28.09. waren nur 4,55 Wochen.
+- **Der Anspruch in Wochen** (`konten.anspruchW`, Vorgabe **5 Wochen** — das gesetzliche
+  Minimum, passt zu jedem Dienstplan: Mo–Fr 25 Tage, Mo–Sa 30, drei Tage 15). Eingeben lässt er
+  sich in Wochen, Tagen oder Stunden (drei Knöpfe; der Wechsel nimmt denselben Anspruch über die
+  Wochen mit). Ins alte Feld `anspruchEinheit` kommt nie `'wochen'`: ältere Fassungen lesen
+  `anspruch` und bekommen ihn in Tagen gespiegelt — sonst läsen sie „5 Tage".
+- **Die alte Vorgabe „25 Tage" war als 5 Wochen gemeint.** Nachgezählt (02.10.2026, nur
+  gezählt): 20 von 21 Konten hatten sie nie geändert, 11 davon mit 5½ oder 6 Diensttagen — für
+  sie waren 25 Tage zu wenig. Bei der Umstellung wird sie zu 5 Wochen; ein Topf, der nur aus
+  dieser Vorgabe gutgeschrieben wurde (nie am Rad gedreht: `topf = 25 × Jahre`), ebenso. Wirkung:
+  Mo–Fr bleibt alles; Mo–Sa 25 → 30 Tage (220 h); 5½ Tage 25 → 27,5; ein 4¼-Tage-Plan
+  25 → 21,25 (das gesetzliche Maß). Ein gedrehter Topf und ein eigener Anspruch bleiben, wie sie sind.
+- Der Hinweis beim Anspruch nennt Wochen, Tage und Stunden — und, wenn es weniger als 5 Wochen
+  sind, das gesetzliche Minimum (bei 6 Diensttagen 30 Tage, Standardplan 220 h).
+- Das Rad dreht im Stundenkonto in Viertelstunden, im Tagekonto in halben Tagen; gebucht wird nur
+  die Differenz in Wochen. `kBaldSichern()` fehlte seit einem Umbau (jede Drehung warf einen Fehler).
+- Zeitraum: Urlaubstage stehen nur im Tagekonto dabei; was ins nächste Jahr fällt, „geht ab
+  1. Jänner ab".
+
+Geprüft in `tests/test-rechnung.js`, `tests/test-tag.js` (11c), `tests/test-menue.js`,
+`tests/test-zeitraum.js`.
+
 ### Ganze und halbe Tage — nachgerechnet *(27. September 2026)*
 
 Gerechnet wird jeder Tag in `evalDay()`: *Ganzer Tag* nimmt alle geplanten Stunden, *Vormittag*
@@ -803,7 +881,8 @@ Fällen nachgerechnet (Mo–Fr 4 + 4 h, Sa nur 08–12):
   die Stunden und beim Urlaub die Urlaubstage (`zrZaehlen()`; ein Samstag mit 4 h ist ein ganzer).
 - **Entschieden am 28.09.2026** (Marco): *Vormittag* ist der Block bis zur Mittagspause,
   *Nachmittag* der ab Dienstbeginn danach — genau die Zeiten aus den Dienstzeiten. Und das
-  **Urlaubskonto rechnet in Stunden**, auf die Viertelstunde:
+  **Urlaubskonto rechnet in Stunden**, auf die Viertelstunde *(seit 02.10.2026 ersetzt durch das
+  wertneutrale Konto in Urlaubswochen, siehe „Alle Rechnungen geprüft")*:
   - Gutgeschrieben wird der Anspruch in Stunden (`konten.topfStd`, `anspruchStd()`); genommen
     werden die Urlaubsstunden aus `evalDay` (`monthSums().urlaub`). Ein Vormittag 07–12 sind 5 h,
     ein Samstag mit 4 h sind 4 h.

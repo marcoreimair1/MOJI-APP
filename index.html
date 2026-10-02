@@ -1124,6 +1124,7 @@ body.menuauf #avatar{transform:scale(.92)}
 #uabox .zabtn,#uabox .uaein{opacity:.3;pointer-events:none}
 #uabox.frei .zabtn,#uabox.frei .uaein{opacity:1;pointer-events:auto}
 .uahint b{color:var(--tx-2);font-weight:600}
+.uahint .uamin, .uahint .uamin b{color:var(--warn)}
 #uabox .zawert b{font-size:26px}
 #uabox .zawert u{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase}
 
@@ -6699,9 +6700,9 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
         <div class="kbox" data-k="ur">
           <div class="kkopf">
             <span class="kico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg></span>
-            <span class="ktxt"><b>Urlaubstage</b><small id="k-ur-jahr">—</small></span>
+            <span class="ktxt"><b>Urlaub</b><small id="k-ur-jahr">—</small></span>
           </div>
-          <div class="kzahl"><b id="k-ur">0</b><u>Tage offen</u></div>
+          <div class="kzahl"><b id="k-ur">0</b><u id="k-ur-einh">h offen</u></div>
           <div class="kbar"><i id="k-ur-bar"></i></div>
           <div class="kfuss"><small id="k-ur-sub">—</small></div>
           <div class="krad" id="k-ur-rad"></div>
@@ -6728,6 +6729,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
             <span class="ktxt"><b>Urlaubsanspruch</b><small>Pro Jahr</small></span>
           </div>
           <div class="uaein" id="ua-einheit">
+            <button data-ue="wochen">Wochen</button>
             <button data-ue="tage">Tage</button>
             <button data-ue="stunden">Stunden</button>
           </div>
@@ -7430,6 +7432,20 @@ function segH(on, from, to){
   const v = (t2m(to) - t2m(from)) / 60;
   return v > 0 ? r25(v) : 0;
 }
+/* Stunden von Vormittag und Nachmittag eines Plantags. Beginnt der
+   Nachmittag, bevor der Vormittag endet (Tippfehler, etwa 08–13 und
+   12–17), zaehlt die Ueberschneidung nur einmal. Der Editor warnt davor
+   (blockFehler); das hier faengt Altdaten ab. */
+function tagBloecke(cfg){
+  if(!cfg) return { vm:0, nm:0 };
+  const vm = segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo);
+  let nm = segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+  if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0 && t2m(cfg.nmFrom) < t2m(cfg.vmTo)
+     && t2m(cfg.nmTo) > t2m(cfg.vmFrom)){
+    nm = t2m(cfg.nmTo) > t2m(cfg.vmTo) ? segH(true, cfg.vmTo, cfg.nmTo) : 0;
+  }
+  return { vm:vm, nm:nm };
+}
 function dayPlan(sched, date){
   const dow = date.getDay();
   if(dow === 0) return { vm:0, nm:0, pause:0, cfg:null, wi:0 };
@@ -7437,15 +7453,7 @@ function dayPlan(sched, date){
   const wi = rhythmusWoche(sched, date);
   const cfg = (sched.weeks[wi] || sched.weeks[0])[dow];
   if(!cfg) return { vm:0, nm:0, pause:0, cfg:null, wi:wi };
-  const vm = segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo);
-  let nm = segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
-  /* Beginnt der Nachmittag, bevor der Vormittag endet (Tippfehler im Plan,
-     etwa 08–13 und 12–17), zaehlt die Ueberschneidung nur einmal. Der
-     Editor warnt davor (blockFehler); das hier faengt Altdaten ab. */
-  if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0 && t2m(cfg.nmFrom) < t2m(cfg.vmTo)
-     && t2m(cfg.nmTo) > t2m(cfg.vmFrom)){
-    nm = t2m(cfg.nmTo) > t2m(cfg.vmTo) ? segH(true, cfg.vmTo, cfg.nmTo) : 0;
-  }
+  const { vm, nm } = tagBloecke(cfg);
   let pause = 0;
   if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0){
     const p = (t2m(cfg.nmFrom) - t2m(cfg.vmTo)) / 60;
@@ -7717,83 +7725,132 @@ function fmtT(d){
    Das Ergebnis landet in p.stand und wird mitgespeichert, damit der
    Ist-Stand auch in der Datenbank steht und nicht nur am Bildschirm. */
 const r05 = x => Math.round(x * 2) / 2;
-/* ─── Urlaub in Stunden ────────────────────────────────────────────
-   Seit 28.09.2026 rechnet das Urlaubskonto in Stunden, auf die
-   Viertelstunde (Marcos Entscheidung): gutgeschrieben wird der Anspruch
-   in Stunden (konten.topfStd), genommen werden die Urlaubsstunden der
-   Tage aus evalDay — ein halber Vormittag mit 5 h sind 5 h, ein Samstag
-   mit 4 h sind 4 h. Tage sind nur noch Anzeige: Stunden geteilt durch
-   die Stunden des ueblichen Diensttags (tagFaktor). Vorher zaehlte jeder
-   Tag anteilig in Tagen, und ein Samstag mit 4 h war ein ganzer
-   Urlaubstag wie ein Montag mit 8 h.
+/* ─── Das Urlaubskonto: wertneutral in Urlaubswochen ────────────────
+   Gepruefte Rechtslage (Recherche vom 02.10.2026, Quellen im README):
+   Der Anspruch sind 5 Wochen im Jahr (§ 2 UrlG), unabhaengig von Lage
+   und Ausmass der Arbeitszeit. Ein Urlaubstag kostet je Diensttag
+   einen Tag, egal wie lang die Schicht ist (OGH 9 ObA 78/24x). In
+   Stunden darf man rechnen, wenn es vereinbart ist und wertneutral
+   bleibt: Anspruch = Wochen × Wochenstunden, Abzug = Planstunden des
+   Tages. Aendern sich Stunden oder Tage pro Woche, bleibt die Zahl der
+   Wochen gleich (OGH 8 ObA 35/12y, 9 ObA 20/14b).
 
-   Der uebliche Diensttag ist die haeufigste Tageslaenge im Plan (bei
-   Gleichstand die laengere) — nicht der Durchschnitt. Bei Mo–Fr 8 h und
-   Sa 4 h ergaebe der Durchschnitt 7,33 h: 25 Tage waeren 183,25 h, und
-   elf Arbeitstage stuenden als „11,5 Urlaubstage" da. Mit 8 h sind 25
-   Tage 200 h und ein Samstag ein halber Tag. */
-function tagFaktor(p){
-  p = p || ME;
+   Darum fuehrt MOJI das Konto in WOCHEN (konten.topfW). Damit sind
+   beide Rechenarten richtig und jederzeit umschaltbar (konten.modus,
+   spaeter je Mitarbeiter in MOJI-PRO):
+     'stunden' (Vorgabe) — ein Urlaubstag kostet Planstunden / Wochenstunden
+     'tage'              — ein Urlaubstag kostet 1 / Diensttage pro Woche,
+                           ein halber 0,5 / Diensttage pro Woche
+   Angezeigt wird die offene Zahl Wochen mal Wochenstunden bzw. mal
+   Diensttage des heute geltenden Plans. Gutgeschrieben wird jeden
+   1. Jaenner der Anspruch, umgerechnet mit dem Plan, der an dem Tag gilt.
+
+   Bis 02.10.2026 rechnete das Konto „Tage × haeufigste Tageslaenge"
+   (bei Mo–Fr 8 h, Sa 4 h also 200 h statt 220 h) und davor in Tagen
+   mit einem halben Tag fuer einen Samstag. Beides ist umgestellt. */
+/* Wochenstunden und Diensttage pro Woche eines Plans, gemittelt ueber
+   seinen Rhythmus (OGH 9 ObA 54/20m: bei wechselnden Wochen der Schnitt). */
+function planWoche(sched){
+  const sch = sched || defaultSched();
+  const wc = clamp(sch.weekCount || 1, 1, 4);
+  let std = 0, tage = 0;
+  for(let w = 0; w < wc; w++){
+    for(let dow = 1; dow <= 6; dow++){
+      const b = tagBloecke((sch.weeks[w] || sch.weeks[0])[dow]);
+      const h = b.vm + b.nm;
+      if(h > 0){ std += h; tage++; }
+    }
+  }
+  return { std: std / wc, tage: tage / wc };
+}
+/* Nur fuer die Umstellung: der Faktor der Fassung vom 28.09.2026 — die
+   haeufigste Tageslaenge im Plan, bei Gleichstand die laengere. */
+function tagLaengeAlt(p){
   const sch = (p && p.sched) || defaultSched();
   const wc = clamp(sch.weekCount || 1, 1, 4);
   const zahl = {};
   for(let w = 0; w < wc; w++){
     for(let dow = 1; dow <= 6; dow++){
-      const cfg = (sch.weeks[w] || sch.weeks[0])[dow];
-      const h = cfg ? r25(segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo) + segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo)) : 0;
+      const b = tagBloecke((sch.weeks[w] || sch.weeks[0])[dow]);
+      const h = r25(b.vm + b.nm);
       if(h > 0) zahl[h] = (zahl[h] || 0) + 1;
     }
   }
   let best = 0, oft = 0;
-  Object.keys(zahl).forEach(h => {
-    const n = zahl[h], x = +h;
-    if(n > oft || (n === oft && x > best)){ best = x; oft = n; }
-  });
+  Object.keys(zahl).forEach(h => { const n = zahl[h], x = +h; if(n > oft || (n === oft && x > best)){ best = x; oft = n; } });
   return best || 8;
 }
-/* Nur fuer die Umstellung: so rechnete die App bis 28.09.2026 Stunden
-   in Tage um — der Durchschnitt der Diensttage, auf die Viertelstunde. */
-function tagSchnittAlt(p){
-  const sch = (p && p.sched) || defaultSched();
-  const wc = clamp(sch.weekCount || 1, 1, 4);
-  let summe = 0, tage = 0;
-  for(let w = 0; w < wc; w++){
-    for(let dow = 1; dow <= 6; dow++){
-      const cfg = (sch.weeks[w] || sch.weeks[0])[dow];
-      const h = cfg ? segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo) + segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo) : 0;
-      if(h > 0){ summe += h; tage++; }
-    }
-  }
-  return tage ? r25(summe / tage) : 8;
+function planHeute(p){ return planWoche(schedFuer(p || ME, new Date())); }
+function kontoModus(p){ return (p && p.konten && p.konten.modus === 'tage') ? 'tage' : 'stunden'; }
+/* Was ein Urlaubstag (eine Zeile aus evalDay) vom Konto nimmt, in Wochen,
+   und wie viele Urlaubstage das an jenem Tag sind. */
+function urlaubAnteil(p, r){
+  if(!r || !(r.urlaub > 0)) return { w:0, t:0 };
+  const pw = planWoche(schedFuer(p, r.date));
+  if(!(pw.tage > 0) || !(pw.std > 0)) return { w:0, t:0 };
+  const w = kontoModus(p) === 'tage'
+    ? (r.scope === 'full' ? 1 : 0.5) / pw.tage
+    : r.urlaub / pw.std;
+  return { w:w, t:w * pw.tage };
 }
-/* Urlaubstage fuer die Anzeige: eine Nachkommastelle, ohne ",0". */
+/* Urlaubstage/-stunden fuer die Anzeige: eine Nachkommastelle, ohne ",0". */
 function fmtUT(v){
   const r = Math.round((+v || 0) * 10) / 10;
   return (Math.abs(r % 1) < 0.001 ? String(Math.round(r)) : String(r).replace('.', ','));
 }
 function wortUT(v){ return Math.abs((Math.round((+v || 0) * 10) / 10) - 1) < 0.001 ? 'Tag' : 'Tage'; }
-/* Der Anspruch pro Jahr in Stunden — egal, wie er hinterlegt ist. */
-function anspruchStd(p){
+/* Ein Kontostand in Wochen, so wie er angezeigt wird: die gewaehlte
+   Einheit vorn, die andere ungefaehr dahinter. */
+function urlaubText(p, w, kurz){
+  const pw = planHeute(p), std = r25(w * pw.std), tage = w * pw.tage;
+  if(kontoModus(p) === 'tage'){
+    return fmtUT(tage) + ' ' + wortUT(tage) + (kurz ? '' : ' · ' + fmtH(std) + ' h');
+  }
+  return fmtH(std) + ' h' + (kurz ? '' : ' · ≈ ' + fmtUT(tage) + ' ' + wortUT(tage));
+}
+/* Der Anspruch steht in Wochen (konten.anspruchW, Vorgabe 5 — das
+   gesetzliche Minimum, passt zu jedem Dienstplan) oder, wer es so
+   eingibt, in Tagen bzw. Stunden (anspruch/anspruchEinheit). */
+function anspruchEinheit(p){
+  const k = (p || ME || {}).konten || {};
+  return typeof k.anspruchW === 'number' ? 'wochen' : (k.anspruchEinheit === 'stunden' ? 'stunden' : 'tage');
+}
+/* Der Anspruch eines Jahres in Wochen, umgerechnet mit dem Plan vom 1.1. */
+function anspruchWochen(p, jahr){
   p = p || ME; if(!p || !p.konten) return 0;
   const k = p.konten;
-  return k.anspruchEinheit === 'stunden' ? r25(k.anspruch) : r25(k.anspruch * tagFaktor(p));
+  if(typeof k.anspruchW === 'number') return k.anspruchW;
+  const pw = planWoche(schedFuer(p, new Date(jahr || new Date().getFullYear(), 0, 1)));
+  if(k.anspruchEinheit === 'stunden') return pw.std > 0 ? k.anspruch / pw.std : 0;
+  return pw.tage > 0 ? k.anspruch / pw.tage : 0;
 }
-/* Und in Tagen, fuer die Anzeige. */
-function anspruchTage(p){
-  p = p || ME; if(!p || !p.konten) return 0;
-  const k = p.konten;
-  return k.anspruchEinheit === 'stunden' ? k.anspruch / tagFaktor(p) : k.anspruch;
+/* "5 Wochen im Jahr", "25 Tage im Jahr (4,2 Wochen)", "200,00 h im Jahr (4,5 Wochen)" */
+function anspruchWort(p){
+  p = p || ME; const k = p.konten, e = anspruchEinheit(p);
+  if(e === 'wochen') return fmtUT(k.anspruchW) + (wortUT(k.anspruchW) === 'Tag' ? ' Woche' : ' Wochen') + ' im Jahr';
+  return (e === 'stunden' ? fmtH(k.anspruch) + ' h' : fmtTage(k.anspruch) + (Math.abs(k.anspruch - 1) < 0.001 ? ' Tag' : ' Tage'))
+    + ' im Jahr (' + fmtUT(anspruchWochen(p)) + ' Wochen)';
 }
+function anspruchStd(p){ return r25(anspruchWochen(p) * planHeute(p).std); }
+function anspruchTage(p){ return anspruchWochen(p) * planHeute(p).tage; }
 /* Jeden 1. Jänner kommt der Anspruch in den Topf. Verpasste Jahre werden
    nachgetragen. Läuft nur auf dem echten Profil, nie auf einer Vorschau. */
 function urlaubGutschreiben(p){
   p = p || ME; if(!p || !p.konten) return;
   const k = p.konten, jahr = new Date().getFullYear();
   let n = 0;
-  while(k.gutJahr < jahr && n < 50){ k.gutJahr++; k.topfStd = r25(k.topfStd + anspruchStd(p)); n++; }
-  if(k.gutJahr > jahr) k.gutJahr = jahr;      /* Uhr zurückgestellt */
-  /* Fuer aeltere App-Fassungen, die nur den Topf in Tagen kennen. */
-  k.topf = r05(k.topfStd / tagFaktor(p));
+  while(k.gutJahrW < jahr && n < 50){ k.gutJahrW++; k.topfW += anspruchWochen(p, k.gutJahrW); n++; }
+  if(k.gutJahrW > jahr) k.gutJahrW = jahr;      /* Uhr zurückgestellt */
+  /* Fuer aeltere App-Fassungen mitgefuehrt: die kennen nur Tage bzw.
+     Stunden und schreiben selbst gut, solange gutJahr zurueckliegt. */
+  const pw = planHeute(p);
+  k.gutJahr = k.gutJahrW;
+  k.topf = r05(k.topfW * pw.tage);
+  k.topfStd = r25(k.topfW * pw.std);
+  /* Den Anspruch in Wochen kennen sie nicht: fuer sie in Tagen. Ins Feld
+     anspruchEinheit kommt nie 'wochen' — eine alte Fassung laese sonst
+     „5 Tage". */
+  if(typeof k.anspruchW === 'number'){ k.anspruch = r05(k.anspruchW * pw.tage); k.anspruchEinheit = 'tage'; }
 }
 function kontenRechnen(p){
   p = p || ME; if(!p || !p.konten) return null;
@@ -7807,37 +7864,46 @@ function kontenRechnen(p){
   });
   const jahr = new Date().getFullYear();
   const k = p.konten;
-  /* Genommen wird über alle Jahre gezählt, seit der Topf läuft — in
-     Stunden, so wie evalDay sie dem Urlaub gibt. */
-  let std = 0, jahrStd = 0;
+  /* Genommen wird über alle Jahre gezählt, seit der Topf läuft — je Tag
+     in Wochen, mit dem Plan, der an jenem Tag galt. */
+  let w = 0, jahrW = 0, jahrStd = 0;
   for(let y = Math.min(k.startJahr, jahr); y <= jahr; y++){
-    let j = 0;
-    for(let m = 0; m < 12; m++) j += monthSums(monthRows(p, y, m)).urlaub;
-    std += j;
-    if(y === jahr) jahrStd = r25(j);
+    for(let m = 0; m < 12; m++){
+      monthRows(p, y, m).forEach(r => {
+        if(!(r.urlaub > 0)) return;
+        const a = urlaubAnteil(p, r);
+        w += a.w;
+        if(y === jahr){ jahrW += a.w; jahrStd += r.urlaub; }
+      });
+    }
   }
-  std = r25(std);
-  const f = tagFaktor(p);
-  const offenStd = r25(k.topfStd - std);
+  const pw = planHeute(p);
+  const offenW = k.topfW - w;
   p.stand = {
     za:      r25(za + k.zaStart),
     zaRoh:   r25(za),
-    /* Die Wahrheit in Stunden … */
-    urlaubStd:   offenStd,
-    genommenStd: std,
-    jahrStd:     jahrStd,
-    topfStd:     r25(k.topfStd),
+    modus:   kontoModus(p),
+    /* Die Wahrheit in Wochen … */
+    urlaubW:     offenW,
+    genommenW:   w,
+    topfW:       k.topfW,
+    anspruchW:   anspruchWochen(p, jahr),
+    /* … in Stunden und Tagen nach dem heute geltenden Plan. */
+    wochenStd:   pw.std,
+    wochenTage:  pw.tage,
+    urlaubStd:   r25(offenW * pw.std),
+    urlaub:      offenW * pw.tage,
+    genommenStd: r25(w * pw.std),
+    genommen:    w * pw.tage,
+    jahrStd:     r25(jahrStd),
+    jahrTage:    jahrW * pw.tage,
+    topfStd:     r25(k.topfW * pw.std),
+    topf:        k.topfW * pw.tage,
     anspruchStd: anspruchStd(p),
-    faktor:      Math.round(f * 100) / 100,
-    /* … und dieselben Zahlen in Tagen, nur zum Anzeigen. */
-    urlaub:  offenStd / f,
-    genommen:std / f,
-    jahrTage:jahrStd / f,
-    topf:    k.topfStd / f,
-    anspruch: anspruchTage(p),
-    einheit: k.anspruchEinheit,
-    roh:     k.anspruch,
-    gutJahr: k.gutJahr,
+    anspruch:    anspruchTage(p),
+    einheit: anspruchEinheit(p),
+    roh:     typeof k.anspruchW === 'number' ? k.anspruchW : k.anspruch,
+    gutJahr: k.gutJahrW,
     jahr:    jahr,
     ts:      Date.now()
   };
@@ -8000,21 +8066,40 @@ function normalize(p){
   if(typeof k.zaStart !== 'number' || !isFinite(k.zaStart)) k.zaStart = 0;
   /* Urlaub: der Anspruch gilt pro Jahr und wird jeden 1. Jänner dem Topf
      gutgeschrieben. Der Topf läuft also weiter, Reste verfallen nicht. */
+  if(typeof k.anspruchW !== 'number' || !isFinite(k.anspruchW) || k.anspruchW < 0) delete k.anspruchW;
   if(typeof k.anspruch !== 'number' || !isFinite(k.anspruch)){
-    k.anspruch = (typeof k.urlaubJahr === 'number' && isFinite(k.urlaubJahr)) ? k.urlaubJahr : 25;
+    if(typeof k.urlaubJahr === 'number' && isFinite(k.urlaubJahr)) k.anspruch = k.urlaubJahr;
+    /* Neu: 5 Wochen, das gesetzliche Minimum (§ 2 UrlG). In Tagen sind das
+       bei Mo–Fr 25, bei Mo–Sa 30, bei drei Tagen 15. */
+    else { k.anspruch = 25; if(!('topfW' in k)) k.anspruchW = 5; }
   }
   if(k.anspruchEinheit !== 'stunden') k.anspruchEinheit = 'tage';
   const jetztJahr = new Date().getFullYear();
   if(typeof k.startJahr !== 'number' || !isFinite(k.startJahr)) k.startJahr = jetztJahr;
   if(typeof k.topf !== 'number' || !isFinite(k.topf)) k.topf = 0;
-  /* Einmal umstellen: der Topf in Tagen wird zu Stunden (28.09.2026).
-     Wer den Anspruch in Stunden fuehrte, dessen Tage kamen aus dem
-     Durchschnitt der Diensttage — zurueck also mit demselben, sonst
-     waeren es bei Mo–Fr 8 h, Sa 4 h rund 10 % zu viel. */
-  if(typeof k.topfStd !== 'number' || !isFinite(k.topfStd)){
-    k.topfStd = r25(k.topf * (k.anspruchEinheit === 'stunden' ? tagSchnittAlt(p) : tagFaktor(p)));
-  }
   if(typeof k.gutJahr !== 'number' || !isFinite(k.gutJahr)) k.gutJahr = k.startJahr - 1;
+  if(k.modus !== 'tage') k.modus = 'stunden';
+  /* Einmal umstellen auf Urlaubswochen (02.10.2026). Gutgeschrieben waren
+     Tage: im Feld topf, oder — wer die Fassung vom 28.09. schon offen
+     hatte — als topfStd = Tage × haeufigste Tageslaenge. Die Tage bleiben
+     erhalten und werden mit den Diensttagen pro Woche zu Wochen. */
+  if(typeof k.topfW !== 'number' || !isFinite(k.topfW)){
+    const tage = (typeof k.topfStd === 'number' && isFinite(k.topfStd))
+      ? k.topfStd / tagLaengeAlt(p) : (k.topf || 0);
+    const pw = planWoche(p.sched);
+    /* Die alte Vorgabe „25 Tage" stand fuer 5 Wochen — bei Mo–Fr stimmt
+       das, bei 5½ oder 6 Diensttagen waren es zu wenig. Nachgezaehlt am
+       02.10.2026: 20 von 21 Konten hatten sie nie geaendert. Sie wird zu
+       5 Wochen, und ein Topf, der nur aus dieser Vorgabe gutgeschrieben
+       wurde (nie am Rad gedreht), ebenso. Ein gedrehter Topf behaelt
+       seine Tage. */
+    const vorgabe = k.anspruchEinheit === 'tage' && k.anspruch === 25 && typeof k.anspruchW !== 'number';
+    const jahre = k.gutJahr - k.startJahr + 1;
+    if(vorgabe) k.anspruchW = 5;
+    k.topfW = (vorgabe && jahre >= 1 && Math.abs(tage - 25 * jahre) < 0.01) ? 5 * jahre
+            : pw.tage > 0 ? tage / pw.tage : 0;
+  }
+  if(typeof k.gutJahrW !== 'number' || !isFinite(k.gutJahrW)) k.gutJahrW = k.gutJahr;
   delete k.urlaubJahr;
   if(!p.stand || typeof p.stand !== 'object' || Array.isArray(p.stand)) p.stand = {};
   p.ort = EMPLOYER;
@@ -9547,6 +9632,8 @@ function radKern(texte, start, aendert){
     if(aendert) aendert(idx);
   }, { passive:true });
   el._setz = i => { stand = clamp(i, 0, texte.length - 1); stelle(); };
+  /* Wie ein Finger: stellen und melden (die Pruefungen drehen damit). */
+  el._dreh = i => { el._setz(i); if(aendert) aendert(stand); };
   /* Erst wenn der Kasten im Dokument haengt, laesst sich scrollen — und
      das Einrasten von scroll-snap kann sich danach noch einmal melden.
      Darum zweimal setzen und erst dann zuhoeren. */
@@ -10416,9 +10503,9 @@ function enterApp(){
   /* Beim Start gutschreiben, was seit dem letzten Mal an Jahreswechseln
      vorbeigezogen ist — sonst stünde der Topf bis zum ersten Sichern falsch. */
   try{
-    const vor = ME.konten ? ME.konten.gutJahr : null;
+    const vor = ME.konten ? ME.konten.gutJahrW : null;
     urlaubGutschreiben(ME);
-    if(ME.konten && ME.konten.gutJahr !== vor) save(); else kontenRechnen(ME);
+    if(ME.konten && ME.konten.gutJahrW !== vor) save(); else kontenRechnen(ME);
   }catch(e){ console.warn('[MOJI] Urlaub gutschreiben', e); }
   malAvatar();
   serieZaehlen();
@@ -13806,17 +13893,20 @@ function malKonten(vonNull){
         ? ' · Grundwert ' + (ME.konten.zaStart > 0 ? '+' : '−') + fmtH(Math.abs(ME.konten.zaStart)) + ' h'
         : '');
 
-  $('#k-ur-jahr').textContent = 'Topf · ' + fmtUT(st.anspruch || 0) + ' ' + wortUT(st.anspruch || 0) + ' pro Jahr';
+  /* Vorn die gewaehlte Einheit (Vorgabe Stunden), darunter die andere. */
+  const tageModus = st.modus === 'tage';
+  /* Der Anspruch so, wie er eingegeben wurde, die Wochen dahinter. */
+  $('#k-ur-jahr').textContent = 'Anspruch · ' + anspruchWort(ME);
   const elUr = $('#k-ur');
   if(vonNull && elUr) elUr.dataset.wert = '0';
-  zaehlAuf(elUr, st.urlaub || 0, v => fmtUT(v));
-  /* Darunter die Stunden — die sind die Wahrheit, die Tage die Umrechnung. */
-  $('#k-ur-sub').textContent = fmtH(st.urlaubStd || 0) + ' h offen · '
-    + ((st.jahrStd || 0) > 0 ? fmtH(st.jahrStd) + ' h in ' + st.jahr + ' genommen' : 'in ' + st.jahr + ' noch nichts genommen')
+  zaehlAuf(elUr, tageModus ? (st.urlaub || 0) : (st.urlaubStd || 0), v => tageModus ? fmtUT(v) : fmtH(v));
+  $('#k-ur-einh').textContent = tageModus ? 'Tage offen' : 'h offen';
+  $('#k-ur-sub').textContent = (tageModus ? fmtH(st.urlaubStd || 0) + ' h' : '≈ ' + fmtUT(st.urlaub || 0) + ' ' + wortUT(st.urlaub || 0))
+    + ' · ' + ((st.jahrStd || 0) > 0 ? fmtH(st.jahrStd) + ' h in ' + st.jahr + ' genommen' : 'in ' + st.jahr + ' noch nichts genommen')
     + ' · gutgeschrieben bis ' + st.gutJahr;
   const bar = $('#k-ur-bar');
   if(bar){
-    const anteil = st.topfStd > 0 ? Math.max(0, Math.min(1, (st.urlaubStd || 0) / st.topfStd)) : 0;
+    const anteil = st.topfW > 0 ? Math.max(0, Math.min(1, (st.urlaubW || 0) / st.topfW)) : 0;
     if(vonNull) bar.style.width = '0%';
     requestAnimationFrame(() => { bar.style.width = (anteil * 100).toFixed(1) + '%'; });
   }
@@ -13833,7 +13923,7 @@ function kontenFrei(an){
   kRaeder(auf);
 }
 /* Die beiden Raeder. Sie stehen nicht dauernd da: 800 Zeilen Zeitausgleich
-   und 560 Zeilen Urlaub baut niemand fuer jemanden, der nur nachsieht.
+   und 1300 Zeilen Urlaub baut niemand fuer jemanden, der nur nachsieht.
    Beim Aufsperren gebaut, beim Zusperren wieder weg. */
 let _kRad = { za:null, ur:null };
 function kRaeder(auf){
@@ -13850,17 +13940,33 @@ function kRaeder(auf){
     v => fmtVz(v) + ' h',
     v => { ME.konten.zaStart = r25(v - (st.zaRoh || 0)); malKonten(false); kBaldSichern(); });
   hZa.appendChild(_kRad.za);
-  /* Und hier die offenen Tage; der Topf ergibt sich aus dem, was schon
-     genommen wurde. */
-  /* Eingestellt wird in halben Tagen, gerechnet in Stunden: der Topf
-     ergibt sich aus den offenen Tagen mal dem ueblichen Diensttag plus
-     dem, was schon genommen wurde. */
-  _kRad.ur = radZahl(-30, 250, 0.5, r05(st.urlaub || 0),
-    v => fmtUT(v) + ' ' + wortUT(v),
-    v => { ME.konten.topfStd = r25(v * tagFaktor(ME) + (st.genommenStd || 0)); malKonten(false); kBaldSichern(); });
+  /* Und hier das Offene, in der Einheit des Kontos: Viertelstunden wie
+     ueberall, oder halbe Tage. Gebucht wird nur die Differenz zum Start,
+     in Wochen — zurueckdrehen stellt den alten Topf exakt wieder her
+     (vorher wurde der Start gerundet und der Topf dabei verschoben). */
+  const tageModus = st.modus === 'tage';
+  const proWoche = tageModus ? (st.wochenTage || 0) : (st.wochenStd || 0);
+  const urIst = tageModus ? (st.urlaub || 0) : (st.urlaubStd || 0), urSchritt = tageModus ? 0.5 : 0.25;
+  /* Um den Stand herum, damit das Rad auch einen grossen Stand fasst. */
+  const urVon = tageModus ? Math.min(-30, Math.floor(urIst) - 30) : Math.min(-20, Math.floor(urIst) - 100);
+  const urBis = tageModus ? Math.max(250, Math.ceil(urIst) + 30) : Math.max(300, Math.ceil(urIst) + 100);
+  const urStart = clamp(Math.round(urIst / urSchritt) * urSchritt, urVon, urBis);
+  const topf0 = ME.konten.topfW;
+  _kRad.ur = radZahl(urVon, urBis, urSchritt, urStart,
+    v => tageModus ? fmtUT(v) + ' ' + wortUT(v) : fmtH(v) + ' h',
+    v => {
+      if(!(proWoche > 0)) return;
+      ME.konten.topfW = Math.abs(v - urStart) < 1e-9 ? topf0 : topf0 + (v - urStart) / proWoche;
+      malKonten(false); kBaldSichern();
+    });
   hUr.appendChild(_kRad.ur);
   raederRichten($('#konten'));
 }
+/* Gedrehte Raeder kurz danach sichern. Die Funktion fehlte seit einem
+   Umbau — jede Drehung warf einen Fehler, gesichert wurde nur ueber den
+   Knopf. */
+let _kBaldT = null;
+function kBaldSichern(){ clearTimeout(_kBaldT); _kBaldT = setTimeout(() => { _kBaldT = null; save(); }, 420); }
 $('#dt-ok').addEventListener('click', dtSichern);
 function kontenOffen(){
   const k = $('#menu .menu-card');
@@ -14042,18 +14148,27 @@ function schlossStups(kennung){
 }
 function malAnspruch(){
   if(!ME) return;
-  const k = ME.konten, std = k.anspruchEinheit === 'stunden';
-  $$('#ua-einheit button').forEach(b => b.classList.toggle('on', (b.dataset.ue === 'stunden') === std));
-  $('#ua-wert').textContent = std ? fmtH(k.anspruch) : fmtTage(k.anspruch);
-  $('#ua-einh').textContent = std ? 'Stunden' : (Math.abs(k.anspruch - 1) < 0.001 ? 'Tag' : 'Tage');
-  const proTag = tagFaktor(ME);
+  const k = ME.konten, e = anspruchEinheit(ME);
+  $$('#ua-einheit button').forEach(b => b.classList.toggle('on', b.dataset.ue === e));
+  const eins = v => Math.abs(v - 1) < 0.001;
+  $('#ua-wert').textContent = e === 'wochen' ? fmtUT(k.anspruchW) : e === 'stunden' ? fmtH(k.anspruch) : fmtTage(k.anspruch);
+  $('#ua-einh').textContent = e === 'wochen' ? (eins(k.anspruchW) ? 'Woche' : 'Wochen')
+    : e === 'stunden' ? 'Stunden' : (eins(k.anspruch) ? 'Tag' : 'Tage');
   const st = kontenRechnen(ME) || {};
+  const pw = planHeute(ME), wochen = anspruchWochen(ME);
+  /* Gesetzlich sind es mindestens 5 Wochen (§ 2 UrlG) — bei 6 Diensttagen
+     30 Tage, bei 3 Diensttagen 15. Liegt der Anspruch darunter, sagt es
+     der Hinweis, statt still weiterzurechnen. */
+  const zuWenig = wochen < 5 - 1e-6 && pw.tage > 0;
   $('#ua-hint').innerHTML =
-      'Gerechnet wird in Stunden: <b>' + fmtH(anspruchStd(ME)) + ' h</b> im Jahr'
-    + (std ? ', das sind ' + fmtUT(anspruchTage(ME)) + ' ' + wortUT(anspruchTage(ME)) : '')
-    + ' — ein Urlaubstag sind ' + fmtH(proTag) + ' h, dein üblicher Diensttag.'
+      (e === 'wochen' ? 'Bei deinem Dienstplan (' : 'Das sind <b>' + fmtUT(wochen) + ' Wochen</b> im Jahr — bei deinem Dienstplan (')
+    + fmtUT(pw.tage) + ' Diensttage, ' + fmtH(pw.std) + ' h pro Woche) ' + (e === 'wochen' ? 'sind das ' : '')
+    + '<b>' + fmtUT(wochen * pw.tage) + ' ' + wortUT(wochen * pw.tage) + '</b> oder <b>' + fmtH(r25(wochen * pw.std)) + ' h</b>.'
+    + (zuWenig ? '<br><span class="uamin"><b>Gesetzlich sind es mindestens 5 Wochen</b>: bei deinem Dienstplan '
+        + fmtUT(5 * pw.tage) + ' Tage oder ' + fmtH(r25(5 * pw.std)) + ' h.</span>' : '')
     + '<br>Wird jeden 1. Jänner dem Topf gutgeschrieben — zuletzt für <b>' + st.gutJahr + '</b>. '
-    + 'Offen sind <b>' + fmtH(st.urlaubStd || 0) + ' h</b> (' + fmtUT(st.urlaub || 0) + ' ' + wortUT(st.urlaub || 0) + ').';
+    + 'Offen sind <b>' + urlaubText(ME, st.urlaubW || 0) + '</b>.';
+  $('#ua-hint').classList.toggle('zuwenig', zuWenig);
 }
 function uaAuf(an){
   const k = $('#menu .menu-card'); if(!k || !ME) return;
@@ -14069,9 +14184,10 @@ function uaAuf(an){
 }
 function uaSchritt(d){
   if(!ME || !$('#uabox').classList.contains('frei')) return;
-  const k = ME.konten;
-  if(k.anspruchEinheit === 'stunden') k.anspruch = Math.max(0, Math.min(2000, r25(k.anspruch + d * 1)));
-  else                                k.anspruch = Math.max(0, Math.min(200,  r05(k.anspruch + d * 0.5)));
+  const k = ME.konten, e = anspruchEinheit(ME);
+  if(e === 'wochen')       k.anspruchW = Math.max(0, Math.min(10,   r05(k.anspruchW + d * 0.5)));
+  else if(e === 'stunden') k.anspruch  = Math.max(0, Math.min(2000, r25(k.anspruch + d * 1)));
+  else                     k.anspruch  = Math.max(0, Math.min(200,  r05(k.anspruch + d * 0.5)));
   malAnspruch();
 }
 $('#ua-lock').addEventListener('click', () => uaFrei(!$('#uabox').classList.contains('frei')));
@@ -14081,11 +14197,16 @@ $('#ua-einheit').addEventListener('click', e => {
   const b = e.target.closest('[data-ue]'); if(!b || !ME) return;
   if(!$('#uabox').classList.contains('frei')) return;
   const k = ME.konten, neu = b.dataset.ue;
-  if(k.anspruchEinheit === neu) return;
-  const proTag = tagFaktor(ME);
-  /* Beim Wechsel den Wert mitnehmen, statt bei null zu beginnen. */
-  k.anspruch = neu === 'stunden' ? r25(k.anspruch * proTag) : r05(k.anspruch / proTag);
-  k.anspruchEinheit = neu;
+  if(anspruchEinheit(ME) === neu) return;
+  /* Beim Wechsel denselben Anspruch mitnehmen — ueber die Wochen, also
+     wertneutral: Wochen × Diensttage bzw. × Wochenstunden. */
+  const pw = planHeute(ME), w = anspruchWochen(ME);
+  if(neu === 'wochen'){ k.anspruchW = w; }
+  else {
+    delete k.anspruchW;
+    if(pw.tage > 0 && pw.std > 0) k.anspruch = neu === 'stunden' ? r25(w * pw.std) : r05(w * pw.tage);
+    k.anspruchEinheit = neu;
+  }
   malAnspruch();
 });
 let _uaSaveT = [];
@@ -14724,10 +14845,15 @@ function malKontingent(){
     const jetzt = kontenRechnen(ME) || {};
     if(SH.type === 'urlaub'){
       const neu = standMit(k, { t:'urlaub', s:SH.scope, text:'', aw:false }) || {};
-      el.innerHTML = 'Urlaub offen: <b>' + fmtUT(jetzt.urlaub || 0) + ' ' + wortUT(jetzt.urlaub || 0) + '</b> · '
-        + fmtH(jetzt.urlaubStd || 0) + ' h'
-        + (Math.abs((neu.urlaubStd || 0) - (jetzt.urlaubStd || 0)) > 0.001
-            ? ' <i>· danach ' + fmtUT(neu.urlaub || 0) + ' ' + wortUT(neu.urlaub || 0) + ' · ' + fmtH(neu.urlaubStd || 0) + ' h</i>' : '');
+      /* Das Konto zaehlt vom Startjahr bis heute. Ein Tag im naechsten
+         Jahr geht erst ab dem 1. Jaenner ab — das steht dann dabei,
+         statt dass die Wirkung still fehlt. */
+      const jahr = new Date().getFullYear(), start = ME.konten.startJahr;
+      const anders = SH.y > jahr ? ' <i>· geht ab 1. Jänner ' + SH.y + ' ab</i>'
+        : SH.y < start ? ' <i>· vor Beginn des Kontos (' + start + '), wird nicht abgezogen</i>' : '';
+      el.innerHTML = 'Urlaub offen: <b>' + urlaubText(ME, jetzt.urlaubW || 0) + '</b>'
+        + (anders || (Math.abs((neu.urlaubW || 0) - (jetzt.urlaubW || 0)) > 1e-9
+            ? ' <i>· danach ' + urlaubText(ME, neu.urlaubW || 0, true) + '</i>' : ''));
     } else {
       const za = r25(SH.zaDir === 'minus' ? -SH.zaH : SH.zaH);
       const neu = standMit(k, { t:'zeit', za:za }) || {};
@@ -15295,11 +15421,21 @@ function zrZaehlen(){
     p.events[k] = { t:Q.type, s:'full', text:'', aw:false };
     tageListe.push(new Date(d));
   }
-  /* Das Konto rechnet in Stunden; die Urlaubstage sind dieselben
-     Stunden, geteilt durch den ueblichen Diensttag. */
-  tageListe.forEach(d => { stunden += evalDay(p, d.getFullYear(), d.getMonth(), d.getDate())[feld]; });
-  const urlaubTage = Q.type === 'urlaub' ? r25(stunden) / tagFaktor(ME) : 0;
-  return { tage: tage, belegt: belegt, stunden: r25(stunden), urlaubTage: urlaubTage };
+  /* Was das Konto dafuer nimmt, je Tag wie im Konto (urlaubAnteil):
+     im Stunden-Modus die Planstunden, im Tage-Modus ein Tag je Diensttag.
+     Was in einem spaeteren Jahr liegt, geht erst dann ab. */
+  const jahr = new Date().getFullYear();
+  let urlaubTage = 0, spaeterStd = 0;
+  tageListe.forEach(d => {
+    const row = evalDay(p, d.getFullYear(), d.getMonth(), d.getDate());
+    stunden += row[feld];
+    if(Q.type === 'urlaub'){
+      urlaubTage += urlaubAnteil(p, row).t;
+      if(d.getFullYear() > jahr) spaeterStd += row.urlaub;
+    }
+  });
+  return { tage: tage, belegt: belegt, stunden: r25(stunden), urlaubTage: urlaubTage,
+           spaeterStd: r25(spaeterStd), spaeterJahr: jahr + 1 };
 }
 /* Ein Tag im Von-bis-Feld: kurz, das Jahr nur, wenn es nicht das laufende ist. */
 function zrTag(d){
@@ -15337,12 +15473,14 @@ function qSummary(){
   } else if(!Q.to){
     el.innerHTML = '<i>Nur dieser eine Tag? Dann gleich eintragen.</i>';
   } else {
-    /* Live mitgerechnet: die Stunden, beim Urlaub auch die Urlaubstage
-       (ein Samstag mit vier Stunden ist ein ganzer Urlaubstag). */
+    /* Live mitgerechnet: die Stunden; beim Urlaub im Tage-Modus auch die
+       Urlaubstage (ein Diensttag ist ein Tag, auch ein kurzer Samstag). */
     const art = Q.type === 'urlaub' ? 'Urlaub' : Q.type === 'krank' ? 'Krankenstand' : 'Vermerk';
+    const tageModus = kontoModus(ME) === 'tage';
     el.innerHTML = '<b>' + z.tage + (z.tage === 1 ? ' Arbeitstag' : ' Arbeitstage') + '</b>'
       + ' · ' + fmtH(z.stunden) + ' h ' + art
-      + (Q.type === 'urlaub' ? ' · <b>' + fmtUT(z.urlaubTage) + (wortUT(z.urlaubTage) === 'Tag' ? ' Urlaubstag' : ' Urlaubstage') + '</b>' : '')
+      + (Q.type === 'urlaub' && tageModus ? ' · <b>' + fmtUT(z.urlaubTage) + (wortUT(z.urlaubTage) === 'Tag' ? ' Urlaubstag' : ' Urlaubstage') + '</b>' : '')
+      + (z.spaeterStd > 0 ? '<br><i>davon ' + fmtH(z.spaeterStd) + ' h in ' + z.spaeterJahr + ' — gehen ab 1. Jänner ab</i>' : '')
       + (z.belegt ? '<br><i>' + z.belegt + ' schon belegt, ' + (z.belegt === 1 ? 'wird' : 'werden') + ' ersetzt</i>' : '')
       + '<br><i>Sonntage, Feiertage und freie Tage zählen nicht.</i>';
   }
@@ -15371,7 +15509,7 @@ function zrkAuf(an){
   /* Beim Urlaub steht gleich dabei, wie viel noch offen ist. */
   if(auf && ME){
     const st = kontenRechnen(ME) || {};
-    $('#zo-urlaub').textContent = 'Vom Urlaub abgezogen · ' + fmtUT(st.urlaub || 0) + ' ' + wortUT(st.urlaub || 0) + ' offen';
+    $('#zo-urlaub').textContent = 'Vom Urlaub abgezogen · ' + urlaubText(ME, st.urlaubW || 0, true) + ' offen';
   }
 }
 /* Ein Tipp daneben oder Escape schließt die Wahl wieder. */
@@ -15478,7 +15616,9 @@ function zrMalen(){
   const ist = $('#zrp-ist');
   if(Q.type === 'urlaub'){
     const st = kontenRechnen(ME) || {};
-    $('#zrp-ist-v').textContent = fmtUT(st.urlaub || 0);
+    const tageModus = st.modus === 'tage';
+    const zahl = w => tageModus ? fmtUT(w * (st.wochenTage || 0)) : fmtH(r25(w * (st.wochenStd || 0)));
+    $('#zrp-ist-v').textContent = zahl(st.urlaubW || 0);
     /* Ist ein Zeitraum gewählt, steht daneben, was danach bleibt. */
     const p = Object.assign({}, ME, { events: Object.assign({}, ME.events),
                                       konten: Object.assign({}, ME.konten) });
@@ -15489,9 +15629,9 @@ function zrMalen(){
         { t:'urlaub', s:Q.scope, text:'', aw:false };
     }
     const neu = r ? (kontenRechnen(p) || {}) : st;
-    $('#zrp-ist-u').textContent = Math.abs((neu.urlaubStd || 0) - (st.urlaubStd || 0)) > 0.001
-      ? 'danach ' + fmtUT(neu.urlaub || 0)
-      : 'Tage offen';
+    $('#zrp-ist-u').textContent = Math.abs((neu.urlaubW || 0) - (st.urlaubW || 0)) > 1e-9
+      ? 'danach ' + zahl(neu.urlaubW || 0)
+      : (tageModus ? 'Tage offen' : 'h offen');
     ist.hidden = false;
   } else ist.hidden = true;
 

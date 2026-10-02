@@ -288,7 +288,11 @@ window.__WEITER = function(){
      schloss.className);
 
   /* ── Zeitausgleich und Urlaubstage: Schloss und Raeder ── */
-  ME.konten.zaStart = 6.5; ME.konten.topfStd = 25 * tagFaktor(ME);   /* seit 28.09.2026 in Stunden */
+  /* Seit 02.10.2026 fuehrt das Konto Urlaubswochen: 5 Wochen sind beim
+     Standardplan (Mo–Fr 8 h, Sa 4 h) 44 h × 5 = 220 h. */
+  ME.konten.zaStart = 6.5; ME.konten.topfW = 5; ME.konten.modus = 'stunden';
+  ok('Der Testplan hat 44 h an 6 Tagen', planHeute(ME).std === 44 && planHeute(ME).tage === 6,
+     JSON.stringify(planHeute(ME)));
   var kSchloss = document.getElementById('k-lock');
   ok('Das Schloss ist dasselbe wie bei den Dienstzeiten',
      kSchloss.classList.contains('swz') && kSchloss.classList.contains('hr-schloss'),
@@ -302,16 +306,30 @@ window.__WEITER = function(){
   ok('Zeitausgleich in Viertelstunden',
      document.querySelectorAll('#k-za-rad .rad-roll i').length === 801,
      document.querySelectorAll('#k-za-rad .rad-roll i').length);
-  ok('Urlaub in halben Tagen',
-     document.querySelectorAll('#k-ur-rad .rad-roll i').length === 561,
+  /* Im Stundenkonto Viertelstunden, um den Stand herum: −20 … 320 h. */
+  ok('Urlaub in Viertelstunden',
+     document.querySelectorAll('#k-ur-rad .rad-roll i').length === 1361,
      document.querySelectorAll('#k-ur-rad .rad-roll i').length);
   ok('Und das Rad steht auf dem Stand',
      document.querySelector('#k-za-rad .rad-roll i.on').textContent === '+6,50 h',
      document.querySelector('#k-za-rad .rad-roll i.on').textContent);
   ok('Auch beim Urlaub',
-     document.querySelector('#k-ur-rad .rad-roll i.on').textContent === '25 Tage',
+     document.querySelector('#k-ur-rad .rad-roll i.on').textContent === '220,00 h',
      document.querySelector('#k-ur-rad .rad-roll i.on').textContent);
+  /* Drehen bucht nur die Differenz, in Wochen; zurueck ist exakt der alte Topf. */
+  var urRad = _kRad.ur, urIdx = function(v){ return urRad._werte.indexOf(v); };
+  urRad._dreh(urIdx(176));
+  ok('176 h eingestellt sind 4 Wochen', Math.abs(ME.konten.topfW - 4) < 1e-9, ME.konten.topfW);
+  urRad._dreh(urIdx(220));
+  ok('Zurueck auf 220 h ist exakt der alte Topf', ME.konten.topfW === 5, ME.konten.topfW);
   kontenFrei(false);
+  ME.konten.modus = 'tage'; malKonten(false); kontenFrei(true);
+  ok('Im Tagekonto halbe Tage: 5 Wochen sind 30 Tage',
+     document.querySelector('#k-ur-rad .rad-roll i.on').textContent === '30 Tage',
+     document.querySelector('#k-ur-rad .rad-roll i.on').textContent);
+  ok('Und die Kachel zaehlt Tage', document.getElementById('k-ur-einh').textContent === 'Tage offen');
+  kontenFrei(false); ME.konten.modus = 'stunden'; malKonten(false);
+  ok('Im Stundenkonto zaehlt sie Stunden', document.getElementById('k-ur-einh').textContent === 'h offen');
   ok('Zusperren raeumt die Raeder wieder weg',
      document.querySelectorAll('#konten .rad').length === 0);
   /* Ein Tipp auf die Kachel weist aufs Schloss. */

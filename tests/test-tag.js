@@ -238,45 +238,146 @@ ME.events['2026-10-26'] = { t:'zeit', za:-4 };
 ok('Ein Einloesen am Feiertag zaehlt nichts', evalDay(ME, 2026, 9, 26).za === 0 && evalDay(ME, 2026, 9, 26).work === 0);
 delete ME.events['2026-10-26'];
 
-/* ── 11c · Das Urlaubskonto rechnet in Stunden ──
-   Marco, 28.09.2026: im Hintergrund immer in Viertelstunden, Tage nur
-   zum Anzeigen — umgerechnet mit dem ueblichen Diensttag. */
-ok('Der uebliche Diensttag ist 8 h, nicht der Durchschnitt 7,33 h', tagFaktor(ME) === 8, tagFaktor(ME));
+/* ── 11c · Das Urlaubskonto: wertneutral in Urlaubswochen ──
+   Gepruefte Rechtslage 02.10.2026: 5 Wochen im Jahr (§ 2 UrlG); ein
+   Urlaubstag kostet einen Diensttag (OGH 9 ObA 78/24x); in Stunden nur
+   wertneutral (Wochen × Wochenstunden); aendert sich der Plan, bleiben
+   die Wochen (OGH 8 ObA 35/12y). Standardplan: Mo–Fr 8 h, Sa 4 h. */
+var pwS = planWoche(defaultSched());
+ok('Der Standardplan: 44 h an 6 Diensttagen', pwS.std === 44 && pwS.tage === 6, JSON.stringify(pwS));
 var alt = normalize({ id:'a', vorname:'A', nachname:'B', dob:'1990-01-01', av:3, konten:{ topf:25, anspruch:25 } });
-ok('Ein alter Topf in Tagen wird zu Stunden', alt.konten.topfStd === 200, alt.konten.topfStd);
-ok('25 Tage Anspruch sind 200 h', anspruchStd(alt) === 200);
-/* Anspruch in Stunden: 200 h wurden frueher mit dem Schnitt 7,25 h zu
-   27,5 Tagen. Zurueck mit demselben Schnitt, nicht mit 8 h. */
-var altStd = normalize({ id:'s', vorname:'S', nachname:'T', dob:'1990-01-01', av:3,
-  konten:{ topf:27.5, anspruch:200, anspruchEinheit:'stunden' } });
-/* Genauer als die alte Rundung auf halbe Tage geht es nicht: 27,5 x 7,25
-   = 199,375, auf die Viertelstunde 199,5 h. Mit 8 h waeren es 220 h. */
-ok('Wer in Stunden rechnete, behaelt seine Stunden (bis auf die alte Rundung)',
-   altStd.konten.topfStd === 199.5, altStd.konten.topfStd);
-alt.konten.gutJahr = new Date().getFullYear() - 1; urlaubGutschreiben(alt);
-ok('Gutgeschrieben wird in Stunden', alt.konten.topfStd === 400 && alt.konten.topf === 50, alt.konten.topfStd);
+ok('Ein alter Topf von 25 Tagen bleibt 25 Tage', Math.abs(alt.konten.topfW * 6 - 25) < 1e-9, alt.konten.topfW);
+ok('Und das Konto rechnet ab jetzt in Stunden', alt.konten.modus === 'stunden');
+var alt28 = normalize({ id:'b', vorname:'A', nachname:'B', dob:'1990-01-01', av:3, konten:{ topf:25, topfStd:200, anspruch:25 } });
+ok('Die Fassung vom 28.09. (200 h = 25 × 8 h) wird ebenso 25 Tage', Math.abs(alt28.konten.topfW * 6 - 25) < 1e-9, alt28.konten.topfW);
+ok('Wer schon Wochen hat, wird nicht nochmal umgestellt',
+   normalize({ id:'c', vorname:'A', nachname:'B', dob:'1990-01-01', av:3, konten:{ topf:99, topfStd:9, topfW:5 } }).konten.topfW === 5);
 var j = new Date().getFullYear();
-function probeKonto(ev, y, m, d){
-  var p = normalize({ id:'k', vorname:'K', nachname:'L', dob:'1990-01-01', av:3, konten:{ topfStd:200, anspruch:25, startJahr:j, gutJahr:j } });
-  if(ev) p.events[key(y, m, d)] = ev;
-  return kontenRechnen(p);
+function probe(konten, ev, plan){
+  var p = normalize({ id:'k', vorname:'K', nachname:'L', dob:'1990-01-01', av:3,
+    konten: Object.assign({ topfW:5, anspruch:30, startJahr:j, gutJahr:j, gutJahrW:j }, konten || {}) });
+  if(plan) plan(p);
+  Object.keys(ev || {}).forEach(function(k){ p.events[k] = ev[k]; });
+  return p;
 }
-var basis = probeKonto(null);
-ok('Ohne Urlaub: 200 h, 25 Tage', basis.urlaubStd === 200 && basis.urlaub === 25);
-function samstagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 5, t).getDay() === 6) return t; } }
-function montagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 5, t).getDay() === 1) return t; } }
-var sa = probeKonto({ t:'urlaub', s:'full' }, j, 5, samstagIn(j));
-ok('Ein Samstag mit 4 h: 4 h weg, ein halber Tag', sa.urlaubStd === 196 && sa.urlaub === 24.5, sa.urlaubStd);
-var mo = probeKonto({ t:'urlaub', s:'full' }, j, 5, montagIn(j));
-ok('Ein Montag mit 8 h: ein ganzer Tag', mo.urlaubStd === 192 && mo.urlaub === 24);
+/* Im Februar: der hat in Oesterreich nie einen Feiertag (im Juni koennen
+   Pfingstmontag und Fronleichnam in die erste Woche fallen). */
+function samstagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 1, t).getDay() === 6) return t; } }
+function montagIn(jahr){ for(var t = 1; t <= 7; t++){ if(new Date(jahr, 1, t).getDay() === 1) return t; } }
+var kSa = key(j, 1, samstagIn(j)), kMo = key(j, 1, montagIn(j));
+var b0 = kontenRechnen(probe());
+ok('5 Wochen sind 220 h oder 30 Tage', b0.urlaubStd === 220 && Math.abs(b0.urlaub - 30) < 1e-9, b0.urlaubStd + ' / ' + b0.urlaub);
+var ev1 = {}; ev1[kSa] = { t:'urlaub', s:'full' };
+var sa = kontenRechnen(probe(null, ev1));
+ok('Stundenkonto: ein Samstag mit 4 h kostet 4 h', sa.urlaubStd === 216, sa.urlaubStd);
+var ev2 = {}; ev2[kMo] = { t:'urlaub', s:'full' };
+var mo = kontenRechnen(probe(null, ev2));
+ok('Und ein Montag 8 h', mo.urlaubStd === 212, mo.urlaubStd);
+var saT = kontenRechnen(probe({ modus:'tage' }, ev1));
+ok('Tagekonto: der Samstag ist ein ganzer Urlaubstag (OGH 9 ObA 78/24x)', Math.abs(saT.urlaub - 29) < 1e-9, saT.urlaub);
+var ev3 = {}; ev3[kMo] = { t:'urlaub', s:'vm' };
+ok('Tagekonto: ein Vormittag ist ein halber', Math.abs(kontenRechnen(probe({ modus:'tage' }, ev3)).urlaub - 29.5) < 1e-9);
+/* Eine ganze Woche Urlaub kostet in beiden Rechenarten genau eine Woche. */
+var woche = {}, mo0 = montagIn(j);
+for(var t = 0; t < 6; t++) woche[key(j, 1, mo0 + t)] = { t:'urlaub', s:'full' };
+ok('Eine Woche Urlaub: in Stunden genau 1 Woche weg', Math.abs(kontenRechnen(probe(null, woche)).urlaubW - 4) < 1e-9);
+ok('Und in Tagen ebenso', Math.abs(kontenRechnen(probe({ modus:'tage' }, woche)).urlaubW - 4) < 1e-9);
 /* Ungleiche Haelften: Vormittag bis zur Mittagspause, Nachmittag danach. */
-var ung = normalize({ id:'u', vorname:'U', nachname:'V', dob:'1990-01-01', av:3, konten:{ topfStd:200, anspruch:25, startJahr:j, gutJahr:j } });
-[1,2,3,4,5].forEach(function(t){ ung.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'07:00', vmTo:'12:00', nmOn:true, nmFrom:'13:00', nmTo:'16:00' }; }); });
-ung.events[key(j, 5, montagIn(j))] = { t:'urlaub', s:'vm' };
+var ung = probe(null, ev3, function(p){
+  [1,2,3,4,5].forEach(function(t){ p.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'07:00', vmTo:'12:00', nmOn:true, nmFrom:'13:00', nmTo:'16:00' }; }); });
+});
 var uk = kontenRechnen(ung);
-ok('Vormittag 07–12 bei einem 8-h-Tag: genau 5 h weg', uk.urlaubStd === 195, uk.urlaubStd);
-ok('Das sind 0,625 Tage, angezeigt 0,6', Math.abs(uk.genommen - 0.625) < 0.001 && fmtUT(uk.genommen) === '0,6');
+ok('Vormittag 07–12: genau 5 h weg', uk.urlaubStd === 215, uk.urlaubStd);
 ok('Immer auf die Viertelstunde', [sa, mo, uk].every(function(x){ return Math.abs(x.urlaubStd * 4 - Math.round(x.urlaubStd * 4)) < 1e-9; }));
+/* Teilzeit: drei Tage zu je 6 h. 5 Wochen sind 15 Tage oder 90 h. */
+function teilzeit(p){
+  p.sched.weeks.forEach(function(w){ for(var d = 1; d <= 6; d++) w[d] = (d <= 3)
+    ? { vmOn:true, vmFrom:'08:00', vmTo:'12:00', nmOn:true, nmFrom:'13:00', nmTo:'15:00' }
+    : { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+}
+var tz = kontenRechnen(probe(null, null, teilzeit));
+ok('Teilzeit 3 × 6 h: 5 Wochen sind 90 h oder 15 Tage', tz.urlaubStd === 90 && Math.abs(tz.urlaub - 15) < 1e-9, tz.urlaubStd + ' / ' + tz.urlaub);
+/* Planwechsel: die Wochen bleiben, die Anzeige rechnet mit dem neuen Plan. */
+var pw2 = probe(null, null, teilzeit);
+ok('Wechsel von 6 auf 3 Diensttage: weiter 5 Wochen offen', kontenRechnen(pw2).urlaubW === 5);
+/* Gutgeschrieben: der Anspruch in Tagen, mit dem Plan vom 1. Jaenner. */
+var gut = probe({ topfW:0, anspruch:30, gutJahrW:j - 1, gutJahr:j - 1 });
+urlaubGutschreiben(gut);
+ok('30 Tage Anspruch bei 6 Diensttagen: 5 Wochen gutgeschrieben', Math.abs(gut.konten.topfW - 5) < 1e-9 && gut.konten.gutJahrW === j, gut.konten.topfW);
+ok('Fuer aeltere Fassungen mitgefuehrt: 30 Tage, 220 h, Jahr', gut.konten.topf === 30 && gut.konten.topfStd === 220 && gut.konten.gutJahr === j);
+var gutS = probe({ topfW:0, anspruch:220, anspruchEinheit:'stunden', gutJahrW:j - 1, gutJahr:j - 1 });
+urlaubGutschreiben(gutS);
+ok('220 h Anspruch bei 44 h pro Woche: ebenso 5 Wochen', Math.abs(gutS.konten.topfW - 5) < 1e-9, gutS.konten.topfW);
+urlaubGutschreiben(gutS);
+ok('Zweimal am selben Tag schreibt nicht doppelt gut', Math.abs(gutS.konten.topfW - 5) < 1e-9);
+/* Die Anzeige: Stundenkonto vorn in Stunden, die Tage ungefaehr dahinter. */
+ok('urlaubText im Stundenkonto', urlaubText(probe(), 5) === '220,00 h · ≈ 30 Tage', urlaubText(probe(), 5));
+ok('urlaubText im Tagekonto', urlaubText(probe({ modus:'tage' }), 5) === '30 Tage · 220,00 h', urlaubText(probe({ modus:'tage' }), 5));
+ok('Ein Tag heisst Tag', urlaubText(probe({ modus:'tage' }), 1/6, true) === '1 Tag');
+/* Die alte Vorgabe „25 Tage" war als 5 Wochen gemeint (02.10.2026: 20 von
+   21 Konten hatten sie nie geaendert, 11 davon mit 5½ oder 6 Diensttagen). */
+function altProfil(konten, plan){
+  var p = { id:'m', vorname:'M', nachname:'N', dob:'1990-01-01', av:3, konten: konten };
+  if(plan){ var q = normalize({ id:'x', vorname:'X', nachname:'Y', dob:'1990-01-01', av:3 }); plan(q); p.sched = q.sched; }
+  return normalize(p);
+}
+var v6 = altProfil({ topf:25, anspruch:25, startJahr:j, gutJahr:j });
+ok('Nie geaendert, Mo–Sa: aus 25 Tagen werden 5 Wochen = 30 Tage', v6.konten.anspruchW === 5 && v6.konten.topfW === 5
+   && Math.abs(kontenRechnen(v6).urlaub - 30) < 1e-9 && kontenRechnen(v6).urlaubStd === 220, JSON.stringify([v6.konten.anspruchW, v6.konten.topfW]));
+var v5 = altProfil({ topf:25, anspruch:25, startJahr:j, gutJahr:j }, function(q){ q.sched.weeks.forEach(function(w){ w[6] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; }); });
+ok('Mo–Fr: es bleiben 25 Tage, 200 h', v5.konten.topfW === 5 && Math.abs(kontenRechnen(v5).urlaub - 25) < 1e-9 && kontenRechnen(v5).urlaubStd === 200);
+var vZwei = altProfil({ topf:50, anspruch:25, startJahr:j - 1, gutJahr:j });
+ok('Zwei Jahre nur Vorgabe: 10 Wochen', vZwei.konten.topfW === 10, vZwei.konten.topfW);
+var vDreh = altProfil({ topf:23, anspruch:25, startJahr:j, gutJahr:j });
+ok('Am Rad gedreht: der Topf behaelt seine Tage, der Anspruch wird 5 Wochen',
+   Math.abs(vDreh.konten.topfW * 6 - 23) < 1e-9 && vDreh.konten.anspruchW === 5, vDreh.konten.topfW);
+var vEigen = altProfil({ topf:25, anspruch:28.5, startJahr:j, gutJahr:j });
+ok('Ein eigener Anspruch bleibt, wie er ist', vEigen.konten.anspruch === 28.5 && !('anspruchW' in vEigen.konten)
+   && Math.abs(vEigen.konten.topfW * 6 - 25) < 1e-9);
+var vStd = altProfil({ topf:27.5, anspruch:200, anspruchEinheit:'stunden', startJahr:j, gutJahr:j });
+ok('Ein Anspruch in Stunden ebenso', vStd.konten.anspruch === 200 && vStd.konten.anspruchEinheit === 'stunden' && !('anspruchW' in vStd.konten));
+var vNeu = normalize({ id:'n', vorname:'N', nachname:'O', dob:'1990-01-01', av:3 });
+ok('Ein neues Profil: 5 Wochen, leerer Topf', vNeu.konten.anspruchW === 5 && vNeu.konten.topfW === 0);
+urlaubGutschreiben(vNeu);
+ok('Gutgeschrieben: 5 Wochen', vNeu.konten.topfW === 5 && vNeu.konten.gutJahrW === j);
+ok('Fuer aeltere Fassungen in Tagen gespiegelt, nie als „wochen"',
+   vNeu.konten.anspruch === 30 && vNeu.konten.anspruchEinheit === 'tage', JSON.stringify([vNeu.konten.anspruch, vNeu.konten.anspruchEinheit]));
+var vRund = normalize(JSON.parse(JSON.stringify(vNeu)));
+ok('Neu geladen: weiter 5 Wochen, nichts doppelt', vRund.konten.anspruchW === 5 && vRund.konten.topfW === 5 && anspruchWochen(vRund) === 5);
+/* Eine alte Fassung schrieb den Spiegel um (etwa Teilzeit-Plan dort) —
+   die Wochen gelten trotzdem. */
+vRund.konten.anspruch = 15; vRund.konten.topf = 3;
+ok('Der Spiegel zaehlt nicht, die Wochen schon', anspruchWochen(vRund) === 5 && kontenRechnen(vRund).urlaubW === 5);
+ok('anspruchWort in Wochen', anspruchWort(vNeu) === '5 Wochen im Jahr', anspruchWort(vNeu));
+ok('anspruchWort in Tagen', anspruchWort(vEigen) === '28,5 Tage im Jahr (4,8 Wochen)', anspruchWort(vEigen));
+
+/* Der Hinweis zum Anspruch nennt das gesetzliche Minimum, wenn es fehlt. */
+var meVor = ME;
+ME = probe({ anspruch:25 }); uaAuf(true);
+var hint = document.querySelector('#ua-hint');
+ok('25 Tage bei 6 Diensttagen: Hinweis auf 5 Wochen = 30 Tage',
+   !!hint.querySelector('.uamin') && hint.textContent.indexOf('mindestens 5 Wochen') >= 0 && hint.textContent.indexOf('30 Tage oder 220,00 h') >= 0, hint.textContent);
+ME.konten.anspruch = 30; malAnspruch();
+ok('30 Tage: kein Hinweis', !hint.querySelector('.uamin') && hint.textContent.indexOf('5 Wochen') >= 0, hint.textContent);
+/* Drei Einheiten; der Wechsel nimmt denselben Anspruch mit, ueber die Wochen. */
+ME = probe({ anspruchW:5 }); uaAuf(true); uaFrei(true);
+var ein = function(e){ return document.querySelector('#ua-einheit [data-ue="' + e + '"]'); };
+ok('Drei Knoepfe: Wochen, Tage, Stunden', document.querySelectorAll('#ua-einheit button').length === 3 && ein('wochen').classList.contains('on'));
+ok('In Wochen: 5 Wochen, darunter 30 Tage oder 220 h', document.querySelector('#ua-wert').textContent === '5'
+   && document.querySelector('#ua-einh').textContent === 'Wochen' && hint.textContent.indexOf('sind das 30 Tage oder 220,00 h') >= 0, hint.textContent);
+ok('Und kein Hinweis aufs Minimum', !hint.querySelector('.uamin'));
+tipp(ein('tage'));
+ok('Wechsel zu Tagen: 30 Tage', ME.konten.anspruch === 30 && ME.konten.anspruchEinheit === 'tage' && !('anspruchW' in ME.konten)
+   && document.querySelector('#ua-wert').textContent === '30');
+tipp(ein('stunden'));
+ok('Zu Stunden: 220 h', ME.konten.anspruch === 220 && ME.konten.anspruchEinheit === 'stunden');
+tipp(ein('wochen'));
+ok('Zurueck zu Wochen: genau 5', ME.konten.anspruchW === 5, ME.konten.anspruchW);
+uaSchritt(1);
+ok('Plus in Wochen: eine halbe mehr', ME.konten.anspruchW === 5.5);
+uaSchritt(-1); uaSchritt(-1);
+ok('Unter 5 Wochen kommt der Hinweis', ME.konten.anspruchW === 4.5 && !!hint.querySelector('.uamin'));
+uaFrei(false); uaAuf(false); ME = meVor;
 closeSheet();
 
 /* ── 12 · Einloesen hoechstens, was geplant ist ──
