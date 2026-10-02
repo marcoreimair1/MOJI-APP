@@ -22,6 +22,7 @@ const fs = require('fs');
    Stundenrechnung hat, will das zuerst lesen. */
 const REIHEN = [
   ['test-rhythmus',     'Wochenrhythmus über Jahre mit 53 Kalenderwochen'],
+  ['test-rechnung',     'Tagesrechnung: Feiertage, Eintragsarten, ZA, Bloecke'],
   ['test-dienstzeiten', 'Dienstzeiten mit Datum, schedAlt und schedFuer'],
   ['test-erinnerung',   'Die einmalige Frage nach der Monats-Erinnerung'],
   ['test-einstieg',     'Einstieg, die zwei Blaetter und der Funnel'],

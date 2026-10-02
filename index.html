@@ -7256,6 +7256,10 @@ const TYPES = {
   zeit:   { label:'Zeitausgleich', color:'#BFD0F2', pdf:[65,99,228], pdfF:[203,221,255], desc:'Sammeln oder einlösen' }
 };
 
+/* Was als Eintrag gespeichert werden darf. TYPES kennt dazu 'feier' fuer
+   die Anzeige der echten Feiertage — ein gespeicherter Eintrag 'feier'
+   loeschte frueher die Planstunden eines normalen Tages. */
+const ARTEN = new Set(['urlaub', 'krank', 'eigen', 'zeit']);
 const ICONS = {
   zeit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3.2 1.9"/></svg>',
   urlaub:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2L19 19M19 5l-1.8 1.8M6.8 17.2L5 19"/></svg>',
@@ -7434,7 +7438,14 @@ function dayPlan(sched, date){
   const cfg = (sched.weeks[wi] || sched.weeks[0])[dow];
   if(!cfg) return { vm:0, nm:0, pause:0, cfg:null, wi:wi };
   const vm = segH(cfg.vmOn, cfg.vmFrom, cfg.vmTo);
-  const nm = segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+  let nm = segH(cfg.nmOn, cfg.nmFrom, cfg.nmTo);
+  /* Beginnt der Nachmittag, bevor der Vormittag endet (Tippfehler im Plan,
+     etwa 08–13 und 12–17), zaehlt die Ueberschneidung nur einmal. Der
+     Editor warnt davor (blockFehler); das hier faengt Altdaten ab. */
+  if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0 && t2m(cfg.nmFrom) < t2m(cfg.vmTo)
+     && t2m(cfg.nmTo) > t2m(cfg.vmFrom)){
+    nm = t2m(cfg.nmTo) > t2m(cfg.vmTo) ? segH(true, cfg.vmTo, cfg.nmTo) : 0;
+  }
   let pause = 0;
   if(cfg.vmOn && cfg.nmOn && vm > 0 && nm > 0){
     const p = (t2m(cfg.nmFrom) - t2m(cfg.vmTo)) / 60;
@@ -7558,7 +7569,7 @@ function evalDay(profile, y, m, d){
   /* Kennt diese Fassung die Art nicht — etwa weil ein Eintrag aus einer
      neueren Fassung stammt und wir zurückgegangen sind —, wird er
      übergangen statt die Ansicht abstürzen zu lassen. */
-  const ev   = (roh && TYPES[roh.t]) ? roh : null;
+  const ev   = (roh && ARTEN.has(roh.t)) ? roh : null;
 
   const out = {
     k:k, date:date, dow:date.getDay(), day:d,
@@ -7585,10 +7596,13 @@ function evalDay(profile, y, m, d){
        bleibt, die Stunden kommen als Arbeit dazu und aufs Konto.
        Einloesen geht an einem Feiertag nicht, dort ist nichts geplant. */
     if(ev && ev.t === 'zeit' && r25(+ev.za || 0) > 0){
-      const za = r25(+ev.za);
+      const za = Math.min(r25(+ev.za), 24);
       out.work = za; out.za = za;
       out.note = hol + ' · ' + fmtH(za) + ' h gesammelt';
     }
+    /* Ein Vermerk aendert am Feiertag keine Stunden, sein Text soll aber
+       im Kalender und im PDF stehen. */
+    if(ev && ev.t === 'eigen'){ out.note = hol + ' · ' + ((ev.text || '').trim() || 'Vermerk'); out.vermerk = true; }
     return out;
   }
   /* ── Zeitausgleich ──────────────────────────────────────────────
@@ -7605,26 +7619,33 @@ function evalDay(profile, y, m, d){
       const weg = Math.min(-za, geplant);
       out.zeit = weg;
       out.work = r25(geplant - weg);
-      out.za = -weg;                       /* nur was wirklich abgeht */
+      out.za = -weg || 0;                  /* nur was wirklich abgeht, nie -0 */
       if(out.work <= 0){
         out.work = 0; out.pause = 0;
         out.vmFrom = out.vmTo = out.nmFrom = out.nmTo = '';
       }
-      out.note = 'Zeitausgleich · ' + fmtH(weg) + ' h eingelöst';
+      out.note = weg > 0 ? 'Zeitausgleich · ' + fmtH(weg) + ' h eingelöst'
+                         : 'Zeitausgleich · kein Dienst, nichts eingelöst';
     } else if(za > 0){
-      out.work = r25(plan.vm + plan.nm + za);
-      out.za = za;
-      out.note = 'Zeitausgleich · ' + fmtH(za) + ' h gesammelt';
+      /* Ein Tag hat 24 Stunden: mehr als 24 − Plan laesst sich nicht sammeln. */
+      const plus = Math.min(za, Math.max(0, r25(24 - (plan.vm + plan.nm))));
+      out.work = r25(plan.vm + plan.nm + plus);
+      out.za = plus;
+      out.note = 'Zeitausgleich · ' + fmtH(plus) + ' h gesammelt';
     } else {
       out.type = null;
     }
     return out;
   }
   if(ev){
-    const s = ev.s || 'full';
+    const s = (ev.s === 'vm' || ev.s === 'nm') ? ev.s : 'full';
     out.type = ev.t; out.scope = s;
     let taken = 0;
-    if(s === 'full'){ taken = plan.vm + plan.nm; out.work = 0; out.pause = 0;
+    if(ev.t === 'eigen' && ev.aw){
+      /* Zaehlt als Arbeitszeit: Uhrzeiten, Pause und Stunden bleiben wie
+         geplant — vorher verschwanden Zeiten und Pause aus dem PDF. */
+    }
+    else if(s === 'full'){ taken = plan.vm + plan.nm; out.work = 0; out.pause = 0;
       out.vmFrom = out.vmTo = out.nmFrom = out.nmTo = ''; }
     else if(s === 'vm'){ taken = plan.vm; out.work = plan.nm; out.pause = 0;
       out.vmFrom = out.vmTo = ''; }
@@ -7633,15 +7654,14 @@ function evalDay(profile, y, m, d){
 
     if(ev.t === 'urlaub') out.urlaub = taken;
     else if(ev.t === 'krank') out.krank = taken;
-    else if(ev.t === 'eigen'){
-      if(ev.aw){ out.work += taken; }
-      else out.sonst = taken;
-    }
+    else if(ev.t === 'eigen' && !ev.aw) out.sonst = taken;
     const half = s === 'full' ? '' : (s === 'vm' ? ' · Vormittag' : ' · Nachmittag');
     out.note = (ev.t === 'eigen' ? (ev.text || 'Sonstiges') : TYPES[ev.t].label) + half;
-    /* Ein freier Tag mitten in einem Zeitraum: traegt die Farbe, zaehlt
-       aber nichts — an dem Tag ist kein Dienst geplant. */
-    if(ev.frei){ out.frei = true; out.note += ' · kein Dienst'; }
+    /* Ein freier Tag mitten in einem Zeitraum traegt die Farbe, zaehlt aber
+       nichts. Ob er frei ist, sagt der Plan, der an dem Tag gilt — nicht
+       der Merker vom Eintragen: bekommt der Tag spaeter Dienst, ist er ein
+       normaler Tag des Zeitraums und zaehlt. */
+    if(ev.frei && plan.vm + plan.nm <= 0){ out.frei = true; out.note += ' · kein Dienst'; }
   }
   return out;
 }
@@ -7652,13 +7672,23 @@ function monthRows(profile, y, m){
 }
 function monthSums(rows){
   const s = { work:0, urlaub:0, krank:0, feier:0, sonst:0, zeit:0, pause:0, za:0,
+              zaPlus:0, zaMinus:0, feierArbeit:0, dFeierArbeit:0,
               dWork:0, dUrlaub:0, dKrank:0, dFeier:0, dSonst:0, dZeit:0, dTotal:0 };
   rows.forEach(r => {
     s.work += r.work; s.urlaub += r.urlaub; s.krank += r.krank;
     s.feier += r.feier; s.sonst += r.sonst; s.zeit += r.zeit;
     s.pause += r.pause; s.za += r.za;
-    /* Tage anteilig: ein halber Urlaubstag zählt 0,5. Der Anteil ergibt sich
-       aus den Stunden gegenüber dem, was an diesem Tag geplant war. */
+    if(r.za > 0) s.zaPlus += r.za; else if(r.za < 0) s.zaMinus -= r.za;
+    /* Ein Feiertag mit Planstunden ist ein ganzer Feiertag, auch wenn an ihm
+       gearbeitet wurde — die Arbeit steht nur in den Stunden (s.work) und
+       eigens in feierArbeit. Vorher teilte sie den Tag: 3 Feiertage wurden
+       im PDF zu „2,5 Tage". */
+    if(r.type === 'feier' && r.feier > 0){
+      s.dFeier += 1; s.dTotal += 1;
+      if(r.work > 0){ s.feierArbeit += r.work; s.dFeierArbeit += 1; }
+      return;
+    }
+    /* Sonst Tage anteilig nach Stunden: ein halber Tag zählt seinen Anteil. */
     const tag = r.work + r.urlaub + r.krank + r.feier + r.sonst + r.zeit;
     if(tag > 0){
       s.dWork   += r.work   / tag;
@@ -7928,7 +7958,9 @@ function normalize(p){
   if(p.events && typeof p.events === 'object'){
     Object.keys(p.events).forEach(k => {
       const e = p.events[k];
-      if(!e || !e.t || !TYPES[e.t]) delete p.events[k];
+      if(!e || !e.t || !ARTEN.has(e.t)){ delete p.events[k]; return; }
+      /* Unbekannter Umfang (etwa aus einer anderen Fassung) gilt als ganzer Tag. */
+      if(e.t !== 'zeit' && e.s !== 'vm' && e.s !== 'nm') e.s = 'full';
     });
   }
   /* Nur die Nummer des Motivs, kein Bild — die Zeile in der Cloud bleibt klein.
@@ -14171,7 +14203,9 @@ function renderCal(){
     if(geb && r.day === geb.tag) html += '<span class="gift" data-geb="'+r.day+'" role="button" '
       + 'aria-label="Geburtstag feiern" title="Antippen">' + PK_GESCHENK + '</span>';
     if(r.type) html += '<span class="ico" style="color:'+TYPES[r.type].color+'">'+ICONS[r.type]+'</span>';
-    const tot = r.work + r.urlaub + r.krank + r.feier + r.sonst;
+    /* Mit eingeloestem Zeitausgleich — sonst zeigte die Zelle weniger als
+       die Tagesbilanz und die Monatssumme. */
+    const tot = r.work + r.urlaub + r.krank + r.feier + r.sonst + r.zeit;
     html += '<span class="hrs">'+(tot > 0 ? fmtH(tot) : (isSun ? '' : '–'))+'</span>';
     html += '</button>';
   });
@@ -14585,8 +14619,9 @@ function openSheet(y, m, d){
     : 'Laut Dienstplan dienstfrei';
   $('#sh-sub').innerHTML = ICONS.zeit + '<span>' + esc(planTxt) + '</span>';
   $('#sh-holiday').style.display = hol ? 'flex' : 'none';
-  /* Freier Tag in einem Zeitraum: wozu er gehoert und dass er nicht zaehlt. */
-  const frei = !!(ev && ev.frei && !hol);
+  /* Freier Tag in einem Zeitraum: wozu er gehoert und dass er nicht zaehlt —
+     nur, solange der Plan an dem Tag wirklich keinen Dienst hat. */
+  const frei = !!(ev && ev.frei && !hol && plan.vm + plan.nm <= 0);
   $('#sh-frei').style.display = frei ? 'flex' : 'none';
   if(frei){
     const teile = String(ev.ser || '').split('>');
@@ -14598,7 +14633,10 @@ function openSheet(y, m, d){
     $('#sh-frei-t').innerHTML = 'Teil ' + art + (von && bis ? ' vom <b>' + esc(von) + '</b> bis <b>' + esc(bis) + '</b>' : '')
       + '. Weil du an diesem Tag keinen Dienst hast, ' + folge + '.';
   }
-  SH._frei = frei ? { t: ev.t, ser: ev.ser } : null;
+  /* Herkunft merken, damit Speichern sie nicht verliert: die Kennung der
+     Serie immer, der Merker frei nur fuer Tage, die einer waren. */
+  SH._frei = (ev && ev.frei && !hol) ? { t: ev.t, ser: ev.ser } : null;
+  SH._ser  = (ev && ev.ser) ? { t: ev.t, ser: ev.ser } : null;
   if(hol) $('#sh-holiday-t').innerHTML = '<b>' + hol + '</b> — gesetzlicher Feiertag, wird automatisch gezählt.';
 
   $('#sh-opts').innerHTML = ['urlaub','krank','zeit','eigen'].map(t => {
@@ -15086,7 +15124,10 @@ $('#sh-save').addEventListener('click', () => {
   }  ME.events[k] = { t:SH.type, s:SH.scope, text:SH.type === 'eigen' ? SH.text.trim() : '',
                      aw:SH.type === 'eigen' ? (SH.aw && shAwStunden() > 0) : false };
   /* Ein freier Tag im Zeitraum bleibt einer, solange die Art dieselbe ist. */
-  if(SH._frei && SH._frei.t === SH.type){ ME.events[k].frei = true; if(SH._frei.ser) ME.events[k].ser = SH._frei.ser; }
+  /* Bleibt die Art gleich, bleibt der Tag Teil seiner Serie — sonst liess
+     „Alle N Tage zuruecksetzen" ihn nach einem Speichern stehen. */
+  if(SH._ser && SH._ser.t === SH.type) ME.events[k].ser = SH._ser.ser;
+  if(SH._frei && SH._frei.t === SH.type) ME.events[k].frei = true;
   save(); closeSheet(); tagBlitz(k);
   toast((SH.type === 'eigen' ? (SH.text.trim() || 'Vermerk') : TYPES[SH.type].label) + ' eingetragen');
 });
