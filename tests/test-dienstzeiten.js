@@ -261,6 +261,26 @@ ok('Die aktuelle Fassung ist hervorgehoben', !!host.querySelector('.shist-z.jetz
   const morgen = new Date(); morgen.setDate(morgen.getDate() + 1);
   ME.schedAlt = [{ bis: key(morgen.getFullYear(), morgen.getMonth(), morgen.getDate()), sched: defaultSched() }];
   ok('Plan gilt erst ab spaeter: keine Frage', !rotFrageNoetig());
+  /* Gegenpruefung vor dem Ausrollen */
+  ME = normalize({ id:'pK', vorname:'K', dob:'1990-01-01' });
+  DRAFT = JSON.parse(JSON.stringify(ME.sched)); DRAFT.weekCount = 2;
+  const off0 = DRAFT.offset;
+  sabAuf(); sabSchritt(2);
+  document.getElementById('sab-ab').value = '2026-11-04'; sabRotMalen();
+  const anders = document.querySelector('#sab-rot-w button:not(.on)');
+  anders.click();
+  ok('Im Datumsschritt eine andere Woche gewaehlt', DRAFT.offset !== off0);
+  sabSchritt(1);
+  ok('Zurueck zu „Nur korrigieren": der Versatz ist wieder der alte', DRAFT.offset === off0, DRAFT.offset + ' / ' + off0);
+  sabSchritt(2); document.getElementById('sab-ab').value = '2026-11-04'; sabRotMalen();
+  document.querySelector('#sab-rot-w button:not(.on)').click(); sabZu();
+  ok('Schliessen ohne Sichern ebenso', DRAFT.offset === off0);
+  DRAFT = null;
+  /* Assistent: ein ueber „Zurueck" abgewaehlter Tag ist frei. */
+  ZA.wc = 1; ZA.bezug = null; ZA.tage = [[1, 2], [], [], []]; ZA.sched = defaultSched();
+  ZA.sched.weeks[0][3].vmOn = true;                   /* frueher gewaehlt, wieder abgewaehlt */
+  try{ zaFertig(); }catch(e){}
+  ok('Abgewaehlter Mittwoch ist frei', !OB.sched.weeks[0][3].vmOn && !OB.sched.weeks[0][3].nmOn && OB.sched.weeks[0][1].vmOn);
 }
 ME = null;
 window.__FERTIG = true;

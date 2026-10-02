@@ -103,6 +103,12 @@ ok('Aufraeumen: der Sonntag am Rand geht mit', freiAufraeumen() === 1 && !ME.eve
 setzen(true);
 ME.events['2026-09-20'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-14>2026-09-25', frei:true };
 ok('Liegt er dazwischen, bleibt er', freiAufraeumen() === 0 && !!ME.events['2026-09-20']);
+/* Gegenpruefung: ein frei-Tag, der inzwischen Dienst hat (Samstag), ist ein
+   zaehlender Urlaubstag und bleibt, auch am Rand. */
+setzen(true);
+['21','22','23','24','25'].forEach(function(d){ delete ME.events['2026-09-' + d]; });
+ME.events['2026-09-19'].frei = true;                 /* Samstag mit Dienst */
+ok('frei-Eintrag mit Dienst am Rand bleibt', freiAufraeumen() === 0 && !!ME.events['2026-09-19'] && evalDay(ME, 2026, 8, 19).urlaub === 4);
 ME.events['2026-09-13'] = { t:'urlaub', s:'full', text:'', aw:false, ser:'2026-09-01>2026-09-12', frei:true };
 ok('Ein freier Tag einer verschwundenen Serie geht', freiAufraeumen() === 1 && !ME.events['2026-09-13']);
 ME.events = { '2026-09-16': { t:'urlaub', s:'full', text:'', aw:false } };   /* fuer 7 */

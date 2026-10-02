@@ -131,6 +131,18 @@ ok('2 h eingeloest: Zeiten laut Plan, vermerkt', b18.vmFrom === '08:00' && b18.n
 var pG = profil({ '2026-09-16': { t:'zeit', za:-4 } });
 ok('Gleich lange Haelften: welche frei war, ist offen — Zeiten laut Plan', tag(pG, '2026-09-16').zeiten === 'plan' && tag(pG, '2026-09-16').nmFrom === '13:00');
 ok('Sammeln am Sonntag: Zeiten nicht erfasst', tag(profil({ '2026-09-20': { t:'zeit', za:3 } }), '2026-09-20').zeiten === 'fehlt');
+/* Gegenpruefung vor dem Ausrollen: Arbeit an einem Feiertag ohne Plan
+   (Allerheiligen 2026 ist ein Sonntag) zaehlt als Feiertagsarbeit. */
+var nov = monthSums(monthRows(profil({ '2026-11-01': { t:'zeit', za:5 } }), 2026, 10));
+ok('Sonntagsfeiertag mit 5 h: Feiertagsarbeit 5 h an 1 Tag', nov.feierArbeit === 5 && nov.dFeierArbeit === 1 && nov.zaPlus === 5, JSON.stringify([nov.feierArbeit, nov.dFeierArbeit]));
+var dz2 = monthSums(monthRows(profil({ '2026-11-01': { t:'zeit', za:5 }, '2026-11-02': { t:'zeit', za:1 } }), 2026, 10));
+ok('Gemischt: nur die Feiertagsstunden', dz2.feierArbeit === 5 && dz2.zaPlus === 6);
+/* Monatsuebersicht: die Kachel Arbeit steht auch, wenn nur am Feiertag gearbeitet wurde. */
+ME = profil({ '2026-12-08': { t:'zeit', za:6 } });
+ME.sched.weeks.forEach(function(w){ for(var d = 1; d <= 6; d++) w[d] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+enterApp(); CAL.y = 2026; CAL.m = 11; renderCal();
+ok('Nur Feiertagsarbeit: die Kachel Arbeit mit 6 h', document.querySelector('#mb-leg').textContent.indexOf('Arbeit6,00 h') >= 0, document.querySelector('#mb-leg').textContent);
+ME = null;
 
 /* ── 9 · Die Kalenderzelle zeigt eingeloesten Zeitausgleich mit ── */
 ME = profil({ '2026-09-16': { t:'zeit', za:-3 } });

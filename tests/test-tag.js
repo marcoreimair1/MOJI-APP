@@ -303,6 +303,38 @@ ok('Teilzeit 3 × 6 h: 5 Wochen sind 90 h oder 15 Tage', tz.urlaubStd === 90 && 
 /* Planwechsel: die Wochen bleiben, die Anzeige rechnet mit dem neuen Plan. */
 var pw2 = probe(null, null, teilzeit);
 ok('Wechsel von 6 auf 3 Diensttage: weiter 5 Wochen offen', kontenRechnen(pw2).urlaubW === 5);
+/* Gegenpruefung vor dem Ausrollen (02.10.2026) */
+{
+  const zuk = new Date(); zuk.setDate(zuk.getDate() + 30);
+  const bisIso = key(zuk.getFullYear(), zuk.getMonth(), zuk.getDate());
+  const mf = normalize({ id:'mf', vorname:'M', nachname:'F', dob:'1990-01-01', av:3 });
+  mf.sched.weeks.forEach(function(w){ w[6] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+  const zwei = JSON.parse(JSON.stringify(mf.sched));
+  [3,4,5].forEach(function(t){ zwei.weeks.forEach(function(w){ w[t] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; }); });
+  /* Gespeichert mit der alten Fassung: ein gedrehter Topf von 20 Tagen,
+     Mo–Fr gilt bis in einem Monat, danach nur Mo+Di. */
+  const um = normalize({ id:'um', vorname:'U', nachname:'M', dob:'1990-01-01', av:3,
+    konten:{ topf:20, anspruch:25, startJahr:j, gutJahr:j }, sched: zwei, schedAlt:[{ bis: bisIso, sched: mf.sched }] });
+  ok('Umstellung mit dem heute geltenden Plan: 20 Tage bleiben 20 (4 Wochen bei Mo–Fr)', Math.abs(um.konten.topfW - 4) < 1e-9, um.konten.topfW);
+  ok('Und angezeigt 20 Tage', Math.abs(kontenRechnen(um).urlaub - 20) < 1e-9, kontenRechnen(um).urlaub);
+  /* Einheit wechseln nach einem Planwechsel im Jahr: 5 Wochen bleiben 5. */
+  const sechs = normalize({ id:'s6', vorname:'S', nachname:'X', dob:'1990-01-01', av:3 }).sched;
+  const meAlt = ME;
+  ME = probe({ anspruchW:5 }); ME.sched = JSON.parse(JSON.stringify(mf.sched)); ME.schedAlt = [{ bis: key(j, 0, 15), sched: sechs }];
+  uaAuf(true); uaFrei(true);
+  const knopf = function(e){ return document.querySelector('#ua-einheit [data-ue="' + e + '"]'); };
+  tipp(knopf('tage'));
+  ok('Nach dem Wechsel auf Mo–Fr: 5 Wochen sind 25 Tage', ME.konten.anspruch === 25, ME.konten.anspruch);
+  tipp(knopf('wochen'));
+  ok('Und zurueck genau 5 Wochen', ME.konten.anspruchW === 5, ME.konten.anspruchW);
+  tipp(knopf('stunden')); tipp(knopf('wochen'));
+  ok('Auch ueber Stunden', ME.konten.anspruchW === 5, ME.konten.anspruchW);
+  uaFrei(false); uaAuf(false); ME = meAlt;
+  /* tagLaengeAlt rechnet wie damals: rohe Bloecke, auch ueberlappend. */
+  const ue = normalize({ id:'ue', vorname:'U', nachname:'E', dob:'1990-01-01', av:3 });
+  [1,2,3,4,5].forEach(function(t){ ue.sched.weeks.forEach(function(w){ w[t] = { vmOn:true, vmFrom:'08:00', vmTo:'13:00', nmOn:true, nmFrom:'12:00', nmTo:'17:00' }; }); });
+  ok('tagLaengeAlt bei 08–13 + 12–17: 10 h wie der alte Faktor', tagLaengeAlt(ue) === 10, tagLaengeAlt(ue));
+}
 /* Gutgeschrieben: der Anspruch in Tagen, mit dem Plan vom 1. Jaenner. */
 var gut = probe({ topfW:0, anspruch:30, gutJahrW:j - 1, gutJahr:j - 1 });
 urlaubGutschreiben(gut);

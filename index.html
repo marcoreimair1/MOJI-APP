@@ -7380,7 +7380,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-09-28-0100';
+const APP_STAND = '2026-10-02-2335';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7789,9 +7789,11 @@ function monthSums(rows){
        gearbeitet wurde — die Arbeit steht nur in den Stunden (s.work) und
        eigens in feierArbeit. Vorher teilte sie den Tag: 3 Feiertage wurden
        im PDF zu „2,5 Tage". */
+    /* Arbeit am Feiertag zaehlt eigens — auch an einem Feiertag ohne
+       Planstunden (Sonntag, freier Samstag). */
+    if(r.type === 'feier' && r.work > 0){ s.feierArbeit += r.work; s.dFeierArbeit += 1; }
     if(r.type === 'feier' && r.feier > 0){
       s.dFeier += 1; s.dTotal += 1;
-      if(r.work > 0){ s.feierArbeit += r.work; s.dFeierArbeit += 1; }
       return;
     }
     /* Ein halber Tag zählt 0,5 — der Block bis zur Mittagspause oder der
@@ -7881,8 +7883,11 @@ function tagLaengeAlt(p){
   const zahl = {};
   for(let w = 0; w < wc; w++){
     for(let dow = 1; dow <= 6; dow++){
-      const b = tagBloecke((sch.weeks[w] || sch.weeks[0])[dow]);
-      const h = r25(b.vm + b.nm);
+      /* Genau wie tagFaktor damals: die rohen Blocklaengen, ohne die
+         spaeter eingefuehrte Ueberschneidungsregel — sonst ergaebe
+         topfStd / Faktor nicht die Tage, die die alte Fassung zeigte. */
+      const c = (sch.weeks[w] || sch.weeks[0])[dow];
+      const h = c ? r25(segH(c.vmOn, c.vmFrom, c.vmTo) + segH(c.nmOn, c.nmFrom, c.nmTo)) : 0;
       if(h > 0) zahl[h] = (zahl[h] || 0) + 1;
     }
   }
@@ -7930,7 +7935,10 @@ function anspruchWochen(p, jahr){
   p = p || ME; if(!p || !p.konten) return 0;
   const k = p.konten;
   if(typeof k.anspruchW === 'number') return k.anspruchW;
-  const pw = planWoche(schedFuer(p, new Date(jahr || new Date().getFullYear(), 0, 1)));
+  /* Gutgeschrieben wird mit dem Plan vom 1. Jaenner; angezeigt und beim
+     Wechsel der Einheit umgerechnet mit dem heutigen — sonst war
+     5 Wochen → Tage → Wochen nach einem Planwechsel 4,17 Wochen. */
+  const pw = jahr ? planWoche(schedFuer(p, new Date(jahr, 0, 1))) : planHeute(p);
   if(k.anspruchEinheit === 'stunden') return pw.std > 0 ? k.anspruch / pw.std : 0;
   return pw.tage > 0 ? k.anspruch / pw.tage : 0;
 }
@@ -8208,7 +8216,16 @@ function normalize(p){
   if(typeof k.topfW !== 'number' || !isFinite(k.topfW)){
     const tage = (typeof k.topfStd === 'number' && isFinite(k.topfStd))
       ? k.topfStd / tagLaengeAlt(p) : (k.topf || 0);
-    const pw = planWoche(p.sched);
+    /* Mit dem Plan, der HEUTE gilt — wie die Anzeige (planHeute). p.sched
+       kann ein Wechsel sein, der erst kuenftig gilt (Pruefung vor dem
+       Ausrollen, 02.10.2026: der Topf wurde sonst aufgeblaeht oder ging
+       ganz verloren). Hat er keine Diensttage, ein Plan, der welche hat. */
+    let pw = planWoche(schedFuer(p, new Date()));
+    if(!(pw.tage > 0)) pw = planWoche(p.sched);
+    if(!(pw.tage > 0)){
+      const mit = (p.schedAlt || []).map(e => planWoche(e.sched)).filter(x => x.tage > 0).pop();
+      if(mit) pw = mit;
+    }
     /* Die alte Vorgabe „25 Tage" stand fuer 5 Wochen — bei Mo–Fr stimmt
        das, bei 5½ oder 6 Diensttagen waren es zu wenig. Nachgezaehlt am
        02.10.2026: 20 von 21 Konten hatten sie nie geaendert. Sie wird zu
@@ -10179,6 +10196,14 @@ function zaFertig(){
   OB.sched = JSON.parse(JSON.stringify(ZA.sched));
   OB.sched.weekCount = ZA.wc;
   OB.sched.tab = 0;
+  /* Wer ueber „Zurueck" einen Tag wieder abgewaehlt hat, arbeitet dort
+     nicht — seine Zeiten standen sonst weiter im Plan und zaehlten
+     (Pruefung vor dem Ausrollen, 02.10.2026). */
+  for(let w = 0; w < ZA.wc; w++) WORKDAYS.forEach(d => {
+    if(ZA.tage[w].indexOf(d) < 0 && OB.sched.weeks[w] && OB.sched.weeks[w][d]){
+      OB.sched.weeks[w][d].vmOn = false; OB.sched.weeks[w][d].nmOn = false;
+    }
+  });
   /* Woche 1 ist die Woche ab dem Bezugsmontag — der Versatz zaehlt gegen
      die fortlaufende Wochennummer (rhythmusWoche). */
   if(ZA.wc > 1){
@@ -14639,7 +14664,9 @@ function malBalken(){
   const leg = $('#mb-leg');
   leg.className = 'mleg';
   leg.scrollLeft = 0;
-  leg.innerHTML = da.map(a => {
+  /* Die Kacheln auch fuer eine Art mit Stunden, aber ohne Tage — etwa die
+     Arbeit an einem Feiertag, der als ganzer Feiertag zaehlt. */
+  leg.innerHTML = MB_ARTEN.filter(a => s[a[3]] > 0.004 || s[a[2]] > 0.004).map(a => {
     const f = MX_FARBE[a[0]];
     const std = s[a[2]];
     return '<div class="ml" style="--ml-farbe:' + f[0] + ';--ml-grund:' + f[1] + '">'
@@ -15636,14 +15663,23 @@ function serieVon(y, m, d){
 function freiAufraeumen(p){
   p = p || ME; if(!p || !p.events) return 0;
   const ev = p.events, spanne = {};
+  /* Frei ist ein Tag wie in evalDay nur, wenn er laut dem Plan jenes Tages
+     keinen Dienst hat. Ein frei-Eintrag, der inzwischen Dienst hat, ist ein
+     zaehlender Urlaubstag: er gehoert zur Spanne und wird nie geloescht. */
+  const freiJetzt = (k, e) => {
+    if(!e.frei) return false;
+    const t = k.split('-').map(Number), d = new Date(t[0], t[1] - 1, t[2]);
+    const pl = dayPlan(schedFuer(p, d), d);
+    return pl.vm + pl.nm <= 0;
+  };
   Object.keys(ev).forEach(k => {
-    const e = ev[k]; if(!e || !e.ser || e.frei) return;
+    const e = ev[k]; if(!e || !e.ser || freiJetzt(k, e)) return;
     const id = e.ser + '|' + e.t, s = spanne[id] || (spanne[id] = [k, k]);
     if(k < s[0]) s[0] = k; if(k > s[1]) s[1] = k;
   });
   let weg = 0;
   Object.keys(ev).forEach(k => {
-    const e = ev[k]; if(!e || !e.frei || !e.ser) return;
+    const e = ev[k]; if(!e || !e.ser || !freiJetzt(k, e)) return;
     const s = spanne[e.ser + '|' + e.t];
     if(!s || k < s[0] || k > s[1]){ delete ev[k]; weg++; }
   });
@@ -16518,7 +16554,7 @@ function drawPage(doc, p, y, m){
          geht — vorher standen zwei „8,00 h" ohne Unterschied hintereinander. */
       if(r.type === 'feier' && r.za > 0){
         txt = r.hol || txt;
-        suf = '  ·  ' + fmtH(r.feier) + ' h  ·  +' + fmtH(r.za) + ' h ZA';
+        suf = (r.feier > 0 ? '  ·  ' + fmtH(r.feier) + ' h' : '') + '  ·  +' + fmtH(r.za) + ' h ZA';
       }
       /* Zeitausgleich kurz, damit dahinter Platz bleibt fuer die Herkunft
          der Uhrzeiten (die Stunden gelten, die Lage kennt MOJI nicht). */
@@ -17574,8 +17610,13 @@ wireWischRaus('v-hours', hoursRaus);
 const SAB_UHR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
   + 'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/>'
   + '<path d="M12 7v5.2l3.2 2"/></svg>';
+/* Der Versatz vor der Wochenwahl im Datumsschritt: geht man zurueck zu
+   „Nur korrigieren" oder schliesst, gilt wieder er — sonst kippte der
+   Rhythmus des ganzen Plans rueckwirkend (Pruefung vor dem Ausrollen). */
+let SAB_ALT = null;
 function sabAuf(){
   const el = $('#sab'); if(!el) return;
+  SAB_ALT = DRAFT ? { offset: DRAFT.offset, basis: DRAFT.basis } : null;
   $('#sab-i').innerHTML = SAB_UHR;
   sabSchritt(1);
   el.classList.add('on');
@@ -17584,6 +17625,7 @@ function sabAuf(){
 }
 function sabZu(){
   const el = $('#sab'); if(!el || !el.classList.contains('on')) return;
+  if(DRAFT && SAB_ALT) Object.assign(DRAFT, SAB_ALT);
   el.classList.remove('da');
   el.setAttribute('aria-hidden', 'true');
   setTimeout(() => el.classList.remove('on'), 300);
@@ -17595,6 +17637,7 @@ function sabSchritt(n){
   $('#sab-s').textContent = eins
     ? 'Ein Tippfehler soll überall verschwinden. Ein echter Wechsel darf die alten Monate nicht anfassen.'
     : 'Alles davor bleibt mit den bisherigen Zeiten gerechnet — auch schon abgegebene Monate.';
+  if(eins && DRAFT && SAB_ALT) Object.assign(DRAFT, SAB_ALT);
   $('#sab-schritt1').hidden = !eins;
   $('#sab-schritt2').hidden = eins;
   if(!eins){

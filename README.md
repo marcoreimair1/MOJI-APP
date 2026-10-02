@@ -938,6 +938,23 @@ Geprüft in `tests/test-dienstzeiten.js` (12) und `tests/test-einstieg.js` (11d,
 
 Geprüft in `tests/test-rechnung.js` (8b), `tests/test-export.js` (7), `tests/test-jahr.js` (2b).
 
+**Gegenprüfung vor dem Ausrollen.** Fünf Prüfer (Konto, Tagesrechnung, Tagesblatt/Zeitraum,
+Dienstplan, PDF/Rückblick) haben den Diff `c731ae3..679af4e` gelesen und jeden Verdacht mit dem
+echten Code nachgestellt; je Bereich hat ein zweiter Prüfer versucht, die Befunde zu widerlegen.
+10 gemeldet, 9 bestätigt, alle behoben und mit Tests festgehalten:
+- Assistent: ein über „Zurück" abgewählter Tag blieb mit seinen Zeiten im Plan (`zaFertig` schaltet
+  nicht gewählte Tage aus).
+- Umstellung des Kontos rechnete mit `p.sched`, auch wenn der erst künftig gilt — jetzt mit dem
+  heute geltenden Plan (`schedFuer(p, heute)`); `anspruchWochen()` ohne Jahr ebenso (der Wechsel
+  der Einheit war nach einem Planwechsel nicht wertneutral); `tagLaengeAlt()` rechnet wie der alte
+  Faktor mit rohen Blöcken.
+- Datumsschritt beim Planwechsel: die gewählte Woche wirkte auch auf „Nur korrigieren" — sie gilt
+  nur noch für „Ab einem Datum" (`SAB_ALT`).
+- `freiAufraeumen()` urteilt wie `evalDay` nach dem Plan des Tages und löscht keinen zählenden
+  Urlaubstag mehr.
+- Arbeit an einem Feiertag ohne Planstunden zählt als Feiertagsarbeit; das PDF schreibt dort kein
+  „0,00 h"; die Monatsübersicht zeigt die Kachel Arbeit auch ohne Arbeitstage.
+
 Bewusst nicht geändert: `segH` rundet krumme Minuten aus Altdaten je Block (solche Daten entstehen
 nicht mehr, und abgegebene Monate behalten ihre Stunden); Krankenstand im Urlaub (Marco: wie
 bisher); Arbeit am Feiertag geht 1 : 1 aufs Zeitausgleich-Konto (Marco: wie jetzt).

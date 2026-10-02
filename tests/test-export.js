@@ -197,6 +197,15 @@ if (window.jspdf && window.jspdf.jsPDF) {
   ok('Der Fusstext sagt, wie Tage zaehlen',
      texte.some(function(e){ return e.t.indexOf('Tage je Kalendertag anteilig, ein halber Tag zählt 0,5, auf 0,1 gerundet') >= 0; }));
   ['2026-12-08','2026-12-09','2026-12-10','2026-12-11'].forEach(function(k){ delete ME.events[k]; });
+  /* Feiertag ohne Plan (Allerheiligen 2026, Sonntag): kein „0,00 h". */
+  ME.events['2026-11-01'] = { t:'zeit', za:5 };
+  var doc3 = new window.jspdf.jsPDF({ unit:'mm', format:'a4', orientation:'portrait', compress:true });
+  var texte3 = [], echt3 = doc3.text.bind(doc3);
+  doc3.text = function(t, x, y, o){ texte3.push(String(t)); return echt3(t, x, y, o); };
+  drawPage(doc3, ME, 2026, 10);
+  ok('Sonntagsfeiertag mit Arbeit: nur die ZA-Stunden', texte3.indexOf('Allerheiligen  ·  +5,00 h ZA') >= 0, texte3.filter(function(t){ return t.indexOf('Allerheiligen') === 0; }).join(' | '));
+  ok('Und die Zeile nennt ihn', texte3.indexOf('Zeitausgleich: gesammelt 5,00 h (davon 5,00 h an 1 Feiertag), in der Arbeitszeit enthalten') >= 0);
+  delete ME.events['2026-11-01'];
   /* Tage je Kachel: die Teile ergeben Gesamt. */
   ok('Groesster Rest: 25,75 + 0,25 werden 25,8 + 0,2', pdfZehntel([25.75, 0.25], 26).join(',') === '258,2', pdfZehntel([25.75, 0.25], 26).join(','));
   ok('25,875 + 0,125 werden 25,9 + 0,1', pdfZehntel([25.875, 0.125], 26).join(',') === '259,1');
