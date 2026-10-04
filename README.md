@@ -2548,7 +2548,7 @@ Tagen ohne Besuch. Bei monatlichem Eintragen wären die Aufzeichnungen regelmä�
 
 ## 8 · Veröffentlichen und Versionen
 
-Repository `marcoreimair1/simply`, Branch `main`, GitHub Pages aus dem Wurzelverzeichnis.
+Repository `marcoreimair1/MOJI-APP` (bis 04.10.2026 `simply`; GitHub leitet die alte Adresse weiter), Branch `main`, GitHub Pages aus dem Wurzelverzeichnis.
 Hochladen über **Add file → Upload files** genügt; nach etwa 40 Sekunden ist die neue Fassung
 draußen.
 
@@ -3177,7 +3177,7 @@ Gedächtnis des Projekts, zusammen mit den Kommentaren im Code.
 
 | Was | Wo | Hängt am Konto? |
 |---|---|---|
-| App, Dokumentation, Bilder, Mailvorlagen, Edge Function | GitHub `marcoreimair1/simply` | GitHub-Login |
+| App, Dokumentation, Bilder, Mailvorlagen, Edge Function | GitHub `marcoreimair1/MOJI-APP` | GitHub-Login |
 | Live-Seite | GitHub Pages → `moji-app.at` | — |
 | Profile, Anmeldung, Passkeys, Monatsmail-Zeitplan | Supabase-Projekt `kzduwbmiytusvlbotrrr` (Frankfurt) | Supabase-Login |
 | Domain und DNS | GoDaddy | GoDaddy-Login |
@@ -3186,7 +3186,7 @@ Gedächtnis des Projekts, zusammen mit den Kommentaren im Code.
 ### 19.2 In fünf Schritten umziehen
 
 1. Repo auf den Rechner holen:
-   `git clone https://github.com/marcoreimair1/simply.git ~/Dokumente/MOJI`
+   `git clone https://github.com/marcoreimair1/MOJI-APP.git ~/MOJI-APP`
 2. Diesen Ordner im neuen Account als Arbeitsordner verbinden
 3. Im Browserprofil einmal bei GitHub und Supabase anmelden
 4. **Empfohlen:** `git` lokal mit SSH-Schlüssel oder Zugriffstoken einrichten. Dann geht
