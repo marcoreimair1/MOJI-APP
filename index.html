@@ -7380,7 +7380,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-06-1200';
+const APP_STAND = '2026-10-06-1300';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -10781,6 +10781,13 @@ function enterApp(){
   enterApp._schonDa = true;
   /* Aus der Erinnerungsmail: gleich zu den Bubble Teas. */
   if(TEE_ZIEL){ teeZielErfuellt(); firmaAuf(); }
+  /* Aus der Mail zum Jahresrueckblick: Export-Seite, dann die Story —
+   ausserhalb des Zeitfensters nur die Export-Seite. */
+  else if(JR_ZIEL){
+    jrZielErfuellt(); go('v-export');
+    const jy = jrJahr();
+    if(jy != null && jrHatJahr(jy)) setTimeout(() => { if(ME) jrAuf({ x: innerWidth / 2, y: innerHeight / 3 }); }, 900);
+  }
   /* Nach einem Fassungswechsel geht das Menue wieder auf — dort wurde
      ja umgeschaltet. Ohne Einlaufbewegung: es war schon da, und der
      Wechsel ist der Schnitt, nicht das Menue. */
@@ -17973,6 +17980,25 @@ function teeZielErfuellt(){
   try{
     const u = new URL(location.href);
     if(u.searchParams.has('tee')){ u.searchParams.delete('tee'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
+  }catch(e){}
+}
+/* Aus der Mail zum Jahresrueckblick (November): moji-app.at/?jahr oeffnet
+   nach dem Einstieg die Export-Seite und dort gleich den Rueckblick —
+   genauso gemerkt und nur einmal erfuellt wie ?tee. */
+let JR_ZIEL = (function(){
+  let ja = /[?&]jahr(?:[=&]|$)/.test(location.search);
+  try{
+    if(ja) sessionStorage.setItem('moji.jahr', '1');
+    ja = sessionStorage.getItem('moji.jahr') === '1';
+  }catch(e){}
+  return ja;
+})();
+function jrZielErfuellt(){
+  JR_ZIEL = false;
+  try{ sessionStorage.removeItem('moji.jahr'); }catch(e){}
+  try{
+    const u = new URL(location.href);
+    if(u.searchParams.has('jahr')){ u.searchParams.delete('jahr'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
   }catch(e){}
 }
 function pdfVermerken(){

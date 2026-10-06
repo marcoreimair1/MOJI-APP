@@ -79,7 +79,10 @@ ok('Und wohin Fragen gehen — die Absenderadresse ist unbesetzt',
    monatsmail.ts ist TypeScript fuer Deno; die drei Funktionen fuer den
    Text werden herausgeloest, von ihren Typen befreit und hier ausgefuehrt. */
 const stueck = (von, bis) => mon.slice(mon.indexOf(von), mon.indexOf(bis));
-let fn = stueck('function textFassung(', 'Deno.serve(')
+let fn = stueck('const LINK_JAHR', 'Deno.serve(')
+  .replace(/^type Tee = [^\n]*\n/m, '')
+  .replace(/: number \| null/g, '')
+  .replace(/: Date(?=[,)])/g, '')
   .replace(/ as Record<string,string>/g, '')
   .replace(/: Map<string, any>/g, '')
   .replace(/: Promise<Response>/g, '').replace(/: Response \| null/g, '')
@@ -101,7 +104,8 @@ function falschesFetch(){
 }
 function falschesWarten(f, ms){ NETZ.gewartet.push(ms); f(); }
 try{ bau = new Function('LINK', 'LINK_TEE', 'MONATE', 'fetch', 'setTimeout',
-       fn + '; return { textFassung, htmlFassung, esc, wartendFuer, teeTeil, sendeMitGeduld, PAUSE_MS, VERSUCHE, ZEIT_MS };')
+       fn + '; return { textFassung, htmlFassung, esc, wartendFuer, teeTeil, sendeMitGeduld, PAUSE_MS, VERSUCHE, ZEIT_MS,'
+          + ' rueckblickJahr, htmlRueckblick, textRueckblick, betreffRueckblick };')
        (LINK, LINK_TEE, MONATE, falschesFetch, falschesWarten); }
 catch(e){ ok('Die Textfunktionen lassen sich ausfuehren', false, e.message); }
 if(bau){
@@ -113,6 +117,25 @@ if(bau){
   const t = bau.textFassung('Ann', 'September');
   ok('Die Textfassung sagt dasselbe', t.includes('dein September ist abgeschlossen') && t.includes(LINK));
   ok('Und nennt, wie man sie abschaltet', t.includes('Im Profilmenü der App schaltest du sie jederzeit ab.'));
+}
+
+/* ── 6b · Jahresrueckblick im November (seit 06.10.2026) ── */
+if(bau){
+  ok('Nur im November gibt es ein Rueckblick-Jahr', bau.rueckblickJahr(new Date(Date.UTC(2026, 10, 1, 5))) === 2026
+     && bau.rueckblickJahr(new Date(Date.UTC(2026, 11, 1, 5))) === null && bau.rueckblickJahr(new Date(Date.UTC(2026, 9, 1, 5))) === null);
+  const mitJr = bau.htmlFassung('Ann', 'Oktober', [], 2026);
+  ok('Die Erinnerung traegt die Rueckblick-Karte', mitJr.includes('>Dein Jahr 2026 mit MOJI ist da</h2>')
+     && mitJr.includes('<a href="https://moji-app.at/?jahr"') && mitJr.includes('>Rückblick ansehen</a>'));
+  ok('Unter der Erinnerung, vor dem Fuss', mitJr.indexOf('Oktober abgeben') < mitJr.indexOf('Dein Jahr 2026') && mitJr.indexOf('Dein Jahr 2026') < mitJr.indexOf('MOJI · Mehr Zeit'));
+  ok('Ohne Jahr keine Karte', !bau.htmlFassung('Ann', 'Oktober').includes('Rückblick'));
+  ok('Die Textfassung nennt ihn', bau.textFassung('Ann', 'Oktober', [], 2026).includes('Dein Jahresrückblick 2026 ist da') && bau.textFassung('Ann', 'Oktober', [], 2026).includes('https://moji-app.at/?jahr'));
+  const r = bau.htmlRueckblick('<b>Ann</b>', 2026);
+  ok('Die eigene Mail: Titel, Anrede maskiert, Knopf', r.includes('>Dein Jahr 2026 ist da.</h1>') && r.includes('Hallo &lt;b&gt;Ann&lt;/b&gt;, ab heute wartet in MOJI dein Jahresrückblick 2026')
+     && r.includes('<a href="https://moji-app.at/?jahr"') && !r.includes('<b>Ann</b>'));
+  ok('Sie sagt nicht „weil du sie erlaubt hast"', !r.includes('weil du sie erlaubt hast') && r.includes('Eine einmalige Nachricht zu deinem Jahresrückblick in MOJI.'));
+  ok('Dieselbe Huelle', stil(r) === stil(anm) && r.includes(fuss) && !/\$\{|\{\{/.test(r));
+  ok('Der Betreff', bau.betreffRueckblick(2026) === 'Dein Jahr 2026 mit MOJI ist da');
+  ok('Text ohne Platzhalter', !/\$\{|\{\{/.test(bau.textRueckblick('Ann', 2026)) && bau.textRueckblick('Ann', 2026).includes('Er bleibt bis Ende Jänner für dich da.'));
 }
 
 /* ── 7 · Die Bubble Teas, die auf Antwort warten ── */
@@ -193,7 +216,7 @@ async function versandPruefen(){
   ok('Nach 100 s bleibt der Rest dem naechsten Lauf', bau.ZEIT_MS === 100000
      && mon.includes('if(Date.now() > schluss){ bericht.vertagt++; continue; }'));
   ok('Ins Protokoll nur, was wirklich hinausging',
-     /if\(!antwort\.ok\) throw new Error[^\n]*\n\s*await sb\.from\('mail_log'\)\.insert/.test(mon));
+     /if\(!antwort\.ok\) throw new Error[^\n]*\n\s*if\(erinnern\) await sb\.from\('mail_log'\)\.insert/.test(mon));
   ok('Keine Mailadressen im Bericht', !/bericht\.fehler\.push\(mail/.test(mon));
 }
 
@@ -249,13 +272,34 @@ ok('Nur einmal', mit.__N === false && mit.sessionStorage.getItem('moji.tee') ===
 ok('Und ?tee ist aus der Adresse verschwunden', mit.location.search === '', mit.location.search);
 const ohne = starte('https://moji-app.at/');
 ok('Ohne ?tee beginnt sie im Kalender', ohne.__V === false && ohne.__A === 'v-cal', ohne.__A);
+const jahrLink = (function(){
+  const vc = new VirtualConsole();
+  ['jsdomError','error','warn'].forEach(e => vc.on(e, () => {}));
+  const d = new JSDOM(fs.readFileSync(APP, 'utf8'), { url: 'https://moji-app.at/?jahr', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc });
+  const sk = d.window.document.createElement('script');
+  sk.textContent = `window.__V = JR_ZIEL;
+    ME = normalize({ id:'t', vorname:'Marco', nachname:'Reimair', dob:'1990-05-04', av:3 });
+    enterApp();
+    window.__A = document.querySelector('.view.on') && document.querySelector('.view.on').id;
+    window.__N = JR_ZIEL;`;
+  d.window.document.body.appendChild(sk);
+  return d.window;
+})();
+ok('Mit ?jahr merkt sich die App den Wunsch', jahrLink.__V === true);
+ok('Und oeffnet die Export-Seite mit dem Banner', jahrLink.__A === 'v-export', jahrLink.__A);
+ok('Nur einmal, ?jahr ist aus der Adresse weg', jahrLink.__N === false && jahrLink.location.search === '');
 const aehnlich = starte('https://moji-app.at/?teeX=1');
 ok('Ein aehnlicher Parameter zaehlt nicht', aehnlich.__V === false);
 
 /* ── 9 · Die Versandlogik ist unberuehrt ── */
 ok('Der Betreff bleibt', mon.includes("return name + ' ist bereit zum Abgeben';"));
-ok('Nur mit Zustimmung', mon.includes("if(p.mailOk !== true){ bericht.uebersprungen++; continue; }"));
-ok('Nicht, wer schon abgegeben hat', mon.includes("if(p.exp && p.exp[expKey]){ bericht.uebersprungen++; continue; }"));
+ok('Die Erinnerung nur mit Zustimmung', mon.includes("if(p.mailOk !== true) erinnern = false;"));
+ok('Nicht, wer schon abgegeben hat', mon.includes("else if(p.exp && p.exp[expKey]) erinnern = false;"));
+ok('Ohne Erinnerung und ohne Rueckblick: nichts', mon.includes("if(!erinnern && !rueckblick){ bericht.uebersprungen++; continue; }"));
+ok('Rueckblick einmal je Konto und Jahr', mon.includes(".eq('user_id', r.user_id).eq('lauf', laufJr).maybeSingle();")
+   && mon.includes("if(rueckblick) await sb.from('mail_log').insert({ user_id: r.user_id, lauf: laufJr, art: 'rueckblick' });"));
+ok('Erst nach dem Versand ins Protokoll, beide Arten',
+   /if\(!antwort\.ok\) throw new Error[^\n]*\n\s*if\(erinnern\) await sb\.from\('mail_log'\)\.insert/.test(mon));
 ok('Nicht zweimal im Monat', mon.includes(".eq('user_id', r.user_id).eq('lauf', lauf).maybeSingle();"));
 ok('Die Rolle wird weiter geprueft', mon.includes("return p.role === 'service_role';"));
 

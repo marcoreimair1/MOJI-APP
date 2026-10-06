@@ -2878,6 +2878,24 @@ letzte Sitzungsaktivität, letzte Anmeldung) und ändert den Auslöser: `zuletzt
 vor, wenn die Person selbst speichert (`auth.uid() = new.user_id`). **Merke:** Wer `records` in
 der Masse ändert, löst `records_mitglied` für jede Zeile aus.
 
+### 15.2d Jahresrückblick am 1. November *(6. Oktober 2026)*
+
+Marco: Der Rückblick ist ab 1. November in der App (`jrJahr()`), und alle sollen davon erfahren —
+**alle Konten**, auch ohne Zustimmung zur Erinnerung, **eine Mail je Person**:
+- Wer am 1. November die Erinnerung bekommt, findet darin unter der Karte „Oktober ist bereit"
+  eine zweite Karte *Dein Jahr 2026 mit MOJI ist da* mit dem Knopf *Rückblick ansehen*
+  (zweitrangig, wie *Bubble Tea zurückschicken*).
+- Alle anderen bekommen die kurze eigene Mail `htmlRueckblick()`, Betreff *Dein Jahr 2026 mit MOJI
+  ist da*, Fuß „Eine einmalige Nachricht zu deinem Jahresrückblick in MOJI." (nicht „weil du sie
+  erlaubt hast").
+- Der Knopf führt auf `moji-app.at/?jahr`: nach dem Einstieg die Export-Seite und gleich die Story
+  (`JR_ZIEL`, gemerkt und einmal erfüllt wie `?tee`).
+- `rueckblickJahr()` gilt nur im November (UTC); `mail_log` hält `lauf = 'rueckblick-2026'`,
+  `art = 'rueckblick'` — jede Person bekommt die Nachricht einmal im Jahr, auch über die drei
+  Läufe am Ersten hinweg. Der Bericht der Funktion zählt sie eigens (`rueckblick`).
+
+Geprüft in `tests/test-mail.js` (6b, 8, 9).
+
 ### 15.3 Funktion veröffentlichen *(erledigt)*
 
 Läuft als `monatsmail` unter
