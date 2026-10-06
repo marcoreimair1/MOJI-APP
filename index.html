@@ -7380,7 +7380,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-02-2335';
+const APP_STAND = '2026-10-06-1200';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -12795,7 +12795,8 @@ function verlaufZu(){
 
 /* ═══════════════════════════════════════════════════════════
    JAHRESRÜCKBLICK
-   Seit 27.09.2026. Vom 1. Dezember bis 31. Jänner steht auf der
+   Seit 27.09.2026. Vom 1. November (Marco, 06.10.2026; vorher ab
+   1. Dezember) bis 31. Jänner steht auf der
    Exportseite ueber "Export als PDF" ein Banner in der Stufenfarbe
    (malJrBanner); ein Tipp oeffnet den Rueckblick als Story (jrAuf).
    Im Jänner gilt er dem Vorjahr.
@@ -12810,7 +12811,7 @@ function verlaufZu(){
    setzt Leute unter Druck, und es sind Gesundheitsdaten.
    ═══════════════════════════════════════════════════════════ */
 const TEE_LOG_AB = '2026-09-27';
-/* Zum Ansehen vor Dezember: moji-app.at/?rueckblick zeigt den
+/* Zum Ansehen vor November: moji-app.at/?rueckblick zeigt den
    Rueckblick fuer das laufende Jahr. Gilt, solange der Tab offen ist. */
 let _jrTest = false;
 try{
@@ -12821,7 +12822,7 @@ try{
 /* Welches Jahr gerade zurueckblickt — oder null. */
 function jrJahr(heute){
   const h = heute || new Date(), m = h.getMonth(), y = h.getFullYear();
-  if(m === 11) return y;
+  if(m === 10 || m === 11) return y;              /* November und Dezember */
   if(m === 0) return y - 1;
   return _jrTest ? y : null;
 }

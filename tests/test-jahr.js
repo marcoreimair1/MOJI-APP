@@ -28,7 +28,9 @@ function ok(n, b, z){ window.__E.push({ n:n, ok:!!b, z: z===undefined?'':String(
 ok('Im Dezember blickt das laufende Jahr zurueck', jrJahr(new Date(2026, 11, 5, 12)) === 2026);
 ok('Im Jaenner das Vorjahr',                       jrJahr(new Date(2027, 0, 20, 12)) === 2026);
 ok('Im September gibt es keinen',                  jrJahr(new Date(2026, 8, 27, 12)) === null);
-ok('Auch nicht Ende November',                     jrJahr(new Date(2026, 10, 30, 12)) === null);
+/* Seit 06.10.2026 schon ab 1. November (Marco). */
+ok('Ab 1. November das laufende Jahr',             jrJahr(new Date(2026, 10, 1, 12)) === 2026 && jrJahr(new Date(2026, 10, 30, 12)) === 2026);
+ok('Ende Oktober noch nicht',                      jrJahr(new Date(2026, 9, 31, 12)) === null);
 ok('Tausender mit Punkt', jrTausend(1642) === '1.642' && jrTausend(12) === '12' && jrTausend(1234567) === '1.234.567',
    jrTausend(1642));
 
@@ -256,7 +258,7 @@ enterApp();
 go('v-export');
 const ban = document.getElementById('jr-banner');
 const m = new Date().getMonth();
-if(m !== 11 && m !== 0) ok('Ausserhalb von Dezember und Jaenner versteckt', ban.hidden);
+if(m !== 10 && m !== 11 && m !== 0) ok('Ausserhalb von November bis Jaenner versteckt', ban.hidden);
 ok('Das Banner steht ueber dem Exportkopf', ban.nextElementSibling && ban.nextElementSibling.classList.contains('exhead'));
 _jrTest = true;
 malJrBanner();

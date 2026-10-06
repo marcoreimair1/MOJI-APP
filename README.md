@@ -584,10 +584,10 @@ erst nach `UEBERGABE`; die Prüfung *Die App wartet, bis der Gruß deckt* hält 
 
 ### Jahresrückblick *(27. September 2026)*
 
-Wie Spotify Wrapped, in MOJIs Handschrift. Vom **1. Dezember bis 31. Jänner** steht auf der
+Wie Spotify Wrapped, in MOJIs Handschrift. Vom **1. November bis 31. Jänner** (bis 06.10.2026: ab 1. Dezember) steht auf der
 Exportseite über „Export als PDF" ein Banner in der Farbe der eigenen Stufe (`malJrBanner()`,
 gemalt aus `go('v-export')`); im Jänner gilt er dem Vorjahr (`jrJahr()`). Ein Tipp öffnet die
-Story (`jrAuf()`). Zum Ansehen vor Dezember: **moji-app.at/?rueckblick** in Safari — gilt für den
+Story (`jrAuf()`). Zum Ansehen vor November: **moji-app.at/?rueckblick** in Safari — gilt für den
 laufenden Tab.
 
 **Kapitel** (nur die mit Inhalt): Eröffnung („Dein Jahr 2026") · Stunden mit rollender Zahl,
