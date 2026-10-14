@@ -678,6 +678,19 @@ erreicht die Datei nicht), übernimmt das Teilen-Blatt mit seiner Vorschau. Teil
 Kann das Gerät keine Dateien teilen, bleibt es beim Öffnen mit `doc.save()` samt dem Vermerk
 darunter.
 
+### Android: das PDF wird gespeichert statt im Tab geöffnet *(14. Oktober 2026)*
+
+Eine Nutzerin mit Android-Handy konnte das PDF nach dem Export nicht ansehen. Der Tipp aufs
+fertige Blatt öffnet das PDF als blob-Adresse in einem neuen Tab — Safari am iPhone zeigt das,
+Chrome auf Android nicht zuverlässig (leerer Tab oder Fehler). Auf Android (`istAndroid()`) wird
+das PDF jetzt über einen Download-Link mit Dateinamen gespeichert (`pdfSpeichern()`); Android
+meldet „Heruntergeladen · Öffnen" und zeigt es im PDF-Programm des Geräts. Unter dem Blatt steht
+dort „Zum Öffnen antippen", danach eine Meldung, wo die Datei liegt. *PDF teilen* (Mail, WhatsApp,
+Drive) war nicht betroffen. iPhone und Rechner bleiben beim neuen Tab (`pdfAnsehen()`).
+
+Geprüft in `tests/test-export.js` mit einer Android-Kennung. Am echten Android-Gerät noch
+von Marco bestätigen lassen.
+
 ### Zurück vom PDF ohne Vorspann *(27. September 2026)*
 
 Auf dem iPhone öffnet sich das PDF in derselben Ansicht. Wer es ansah und zurückging, bekam die

@@ -7380,7 +7380,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-06-1300';
+const APP_STAND = '2026-10-14-1200';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -16834,6 +16834,8 @@ function exOverlay(seiten){
 
   /* Gewechselt wird nicht mitten im Warten: entweder die Datei ist da,
      wenn das Blatt aufgeht, oder es bleibt beim Standbild. */
+  /* Auf Android heisst Ansehen: speichern und oeffnen (pdfAnsehen). */
+  if(istAndroid()) $('.exhinweis', ov).textContent = 'Zum Öffnen antippen';
   const lebt = _lebtDa && !ruhigGestellt();
   const bild = $('.exmoji img', ov);
   bild.src = lebt ? MOJI_LEBT : LOGO_MOJI;
@@ -16985,7 +16987,7 @@ async function buildPdf(list){
         const adresse = pdfAdresse(datei);
         await wait(900);
         await ov.wahl(() => navigator.share({ files:[datei], title:name }),
-                      () => pdfImTab(adresse));
+                      () => pdfAnsehen(adresse, name));
       } else {
         await wait(1250);
         pdfVermerken();
@@ -17032,6 +17034,29 @@ function alsHomeApp(){
 function pdfImTab(adresse){
   if(!adresse || alsHomeApp()) return false;
   try{ return !!window.open(adresse, '_blank'); }catch(e){ return false; }
+}
+/* Android: Chrome zeigt eine blob-Adresse in einem neuen Tab nicht
+   zuverlaessig an — der Tab blieb leer oder meldete einen Fehler
+   (Nutzerin mit Android-Handy, 14.10.2026). Dort wird das PDF stattdessen
+   gespeichert; Android meldet „Heruntergeladen · Öffnen" und zeigt es im
+   PDF-Programm des Geraets. Am iPhone bleibt es beim neuen Tab. */
+function istAndroid(){
+  try{ return /Android/i.test(navigator.userAgent || ''); }catch(e){ return false; }
+}
+function pdfSpeichern(adresse, name){
+  if(!adresse) return false;
+  try{
+    const a = document.createElement('a');
+    a.href = adresse; a.download = name || 'MOJI.pdf'; a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('PDF gespeichert — zum Ansehen auf „Öffnen" tippen oder unter Downloads', true);
+    setTimeout(() => { try{ $('#toast').classList.remove('on'); }catch(e){} }, 7000);
+    return true;
+  }catch(e){ return false; }
+}
+function pdfAnsehen(adresse, name){
+  return istAndroid() ? pdfSpeichern(adresse, name) : pdfImTab(adresse);
 }
 /* Das PDF als Datei fuers Teilen-Blatt — oder null, wenn das Geraet
    keine Dateien teilen kann. Dann bleibt es beim Oeffnen wie bisher. */

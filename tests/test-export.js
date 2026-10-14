@@ -346,6 +346,32 @@ delete navigator.standalone;
 window.open = function(){ return null; };
 ok('Blockt der Browser den Tab, meldet es das', pdfImTab('blob:https://moji-app.at/x') === false);
 window.open = echtOpen;
+/* Seit 14.10.2026: auf Android wird das PDF gespeichert statt im Tab
+   geoeffnet — Chrome zeigte die blob-Adresse dort nicht an. */
+ok('Am iPhone/Rechner: Ansehen heisst neuer Tab', !istAndroid());
+window.open = function(u, z){ geoeffnet.push([u, z]); return {}; };
+geoeffnet = [];
+ok('pdfAnsehen nimmt dort den Tab', pdfAnsehen('blob:https://moji-app.at/x', 'a.pdf') === true && geoeffnet.length === 1);
+const uaEcht = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator), 'userAgent');
+Object.defineProperty(navigator, 'userAgent', { value:'Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36', configurable:true });
+ok('Android wird erkannt', istAndroid());
+let geklickt = null;
+const klickEcht = window.HTMLAnchorElement.prototype.click;
+window.HTMLAnchorElement.prototype.click = function(){ geklickt = { href:this.getAttribute('href'), download:this.getAttribute('download'), drin:document.body.contains(this) }; };
+geoeffnet = [];
+ok('Auf Android: gespeichert, kein Tab', pdfAnsehen('blob:https://moji-app.at/x', 'Arbeitsaufzeichnung_X_2026-09.pdf') === true && geoeffnet.length === 0);
+ok('Ueber einen Download-Link mit Dateinamen', geklickt && geklickt.href === 'blob:https://moji-app.at/x'
+   && geklickt.download === 'Arbeitsaufzeichnung_X_2026-09.pdf' && geklickt.drin, JSON.stringify(geklickt));
+ok('Der Link bleibt nicht liegen', !document.querySelector('a[download="Arbeitsaufzeichnung_X_2026-09.pdf"]'));
+ok('Und die Meldung sagt, wo es liegt', document.getElementById('toast-t').textContent.indexOf('PDF gespeichert') === 0);
+ok('Ohne Adresse nichts', pdfSpeichern(null, 'x.pdf') === false);
+const ovA = exOverlay(1);
+ok('Auf Android heisst der Satz unter dem Blatt „Zum Öffnen antippen"', ovA.el.querySelector('.exhinweis').textContent === 'Zum Öffnen antippen');
+ovA.stop(); ovA.el.remove();
+window.HTMLAnchorElement.prototype.click = klickEcht;
+if(uaEcht) delete navigator.userAgent; else delete navigator.userAgent;
+ok('Danach wieder kein Android', !istAndroid());
+window.open = echtOpen;
 const ov7 = exOverlay(1);
 window.__w7 = { teilen:0, ansehen:0 };
 ov7.wahl(() => { window.__w7.teilen++; return Promise.resolve(); }, () => { window.__w7.ansehen++; return true; });
@@ -490,7 +516,7 @@ setTimeout(() => {
     /stapel\.onclick = \(\) => \{ if\(!\(ansehen && ansehen\(\)\)\) los\(\); \};/.test(roh)],
    ['Die Adresse lebt bis zum naechsten Export', /if\(_pdfAdresse\) URL\.revokeObjectURL\(_pdfAdresse\);/.test(roh)],
    ['buildPdf reicht Teilen und Ansehen weiter',
-    /await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),\s*\n\s*\(\) => pdfImTab\(adresse\)\);/.test(roh)],
+    /await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),\s*\n\s*\(\) => pdfAnsehen\(adresse, name\)\);/.test(roh)],
    ['Fertig waechst das Blatt', /\.exdone\.fertig \.exstapel\{width:min\(68vw,258px\)/.test(roh)],
    ['Beim Druecken gibt es nach, solange der Finger liegt', /\.exdone\.tippbar \.exstapel:active\{scale:\.965\}/.test(roh)
     && /stapel\.addEventListener\('touchstart', \(\) => \{\}, \{ passive:true \}\);/.test(roh)],
