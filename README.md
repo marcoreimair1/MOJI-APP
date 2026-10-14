@@ -678,7 +678,7 @@ erreicht die Datei nicht), übernimmt das Teilen-Blatt mit seiner Vorschau. Teil
 Kann das Gerät keine Dateien teilen, bleibt es beim Öffnen mit `doc.save()` samt dem Vermerk
 darunter.
 
-### Android: das PDF wird gespeichert statt im Tab geöffnet *(14. Oktober 2026)*
+### Android: MOJI zeigt das PDF selbst *(14. Oktober 2026)*
 
 Eine Nutzerin mit Android-Handy konnte das PDF nach dem Export nicht ansehen. Der Tipp aufs
 fertige Blatt öffnet das PDF als blob-Adresse in einem neuen Tab — Safari am iPhone zeigt das,
@@ -688,8 +688,23 @@ meldet „Heruntergeladen · Öffnen" und zeigt es im PDF-Programm des Geräts. 
 dort „Zum Öffnen antippen", danach eine Meldung, wo die Datei liegt. *PDF teilen* (Mail, WhatsApp,
 Drive) war nicht betroffen. iPhone und Rechner bleiben beim neuen Tab (`pdfAnsehen()`).
 
-Geprüft in `tests/test-export.js` mit einer Android-Kennung. Am echten Android-Gerät noch
-von Marco bestätigen lassen.
+**Zweiter Anlauf, am selben Tag:** Am Handy der Nutzerin ging auch das Speichern nicht (kein
+Hinweis auf eine neue Fassung, sie hatte also den Stand mit dem Speichern). Je nach Browser —
+etwa wenn MOJI aus WhatsApp oder Facebook heraus offen ist — schluckt Android einen Download
+stumm. Seitdem zeigt MOJI das PDF auf Android **selbst** (`pdfZeigen()`): eine eigene Ansicht,
+die von der Stelle des Tipps aufgeht, oben Schließen und eine Lupe (doppelte Breite zum
+Wischen), unten *Speichern* und — wo das Gerät teilen kann — *Teilen*. Die Seiten zeichnet
+pdf.js 3.11.174 von cdnjs, geladen erst beim ersten Ansehen (`pdfjsHolen()`); ohne Verbindung
+sagt die Ansicht das und verweist auf *Speichern*. Die Zurück-Taste am Handy schließt die
+Ansicht (`history.pushState` / `popstate`). Auf Android führt der Export immer über diese Wahl,
+auch wenn das Gerät keine Dateien teilen kann; dann fällt *PDF teilen* weg.
+
+Dazu steht im Profilmenü unter „Eine App von Studio MARU" die laufende Fassung
+(„Version 14.10.2026 · 15:00", aus `APP_STAND`) — damit sich „hatte sie schon die neue?" sofort
+klären lässt.
+
+Geprüft in `tests/test-export.js` (Android-Kennung, gespieltes pdf.js) und im Browser mit
+nachgestelltem Android und echtem pdf.js. Am echten Android-Gerät von Marco bestätigen lassen.
 
 ### Zurück vom PDF ohne Vorspann *(27. September 2026)*
 

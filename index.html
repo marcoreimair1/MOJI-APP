@@ -1700,6 +1700,8 @@ body.nobar .topbar{display:none}
 .mfoot{margin:11px 2px 2px;padding-top:12px;border-top:1px solid var(--line-2);
   font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);text-align:center}
 .mfoot b{color:var(--butter);font-weight:600;letter-spacing:.08em}
+/* Welche Fassung laeuft — damit sich „hatte sie schon die neue?" klaeren laesst. */
+.mstand{display:block;margin-top:5px;font-size:10.5px;letter-spacing:.04em;color:var(--tx-3);font-variant-numeric:tabular-nums}
 
 /* ─── Passkey-Balken ──────────────────────────────────────────────────
    Sitzt unten, deckt nur wenig zu und fragt eine Sache. Der Hintergrund
@@ -4252,6 +4254,34 @@ body.halloflug .tabbar .avatar, body.halloflug #av-zaehler{opacity:0;transition:
 
    Bei mehreren Monaten liegen hinter dem Blatt ein oder zwei weitere —
    der Stapel zeigt, dass es mehr als eine Seite wird. */
+/* Kann das Geraet keine Dateien teilen, faellt „PDF teilen" weg — .btn
+   setzt display und wuerde [hidden] sonst ueberstimmen. */
+.exwahl > [hidden]{display:none!important}
+.pdfv{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--ink);color:var(--tx);
+  animation:pdfvAuf .42s var(--ease-out)}
+.pdfv.weg{animation:pdfvZu .3s var(--ease-blend) forwards}
+@keyframes pdfvAuf{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
+@keyframes pdfvZu{to{opacity:0;transform:scale(.96)}}
+.pdfv-kopf{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  border-bottom:1px solid var(--line-2)}
+.pdfv-name{flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.pdfv-rund{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;cursor:pointer;
+  border:1px solid var(--line-2);background:rgba(var(--s-auf),.05);color:var(--tx);
+  transition:transform .16s var(--ease-out),background .2s}
+.pdfv-rund:active{transform:scale(.92)}
+.pdfv-rund svg{width:19px;height:19px}
+.pdfv-rund[aria-pressed="true"]{background:rgba(var(--marke-rgb),.14);color:var(--butter);border-color:var(--butter-dim)}
+.pdfv-seiten{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px;
+  background:rgba(var(--s-hoch),.35)}
+.pdfv-seite{display:block;width:100%;max-width:720px;height:auto;background:#fff;border-radius:6px;
+  box-shadow:0 10px 28px -12px rgba(var(--s-schatten),.45),0 0 0 1px rgba(var(--s-schatten),.06)}
+.pdfv.gross .pdfv-seiten{align-items:flex-start}
+.pdfv.gross .pdfv-seite{width:200%;max-width:none}
+.pdfv-laedt{margin:auto;max-width:300px;text-align:center;font-size:13.5px;line-height:1.5;color:var(--tx-3)}
+.pdfv-fuss{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--line-2)}
+.pdfv-fuss .btn{flex:1;transition:transform .16s var(--ease-out)}
+.pdfv-fuss .btn:active{transform:scale(.97)}
+.pdfv-fuss .btn svg{width:18px;height:18px}
 .exdone{position:fixed;inset:0;z-index:60;display:grid;place-items:center;border-radius:0;
   background:none;backdrop-filter:none;-webkit-backdrop-filter:none;
   animation:qdoneIn .5s var(--ease-blend)}
@@ -6831,7 +6861,7 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
     <button class="mi danger" data-act="delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>Profil löschen</button>
     </div>
     </div>
-    <div class="mfoot">Eine App von <b>Studio MARU 丸</b></div>
+    <div class="mfoot">Eine App von <b>Studio MARU 丸</b><small class="mstand" id="m-stand"></small></div>
   </div>
 </div>
 
@@ -7380,7 +7410,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-14-1200';
+const APP_STAND = '2026-10-14-1500';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7396,6 +7426,12 @@ async function pruefeStand(){
   }catch(e){}
 }
 
+/* "2026-10-14-1300" → "Version 14.10.2026 · 13:00" */
+function standText(s){
+  const t = String(s || '').split('-');
+  return t.length === 4 ? 'Version ' + t[2] + '.' + t[1] + '.' + t[0] + ' · ' + t[3].slice(0, 2) + ':' + t[3].slice(2) : 'Version ' + s;
+}
+try{ const ms = document.getElementById('m-stand'); if(ms) ms.textContent = standText(APP_STAND); }catch(e){}
 function neuZeigen(){
   const el = $('#neuv');
   el.classList.remove('laedt');
@@ -16834,7 +16870,7 @@ function exOverlay(seiten){
 
   /* Gewechselt wird nicht mitten im Warten: entweder die Datei ist da,
      wenn das Blatt aufgeht, oder es bleibt beim Standbild. */
-  /* Auf Android heisst Ansehen: speichern und oeffnen (pdfAnsehen). */
+  /* Auf Android oeffnet der Tipp MOJIs eigene PDF-Ansicht (pdfZeigen). */
   if(istAndroid()) $('.exhinweis', ov).textContent = 'Zum Öffnen antippen';
   const lebt = _lebtDa && !ruhigGestellt();
   const bild = $('.exmoji img', ov);
@@ -16894,12 +16930,14 @@ function exOverlay(seiten){
         let laeuft = false;
         const los = async () => {
           if(laeuft) return;
+          if(!teilen) return;
           laeuft = true;
           try{ await teilen(); fertig(); }
           catch(e){ if(!e || e.name !== 'AbortError') toast('Teilen hat nicht geklappt'); }
           laeuft = false;
         };
-        $('#ex-teilen', ov).onclick = los;
+        if(teilen) $('#ex-teilen', ov).onclick = los;
+        else $('#ex-teilen', ov).hidden = true;
         /* Das Blatt selbst fuehrt zum Dokument: in Safari als neuer Tab
            (ansehen), sonst ueber das Teilen-Blatt mit seiner Vorschau.
            ansehen() laeuft ohne vorheriges Warten, sonst haelt Safari den
@@ -16908,7 +16946,7 @@ function exOverlay(seiten){
         stapel.setAttribute('role', 'button');
         stapel.setAttribute('tabindex', '0');
         stapel.setAttribute('aria-label', 'PDF ansehen');
-        stapel.onclick = () => { if(!(ansehen && ansehen())) los(); };
+        stapel.onclick = e => { if(!(ansehen && ansehen(e))) los(); };
         stapel.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); stapel.onclick(); } };
         /* Ohne einen Beruehrungs-Horcher setzt Safari :active nicht —
            dann gaebe das Blatt beim Druecken nicht nach. */
@@ -16981,13 +17019,17 @@ async function buildPdf(list){
          Dateien, Mail, Nachrichten und Drucken. iOS erlaubt es nur direkt
          nach einem Tipp, darum ein Knopf am Ende statt eines Automatismus. */
       const datei = pdfDatei(doc, name);
-      if(datei){
+      /* Auf Android zeigt MOJI das PDF selbst (pdfZeigen) — auch dort,
+         wo das Geraet keine Dateien teilen kann. */
+      const android = istAndroid();
+      if(datei || android){
         /* Erst jetzt zählt der Monat: die Datei ist geschrieben. */
         merkeExporte(list);
-        const adresse = pdfAdresse(datei);
+        const inhalt = datei || new Blob([doc.output('blob')], { type:'application/pdf' });
+        const adresse = pdfAdresse(inhalt);
         await wait(900);
-        await ov.wahl(() => navigator.share({ files:[datei], title:name }),
-                      () => pdfAnsehen(adresse, name));
+        await ov.wahl(datei ? () => navigator.share({ files:[datei], title:name }) : null,
+                      e => android ? pdfZeigen(inhalt, name, datei, e) : pdfImTab(adresse));
       } else {
         await wait(1250);
         pdfVermerken();
@@ -17037,9 +17079,9 @@ function pdfImTab(adresse){
 }
 /* Android: Chrome zeigt eine blob-Adresse in einem neuen Tab nicht
    zuverlaessig an — der Tab blieb leer oder meldete einen Fehler
-   (Nutzerin mit Android-Handy, 14.10.2026). Dort wird das PDF stattdessen
-   gespeichert; Android meldet „Heruntergeladen · Öffnen" und zeigt es im
-   PDF-Programm des Geraets. Am iPhone bleibt es beim neuen Tab. */
+   (Nutzerin mit Android-Handy, 14.10.2026). Dort zeigt MOJI das PDF in
+   einer eigenen Ansicht (pdfZeigen, unten); pdfSpeichern ist darin der
+   Knopf „Speichern". Am iPhone bleibt es beim neuen Tab. */
 function istAndroid(){
   try{ return /Android/i.test(navigator.userAgent || ''); }catch(e){ return false; }
 }
@@ -17055,9 +17097,125 @@ function pdfSpeichern(adresse, name){
     return true;
   }catch(e){ return false; }
 }
-function pdfAnsehen(adresse, name){
-  return istAndroid() ? pdfSpeichern(adresse, name) : pdfImTab(adresse);
+/* ─── Die PDF-Ansicht in MOJI (Android) ────────────────────────────
+   Auch das Speichern half nicht ueberall: je nach Browser — etwa wenn
+   MOJI aus WhatsApp oder Facebook heraus offen ist — schluckt Android
+   den Download stumm (14.10.2026). Darum zeigt MOJI das PDF dort selbst:
+   pdf.js zeichnet die Seiten, darunter Teilen und Speichern. pdf.js wird
+   erst beim ersten Ansehen geladen. Zurueck am Handy schliesst die Ansicht. */
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let _pdfjsLaden = null;
+function pdfjsHolen(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsLaden) return _pdfjsLaden;
+  _pdfjsLaden = new Promise((ok, nein) => {
+    const s = document.createElement('script');
+    s.src = PDFJS_URL; s.async = true;
+    s.onload = () => {
+      if(!window.pdfjsLib){ _pdfjsLaden = null; nein(new Error('pdf.js fehlt')); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      ok(window.pdfjsLib);
+    };
+    s.onerror = () => { _pdfjsLaden = null; s.remove(); nein(new Error('pdf.js nicht geladen')); };
+    document.head.appendChild(s);
+  });
+  return _pdfjsLaden;
 }
+const PDFV_ZU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const PDFV_LUPE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M8.5 11h5M11 8.5v5"/></svg>';
+const PDFV_SICHERN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>';
+let _pdfv = null;
+/* true: die Ansicht geht auf (das Zeichnen laeuft danach). */
+function pdfZeigen(inhalt, name, datei, e){
+  if(!inhalt) return false;
+  if(_pdfv) pdfvZu(true);
+  const el = document.createElement('div');
+  el.className = 'pdfv';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', 'PDF-Ansicht');
+  el.innerHTML = '<div class="pdfv-kopf">'
+    +   '<button class="pdfv-rund" data-pdfv="zu" aria-label="Schließen">' + PDFV_ZU + '</button>'
+    +   '<b class="pdfv-name"></b>'
+    +   '<button class="pdfv-rund" data-pdfv="zoom" aria-label="Vergrößern" aria-pressed="false">' + PDFV_LUPE + '</button>'
+    + '</div>'
+    + '<div class="pdfv-seiten"><p class="pdfv-laedt">PDF wird geöffnet …</p></div>'
+    + '<div class="pdfv-fuss">'
+    +   '<button class="btn btn-out" data-pdfv="speichern">' + PDFV_SICHERN + 'Speichern</button>'
+    +   (datei ? '<button class="btn btn-p" data-pdfv="teilen">' + EX_TEILEN + 'Teilen</button>' : '')
+    + '</div>';
+  $('.pdfv-name', el).textContent = name || 'PDF';
+  /* Oeffnen kommt von dort, wo getippt wurde. */
+  if(e && typeof e.clientX === 'number' && (e.clientX || e.clientY)){
+    el.style.transformOrigin = e.clientX + 'px ' + e.clientY + 'px';
+  }
+  document.body.appendChild(el);
+  document.body.classList.add('locked');
+  _pdfv = { el: el, adresse: pdfAdresse(inhalt), name: name, datei: datei, verlauf: false };
+  try{ history.pushState({ pdfv:1 }, ''); _pdfv.verlauf = true; }catch(err){}
+  el.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-pdfv]'); if(!b) return;
+    const was = b.dataset.pdfv;
+    if(was === 'zu') pdfvZu();
+    if(was === 'speichern') pdfSpeichern(_pdfv && _pdfv.adresse, name);
+    if(was === 'teilen' && datei){
+      navigator.share({ files:[datei], title:name }).catch(err => {
+        if(!err || err.name !== 'AbortError') toast('Teilen hat nicht geklappt');
+      });
+    }
+    if(was === 'zoom'){
+      const gross = !el.classList.contains('gross');
+      el.classList.toggle('gross', gross);
+      b.setAttribute('aria-pressed', String(gross));
+      b.setAttribute('aria-label', gross ? 'Verkleinern' : 'Vergrößern');
+    }
+  });
+  pdfvZeichnen(inhalt, el);
+  return true;
+}
+async function pdfvZeichnen(inhalt, el){
+  const host = $('.pdfv-seiten', el);
+  try{
+    const lib = await pdfjsHolen();
+    const daten = new Uint8Array(await inhalt.arrayBuffer());
+    const doc = await lib.getDocument({ data: daten }).promise;
+    if(!el.isConnected) return;
+    host.innerHTML = '';
+    /* Scharf genug zum Vergroessern, aber sparsam mit dem Speicher:
+       doppelte Breite des Schirms, hoechstens 2,5-fach. */
+    const breite = Math.min(host.clientWidth || innerWidth || 360, 720);
+    const dichte = Math.min(2.5, Math.max(1.5, (window.devicePixelRatio || 1) * 1.25));
+    for(let i = 1; i <= Math.min(doc.numPages, 24); i++){
+      const seite = await doc.getPage(i);
+      const v1 = seite.getViewport({ scale: 1 });
+      const v = seite.getViewport({ scale: (breite * dichte) / v1.width });
+      const c = document.createElement('canvas');
+      c.width = Math.round(v.width); c.height = Math.round(v.height);
+      c.className = 'pdfv-seite';
+      c.setAttribute('aria-label', 'Seite ' + i);
+      host.appendChild(c);
+      await seite.render({ canvasContext: c.getContext('2d'), viewport: v }).promise;
+      if(!el.isConnected) return;
+    }
+  }catch(err){
+    console.warn('[MOJI] PDF-Ansicht', err);
+    if(!el.isConnected) return;
+    host.innerHTML = '<p class="pdfv-laedt">Die Vorschau lässt sich gerade nicht zeigen (keine Verbindung?). '
+      + 'Mit „Speichern" liegt das PDF in deinen Downloads.</p>';
+  }
+}
+function pdfvZu(sofort){
+  const v = _pdfv; if(!v) return;
+  _pdfv = null;
+  document.body.classList.remove('locked');
+  if(v.verlauf && !sofort){ try{ if(history.state && history.state.pdfv) history.back(); }catch(e){} }
+  if(sofort){ v.el.remove(); return; }
+  v.el.classList.add('weg');
+  setTimeout(() => v.el.remove(), 320);
+}
+/* Zurueck am Handy schliesst die Ansicht, statt MOJI zu verlassen. */
+addEventListener('popstate', () => { if(_pdfv){ _pdfv.verlauf = false; pdfvZu(); } });
 /* Das PDF als Datei fuers Teilen-Blatt — oder null, wenn das Geraet
    keine Dateien teilen kann. Dann bleibt es beim Oeffnen wie bisher. */
 function pdfDatei(doc, name){

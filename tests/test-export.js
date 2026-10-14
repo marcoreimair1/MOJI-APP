@@ -348,18 +348,14 @@ ok('Blockt der Browser den Tab, meldet es das', pdfImTab('blob:https://moji-app.
 window.open = echtOpen;
 /* Seit 14.10.2026: auf Android wird das PDF gespeichert statt im Tab
    geoeffnet — Chrome zeigte die blob-Adresse dort nicht an. */
-ok('Am iPhone/Rechner: Ansehen heisst neuer Tab', !istAndroid());
-window.open = function(u, z){ geoeffnet.push([u, z]); return {}; };
-geoeffnet = [];
-ok('pdfAnsehen nimmt dort den Tab', pdfAnsehen('blob:https://moji-app.at/x', 'a.pdf') === true && geoeffnet.length === 1);
+ok('Am iPhone/Rechner kein Android', !istAndroid());
 const uaEcht = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator), 'userAgent');
 Object.defineProperty(navigator, 'userAgent', { value:'Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36', configurable:true });
 ok('Android wird erkannt', istAndroid());
 let geklickt = null;
 const klickEcht = window.HTMLAnchorElement.prototype.click;
 window.HTMLAnchorElement.prototype.click = function(){ geklickt = { href:this.getAttribute('href'), download:this.getAttribute('download'), drin:document.body.contains(this) }; };
-geoeffnet = [];
-ok('Auf Android: gespeichert, kein Tab', pdfAnsehen('blob:https://moji-app.at/x', 'Arbeitsaufzeichnung_X_2026-09.pdf') === true && geoeffnet.length === 0);
+ok('Speichern: ein Download-Link', pdfSpeichern('blob:https://moji-app.at/x', 'Arbeitsaufzeichnung_X_2026-09.pdf') === true);
 ok('Ueber einen Download-Link mit Dateinamen', geklickt && geklickt.href === 'blob:https://moji-app.at/x'
    && geklickt.download === 'Arbeitsaufzeichnung_X_2026-09.pdf' && geklickt.drin, JSON.stringify(geklickt));
 ok('Der Link bleibt nicht liegen', !document.querySelector('a[download="Arbeitsaufzeichnung_X_2026-09.pdf"]'));
@@ -367,7 +363,37 @@ ok('Und die Meldung sagt, wo es liegt', document.getElementById('toast-t').textC
 ok('Ohne Adresse nichts', pdfSpeichern(null, 'x.pdf') === false);
 const ovA = exOverlay(1);
 ok('Auf Android heisst der Satz unter dem Blatt „Zum Öffnen antippen"', ovA.el.querySelector('.exhinweis').textContent === 'Zum Öffnen antippen');
+/* Ohne Teilen: der Knopf faellt weg, der Tipp aufs Blatt oeffnet trotzdem. */
+window.__wA = 0;
+ovA.wahl(null, () => { window.__wA++; return true; });
+ok('Ohne Teilen kein Teilen-Knopf', ovA.el.querySelector('#ex-teilen').hidden === true);
+ok('Und er ist wirklich weg (CSS ueberstimmt [hidden] nicht)', document.documentElement.innerHTML.indexOf('.exwahl > [hidden]{display:none!important}') >= 0);
+ovA.el.querySelector('.exstapel').click();
+ok('Der Tipp aufs Blatt oeffnet trotzdem', window.__wA === 1);
 ovA.stop(); ovA.el.remove();
+/* Seit 14.10.2026 (zweiter Anlauf): MOJI zeigt das PDF auf Android selbst. */
+window.pdfjsLib = { GlobalWorkerOptions:{}, getDocument: function(){ return { promise: Promise.resolve({ numPages: 2,
+  getPage: function(n){ return Promise.resolve({ getViewport: function(o){ return { width: 595 * o.scale, height: 842 * o.scale }; },
+    render: function(){ return { promise: Promise.resolve() }; } }); } }) }; } };
+const blobA = new Blob(['%PDF-1.4 x'], { type:'application/pdf' });
+const pushVor = history.length;
+ok('pdfZeigen geht auf', pdfZeigen(blobA, 'Arbeitsaufzeichnung_X_2026-09.pdf', null, { clientX: 120, clientY: 300 }) === true);
+const pv = document.querySelector('.pdfv');
+ok('Eine Ansicht mit Namen, Schliessen und Speichern', !!pv && pv.querySelector('.pdfv-name').textContent === 'Arbeitsaufzeichnung_X_2026-09.pdf'
+   && !!pv.querySelector('[data-pdfv="zu"]') && !!pv.querySelector('[data-pdfv="speichern"]'));
+ok('Ohne Datei zum Teilen kein Teilen-Knopf', !pv.querySelector('[data-pdfv="teilen"]'));
+ok('Sie geht von der Stelle des Tipps auf', pv.style.transformOrigin.indexOf('120px') === 0, pv.style.transformOrigin);
+ok('Zurueck am Handy ist vorbereitet', history.state && history.state.pdfv === 1);
+pv.querySelector('[data-pdfv="zoom"]').click();
+ok('Die Lupe vergroessert', pv.classList.contains('gross') && pv.querySelector('[data-pdfv="zoom"]').getAttribute('aria-pressed') === 'true');
+window.__pv = pv;
+setTimeout(function(){
+  ok('Zwei Seiten gezeichnet', window.__pv.querySelectorAll('canvas.pdfv-seite').length === 2,
+     window.__pv.querySelectorAll('canvas.pdfv-seite').length);
+  window.dispatchEvent(new window.PopStateEvent('popstate', { state:null }));
+  ok('Zurueck schliesst die Ansicht', !_pdfv && window.__pv.classList.contains('weg'));
+  delete window.pdfjsLib;
+}, 60);
 window.HTMLAnchorElement.prototype.click = klickEcht;
 if(uaEcht) delete navigator.userAgent; else delete navigator.userAgent;
 ok('Danach wieder kein Android', !istAndroid());
@@ -462,9 +488,9 @@ setTimeout(() => {
    ['Der Knopf fuehrt zum Unterschreiben', /\$\('#ex-go'\)\.addEventListener\('click', sigAuf\)/.test(roh)],
    ['Die Unterschrift steht im PDF', /doc\.addImage\(SIG_BILD, 'PNG'/.test(roh)],
    ['Wo es geht, kommt das PDF ueber das Teilen-Blatt',
-    /const datei = pdfDatei\(doc, name\);\s*\n\s*if\(datei\)\{[\s\S]{0,300}await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),/.test(roh)],
+    /const datei = pdfDatei\(doc, name\);[\s\S]{0,300}if\(datei \|\| android\)\{[\s\S]{0,500}await ov\.wahl\(datei \? \(\) => navigator\.share\(\{ files:\[datei\], title:name \}\) : null,/.test(roh)],
    ['Der Monat zaehlt auch dort erst mit der fertigen Datei',
-    /if\(datei\)\{[\s\S]{0,120}merkeExporte\(list\);/.test(roh)],
+    /if\(datei \|\| android\)\{[\s\S]{0,120}merkeExporte\(list\);/.test(roh)],
    ['Vor dem Oeffnen des PDFs merkt sich die App die Rueckkehr', /pdfVermerken\(\);\s*\n\s*doc\.save\(name\);/.test(roh)],
    ['Zurueck vom PDF: kein Vorspann', /if\(FASSUNG_NEU \|\| ZURUECK_VOM_PDF\) vorspannUeberspringen\(\);/.test(roh)],
    ['Und kein Gruss', /afterLogin\(session, !FASSUNG_NEU && !ZURUECK_VOM_PDF\)/.test(roh)],
@@ -513,10 +539,11 @@ setTimeout(() => {
    ['Die Zeilen tauchen aus der Unschaerfe auf',
     /\.exz b\{[\s\S]{0,200}opacity:0;transform:translateX\(-5px\);filter:blur\(3px\)/.test(roh) && /\.exz\.da b\{opacity:1;transform:none;filter:none\}/.test(roh)],
    ['Der Tipp oeffnet den Tab ohne Warten davor',
-    /stapel\.onclick = \(\) => \{ if\(!\(ansehen && ansehen\(\)\)\) los\(\); \};/.test(roh)],
+    /stapel\.onclick = e => \{ if\(!\(ansehen && ansehen\(e\)\)\) los\(\); \};/.test(roh)],
    ['Die Adresse lebt bis zum naechsten Export', /if\(_pdfAdresse\) URL\.revokeObjectURL\(_pdfAdresse\);/.test(roh)],
    ['buildPdf reicht Teilen und Ansehen weiter',
-    /await ov\.wahl\(\(\) => navigator\.share\(\{ files:\[datei\], title:name \}\),\s*\n\s*\(\) => pdfAnsehen\(adresse, name\)\);/.test(roh)],
+    /await ov\.wahl\(datei \? \(\) => navigator\.share\(\{ files:\[datei\], title:name \}\) : null,\s*\n\s*e => android \? pdfZeigen\(inhalt, name, datei, e\) : pdfImTab\(adresse\)\);/.test(roh)],
+   ['Auf Android auch ohne Teilen ueber die Wahl', /if\(datei \|\| android\)\{/.test(roh)],
    ['Fertig waechst das Blatt', /\.exdone\.fertig \.exstapel\{width:min\(68vw,258px\)/.test(roh)],
    ['Beim Druecken gibt es nach, solange der Finger liegt', /\.exdone\.tippbar \.exstapel:active\{scale:\.965\}/.test(roh)
     && /stapel\.addEventListener\('touchstart', \(\) => \{\}, \{ passive:true \}\);/.test(roh)],
