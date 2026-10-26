@@ -404,7 +404,7 @@ ok('Und am Ende steht oben nichts', el('v-zeitassi').classList.contains('ohnekop
 /* ── 11e · Was am Ende im Plan steht ── */
 ok('Das Intervall steht',     OB.sched.weekCount === 2, OB.sched.weekCount);
 ok('Die erste Woche des Assistenten ist Woche 1 im Kalender, die darauf Woche 2',
-   rhythmusWoche(OB.sched, zaWocheAb(0)) === 0 && rhythmusWoche(OB.sched, zaWocheAb(1)) === 1 && OB.sched.rotOk === true,
+   rhythmusWoche(OB.sched, zaWocheAb(0)) === 0 && rhythmusWoche(OB.sched, zaWocheAb(1)) === 1,
    OB.sched.offset);
 ok('Woche 1 traegt drei Tage', [1,2,3].every(d => OB.sched.weeks[0][d].vmOn)
    && !OB.sched.weeks[0][4].vmOn && !OB.sched.weeks[0][4].nmOn);

@@ -1686,14 +1686,6 @@ body.nobar .topbar{display:none}
 }
 #serbar .pkbar-ja:hover{ background:rgba(var(--za-minus-rgb-f),.24) }
 #serbar .pkbar-i svg{ width:20px; height:20px }
-/* Welche Woche läuft gerade? Ein Knopf je Woche, mit ihren Stunden —
-   so erkennt man die eigene wieder. */
-#rotbar .pkbar-in{ flex-wrap:wrap; row-gap:11px }
-#rotbar .pkbar-txt{ flex:1 1 auto }
-#rotbar .pkbar-btns{ flex:1 0 100%; display:flex; gap:8px }
-#rotbar .pkbar-btns button{ flex:1; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:2px }
-#rotbar .pkbar-btns small{ font-size:10.5px; font-weight:600; opacity:.72 }
-#rotbar .pkbar-i{ color:var(--butter); border-color:var(--butter-dim); background:rgba(var(--marke-rgb),.09) }
 
 /* Trenner zwischen Passkey und E-Mail */
 .mi.done svg{color:var(--c-eigen)}
@@ -1765,6 +1757,7 @@ body.nobar .topbar{display:none}
   cursor:pointer;transition:transform .16s var(--ease-out),border-color .2s,background .2s,color .2s}
 .sab-rot-w button:active{transform:scale(.95)}
 .sab-rot-w button.on{border-color:var(--butter-dim);background:rgba(var(--marke-rgb),.12);color:var(--butter)}
+.sab-rot-w button small{display:block;margin-top:1px;font-size:10px;font-weight:600;opacity:.7}
 /* Verlauf der Dienstplan-Fassungen */
 .shist{margin-top:14px}
 .shist-z{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:14px;
@@ -5998,6 +5991,18 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
 .hz-karte h3{ margin:0 0 3px }
 .hz-karte .hint{ margin-bottom:12px }
 .hz-wahl button{ padding:13px 4px 10px; font-size:17px }
+/* „Diese Woche": je Rhythmuswoche ein Knopf mit ihren Tagen und Stunden,
+   der Streifen in der Farbe der Woche wie bei den Reitern darunter. */
+.hz-rotwahl{ display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:8px }
+.hz-rotwahl button{ position:relative; text-align:left; padding:12px 14px 11px 18px; border-radius:16px; cursor:pointer;
+  border:1px solid var(--line-2); background:rgba(var(--s-auf),.04); color:var(--tx);
+  font:inherit; transition:transform .16s var(--ease-out), border-color .2s, background .2s }
+.hz-rotwahl button::before{ content:""; position:absolute; left:8px; top:12px; bottom:12px; width:3px; border-radius:2px; background:var(--wf) }
+.hz-rotwahl button:active{ transform:scale(.96) }
+.hz-rotwahl button b{ display:block; font-size:15px; font-weight:650 }
+.hz-rotwahl button small{ display:block; margin-top:2px; font-size:11px; color:var(--tx-3); font-variant-numeric:tabular-nums }
+.hz-rotwahl button.on{ border-color:var(--butter-dim); background:rgba(var(--marke-rgb),.12) }
+.hz-rotwahl button.on b{ color:var(--butter) }
 .hz-wahl button small{ font-size:9px }
 
 /* Welche Woche gerade bearbeitet wird. */
@@ -6939,16 +6944,6 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
   </div>
 </div>
 
-<!-- Einmal fragen, welche Rhythmuswoche gerade läuft (Konten mit 2 bis 4
-     Wochen, deren Assistent das nie gefragt hat). -->
-<div class="pkbar" id="rotbar" aria-hidden="true">
-  <div class="pkbar-hg" data-close="rotbar"></div>
-  <div class="pkbar-in" role="dialog" aria-modal="true" aria-labelledby="rot-b">
-    <span class="pkbar-i" id="rot-i"></span>
-    <span class="pkbar-txt"><b id="rot-b">—</b><small id="rot-s">—</small></span>
-    <span class="pkbar-btns" id="rot-btns"></span>
-  </div>
-</div>
 
 <!-- Zurücksetzen eines Tages, der zu einer Serie gehört: erst fragen. -->
 <div class="pkbar" id="serbar" aria-hidden="true">
@@ -7410,7 +7405,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-14-1500';
+const APP_STAND = '2026-10-26-1200';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8987,6 +8982,22 @@ function hrTagH(cfg){
   return b.vm + b.nm;
 }
 
+/* Die Diensttage einer Rhythmuswoche in Kurzform: "Mo–Sa", "Mo–Fr",
+   "Mo, Mi, Fr", "frei". */
+function wocheTageKurz(sched, i){
+  const w = (sched.weeks && (sched.weeks[i] || sched.weeks[0])) || {};
+  const tage = WORKDAYS.filter(d => { const b = tagBloecke(w[d]); return b.vm + b.nm > 0; });
+  if(!tage.length) return 'frei';
+  const teile = [];
+  for(let k = 0; k < tage.length; ){
+    let e = k;
+    while(e + 1 < tage.length && tage[e + 1] === tage[e] + 1) e++;
+    teile.push(e - k >= 2 ? DOWSHORT[tage[k]] + '–' + DOWSHORT[tage[e]]
+             : tage.slice(k, e + 1).map(d => DOWSHORT[d]).join(', '));
+    k = e + 1;
+  }
+  return teile.join(', ');
+}
 function renderZeiten(host, sched, onChange){
   const wc = clamp(sched.weekCount || 1, 1, 4);
   sched.tab = clamp(sched.tab || 0, 0, wc - 1);
@@ -9011,15 +9022,21 @@ function renderZeiten(host, sched, onChange){
 
   /* ── Welche Woche laeuft gerade ── */
   if(wc > 1){
+    /* Nicht „Woche 1 oder 2?" — das verstand kaum jemand (26.10.2026).
+       Sondern: diese Woche mit Datum, und je Wahl, was man da arbeitet. */
     const cur = rhythmusWoche(sched, new Date());
+    const h = new Date(), mo = new Date(h.getFullYear(), h.getMonth(), h.getDate() - (h.getDay() + 6) % 7);
+    const sa = new Date(mo.getFullYear(), mo.getMonth(), mo.getDate() + 5);
     const rw = document.createElement('div');
     rw.className = 'card hz-karte';
     rw.innerHTML = '<h3>Diese Woche</h3>'
-      + '<p class="hint">Gerade läuft Kalenderwoche ' + isoWeek(new Date())
-      + '. Nach welcher deiner Wochen arbeitest du?</p>'
-      + '<div class="za-wahl hz-wahl">'
-      + Array.from({length:wc}, (_, i) => '<button data-rot="' + i + '"'
-          + (i === cur ? ' class="on"' : '') + '>' + (i+1) + '<small>Woche</small></button>').join('')
+      + '<p class="hint">Von Montag, ' + mo.getDate() + '. ' + MONTHS[mo.getMonth()] + ' bis Samstag, '
+      + sa.getDate() + '. ' + MONTHS[sa.getMonth()] + ': Wie arbeitest du da?</p>'
+      + '<div class="hz-rotwahl">'
+      + Array.from({length:wc}, (_, i) => '<button data-rot="' + i + '" style="--wf:' + WOCHENFARBE[i] + '"'
+          + (i === cur ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>'
+          + '<b>' + esc(wocheTageKurz(sched, i)) + '</b>'
+          + '<small>' + fmtH(weekTotal(sched, i)) + ' h · Woche ' + (i + 1) + '</small></button>').join('')
       + '</div>';
     host.appendChild(rw);
   }
@@ -9097,7 +9114,6 @@ function renderZeiten(host, sched, onChange){
       const will = +b.dataset.rot;
       sched.offset = (((will - wochenNr(new Date())) % wc) + wc) % wc;
       sched.basis = 'lauf';
-      sched.rotOk = true;
       neu(); return;
     }
     if(b.dataset.tab !== undefined){
@@ -10247,7 +10263,6 @@ function zaFertig(){
     OB.sched.offset = (((0 - wochenNr(bezug)) % ZA.wc) + ZA.wc) % ZA.wc;
     OB.sched.basis = 'lauf';
   }
-  OB.sched.rotOk = true;
   mojiSagt([
     'Super, *' + zaName() + '*! Deine Arbeitszeiten stehen.',
     'Ab jetzt trägst du nur noch *Urlaub und Krankenstand* im Kalender ein — den Rest rechne ich.',
@@ -10725,63 +10740,11 @@ $('#lg-vn').addEventListener('keydown', e => { if(e.key === 'Enter') $('[data-do
 const CAL = { y:NOW.getFullYear(), m:NOW.getMonth() };
 const EX  = { year:PREV.getFullYear(), set:new Set() };
 
-/* Konten, die vor dem 02.10.2026 mit 2 bis 4 Wochen angelegt wurden: der
-   Assistent fragte nie, welche Woche gerade laeuft. Einmal fragen — nur,
-   wenn der aktuelle Plan heute gilt und nichts anderes offen ist. */
-function rotFrageNoetig(){
-  if(!ME || !ME.sched || ME.sched.rotOk) return false;
-  return clamp(ME.sched.weekCount || 1, 1, 4) > 1 && schedFuer(ME, new Date()) === ME.sched;
-}
-function rotBarSpaeter(n){
-  clearTimeout(rotBarSpaeter._t);
-  rotBarSpaeter._t = setTimeout(() => {
-    if(!rotFrageNoetig()) return;
-    const v = $('#v-cal');
-    const frei = !document.querySelector('.pkbar.on') && !gruessend() && v && v.classList.contains('on')
-      && !$('#sheet').classList.contains('on') && !document.body.classList.contains('menuauf');
-    if(frei) rotBarAuf(); else if((n || 0) < 4) rotBarSpaeter((n || 0) + 1);
-  }, 2600);
-}
-function rotBarAuf(){
-  const el = $('#rotbar'); if(!el || !ME) return;
-  const wc = clamp(ME.sched.weekCount || 1, 1, 4), heute = new Date();
-  const cur = rhythmusWoche(ME.sched, heute);
-  $('#rot-i').innerHTML = ICONS.zeit || '';
-  $('#rot-b').textContent = 'Welche deiner Wochen läuft gerade?';
-  $('#rot-s').textContent = 'Dein Dienstplan wechselt alle ' + wc + ' Wochen. Für diese Woche (KW '
-    + isoWeek(heute) + ') rechnet MOJI mit Woche ' + (cur + 1) + ' — stimmt das?';
-  $('#rot-btns').innerHTML = Array.from({ length:wc }, (_, i) => '<button class="'
-    + (i === cur ? 'pkbar-ja' : 'pkbar-no') + '" data-rotw="' + i + '">Woche ' + (i + 1)
-    + '<small>' + fmtH(weekTotal(ME.sched, i)) + ' h</small></button>').join('');
-  el.classList.add('on');
-  el.setAttribute('aria-hidden', 'false');
-  requestAnimationFrame(() => el.classList.add('da'));
-}
-function rotBarZu(){
-  const el = $('#rotbar'); if(!el || !el.classList.contains('on')) return;
-  el.classList.remove('da');
-  el.setAttribute('aria-hidden', 'true');
-  setTimeout(() => el.classList.remove('on'), 300);
-}
-$('#rotbar').addEventListener('click', e => {
-  if(!ME) return;
-  const b = e.target.closest('[data-rotw]');
-  if(!b && !e.target.closest('[data-close="rotbar"]')) return;
-  const wc = clamp(ME.sched.weekCount || 1, 1, 4), heute = new Date();
-  const cur = rhythmusWoche(ME.sched, heute);
-  /* Auch Wegtippen ist eine Antwort — gefragt wird nur einmal; die Karte
-     „Diese Woche" im Profilmenue bleibt. */
-  ME.sched.rotOk = true;
-  if(b){
-    const will = +b.dataset.rotw;
-    ME.sched.offset = (((will - wochenNr(heute)) % wc) + wc) % wc;
-    ME.sched.basis = 'lauf';
-    rotBarZu(); save(); renderCal();
-    toast(will === cur ? 'Danke — dann bleibt es so.' : 'Umgestellt: diese Woche ist Woche ' + (will + 1) + '.');
-    return;
-  }
-  rotBarZu(); save();
-});
+/* Bis 26.10.2026 stand hier eine einmalige Frage beim Oeffnen: „Welche
+   deiner Wochen läuft gerade? — Woche 1 / Woche 2". Sie verwirrte die
+   meisten, und viele tippten die falsche Woche, ohne es zu merken
+   (Marco). Gestrichen; die Woche stellt man in den Dienstzeiten unter
+   „Diese Woche" ein — dort mit Datum und den Tagen jeder Woche. */
 function enterApp(){
   try{ if(window.erscheinungAusProfil) window.erscheinungAusProfil(); }catch(e){}
   /* Beim Start gutschreiben, was seit dem letzten Mal an Jahreswechseln
@@ -10811,7 +10774,6 @@ function enterApp(){
   malErinnerung();
   exYear(); renderCal();
   setTimeout(pruefeStand, 3500);
-  if(rotFrageNoetig()) rotBarSpaeter(0);
   /* Wer vom PDF zurueckkommt, will dort weitermachen, wo er war. */
   go(ZURUECK_VOM_PDF && !enterApp._schonDa ? 'v-export' : 'v-cal');
   enterApp._schonDa = true;
@@ -17866,9 +17828,9 @@ function sabRotMalen(){
   const mo = new Date(ab.getFullYear(), ab.getMonth(), ab.getDate() - (ab.getDay() + 6) % 7);
   const cur = rhythmusWoche(DRAFT, ab);
   $('#sab-rot-t').textContent = 'In der Woche ab Montag, ' + mo.getDate() + '. ' + MONTHS[mo.getMonth()]
-    + ' (KW ' + isoWeek(mo) + '), arbeitest du nach';
+    + ' (KW ' + isoWeek(mo) + '): wie arbeitest du da?';
   $('#sab-rot-w').innerHTML = Array.from({ length:wc }, (_, i) => '<button data-sabrot="' + i + '"'
-    + (i === cur ? ' class="on"' : '') + '>Woche ' + (i + 1) + '</button>').join('');
+    + (i === cur ? ' class="on"' : '') + '>' + esc(wocheTageKurz(DRAFT, i)) + '<small>Woche ' + (i + 1) + '</small></button>').join('');
 }
 $('#sab-ab').addEventListener('input', sabRotMalen);
 $('#sab-ab').addEventListener('change', sabRotMalen);
@@ -17886,8 +17848,6 @@ $('#sab-zurueck').addEventListener('click', () => sabSchritt(1));
 $('#sab-ok').addEventListener('click', () => {
   const v = $('#sab-ab').value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ toast('Bitte ein Datum wählen.'); return; }
-  /* Die Woche am Stichtag stand vor Augen — damit ist sie bestaetigt. */
-  if(DRAFT && clamp(DRAFT.weekCount || 1, 1, 4) > 1) DRAFT.rotOk = true;
   if(hoursSichern(v)) sabZu();
 });
 $('#sab').addEventListener('click', e => { if(e.target.dataset.close === 'sab') sabZu(); });

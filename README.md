@@ -921,6 +921,14 @@ Geprüft in `tests/test-serie.js` (6b), `tests/test-tag.js` (13), `tests/test-ze
   gefragt (`#rotbar`, `rotFrageNoetig()`): „Für diese Woche rechnet MOJI mit Woche 2 — stimmt das?",
   je Woche ein Knopf mit ihren Stunden. Antwort oder Wegtippen setzt `sched.rotOk`; die Karte
   „Diese Woche" im Profilmenü setzt es ebenso.
+- **Gestrichen am 26.10.2026:** die einmalige Frage beim Öffnen („Welche deiner Wochen läuft
+  gerade? — Woche 1 / Woche 2", `#rotbar`). Sie verwirrte die meisten, und viele tippten die
+  falsche Woche, ohne es zu merken (Marco). Vier Konten hatten sie bis dahin beantwortet oder
+  weggetippt. Statt einer Frage gibt es eine verständliche Wahl in den Dienstzeiten unter
+  **„Diese Woche"**: das Datum dieser Woche („Von Montag, 26. Oktober bis Samstag, 31. Oktober:
+  Wie arbeitest du da?") und je Rhythmuswoche ein Knopf mit ihren Tagen und Stunden („Mo–Sa ·
+  44,00 h · Woche 1", `wocheTageKurz()`), mit dem Farbstreifen der Woche. Ebenso im Datumsschritt
+  beim Planwechsel. `sched.rotOk` wird nicht mehr gebraucht.
 - *Planwechsel ab einem Datum* mit 2 bis 4 Wochen fragt nach der Woche **am Stichtag** (vorher galt
   die Karte für heute, wo noch der alte Plan läuft), vorgewählt mit dem bisherigen Versatz
   (`sabRotMalen()`); das Datum wird in Ortszeit gelesen.

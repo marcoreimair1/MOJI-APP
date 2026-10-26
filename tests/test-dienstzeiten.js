@@ -213,7 +213,7 @@ ok('Die aktuelle Fassung ist hervorgehoben', !!host.querySelector('.shist-z.jetz
   ok('Nach dem Assistenten: KW 40 ist Woche 1, KW 41 Woche 2, KW 42 wieder 1',
      rhythmusWoche(OB.sched, new Date(2026, 8, 28)) === 0 && rhythmusWoche(OB.sched, new Date(2026, 9, 5)) === 1
      && rhythmusWoche(OB.sched, new Date(2026, 9, 14)) === 0, OB.sched.offset);
-  ok('Und als bestaetigt vermerkt', OB.sched.rotOk === true && OB.sched.basis === 'lauf');
+  ok('Gegen die fortlaufende Wochennummer', OB.sched.basis === 'lauf');
   ZA.wc = 3; ZA.bezug = new Date(2026, 9, 5); ZA.sched = defaultSched();
   try{ zaFertig(); }catch(e){}
   ok('Drei Wochen ab KW 41: KW 41 ist Woche 1, KW 43 Woche 3',
@@ -238,29 +238,31 @@ ok('Die aktuelle Fassung ist hervorgehoben', !!host.querySelector('.shist-z.jetz
   DRAFT.weekCount = 1; sabRotMalen();
   ok('Bei einer Woche gibt es die Frage nicht', rotBox.hidden);
   sabZu(); DRAFT = null;
-  /* h · Bestehende Konten mit 2 Wochen: einmal fragen */
-  ME = normalize({ id:'pQ', vorname:'Q', dob:'1990-01-01' });
-  ok('Eine Woche: keine Frage', !rotFrageNoetig());
-  ME.sched.weekCount = 2;
-  ok('Zwei Wochen ohne Bestaetigung: Frage', rotFrageNoetig());
-  rotBarAuf();
-  const rb = document.getElementById('rotbar');
-  ok('Die Leiste nennt je Woche ihre Stunden', rb.classList.contains('on')
-     && document.querySelectorAll('#rot-btns [data-rotw]').length === 2
-     && document.querySelector('#rot-btns [data-rotw="0"] small').textContent === '44,00 h');
-  const cur = rhythmusWoche(ME.sched, new Date()), ander = 1 - cur;
-  document.querySelector('#rot-btns [data-rotw="' + ander + '"]').click();
-  ok('Die andere gewaehlt: jetzt laeuft sie, und gefragt ist', rhythmusWoche(ME.sched, new Date()) === ander
-     && ME.sched.rotOk === true && !rotFrageNoetig());
-  ME = normalize({ id:'pQ2', vorname:'Q', dob:'1990-01-01' }); ME.sched.weekCount = 2;
-  rotBarAuf();
-  document.querySelector('#rotbar [data-close="rotbar"]').click();
-  ok('Wegtippen ist auch eine Antwort', ME.sched.rotOk === true && !rotFrageNoetig());
-  /* Gilt der aktuelle Plan erst ab spaeter, fragt die Leiste nicht. */
-  ME = normalize({ id:'pQ3', vorname:'Q', dob:'1990-01-01' }); ME.sched.weekCount = 2;
-  const morgen = new Date(); morgen.setDate(morgen.getDate() + 1);
-  ME.schedAlt = [{ bis: key(morgen.getFullYear(), morgen.getMonth(), morgen.getDate()), sched: defaultSched() }];
-  ok('Plan gilt erst ab spaeter: keine Frage', !rotFrageNoetig());
+  /* h · Seit 26.10.2026 keine Frage mehr beim Oeffnen (verwirrte die
+     meisten). Die Woche stellt man unter „Diese Woche" ein — mit Datum
+     und den Tagen jeder Woche statt „Woche 1 / Woche 2". */
+  ok('Die Leiste „Welche deiner Wochen läuft gerade?" gibt es nicht mehr',
+     !document.getElementById('rotbar') && typeof rotFrageNoetig === 'undefined' && typeof rotBarAuf === 'undefined');
+  const zw = defaultSched(); zw.weekCount = 2;
+  [6].forEach(function(d){ zw.weeks[1][d] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+  ok('Die Tage einer Woche in Kurzform', wocheTageKurz(zw, 0) === 'Mo–Sa' && wocheTageKurz(zw, 1) === 'Mo–Fr', wocheTageKurz(zw, 0) + ' / ' + wocheTageKurz(zw, 1));
+  const lu = defaultSched(); [2,4,6].forEach(function(d){ lu.weeks[0][d].vmOn = false; lu.weeks[0][d].nmOn = false; });
+  ok('Mit Luecken einzeln', wocheTageKurz(lu, 0) === 'Mo, Mi, Fr', wocheTageKurz(lu, 0));
+  const leer = defaultSched(); [1,2,3,4,5,6].forEach(function(d){ leer.weeks[0][d].vmOn = false; leer.weeks[0][d].nmOn = false; });
+  ok('Ganz frei', wocheTageKurz(leer, 0) === 'frei');
+  const hostW = document.createElement('div'); document.body.appendChild(hostW);
+  renderZeiten(hostW, zw, null);
+  const knoepfe = hostW.querySelectorAll('.hz-rotwahl [data-rot]');
+  ok('„Diese Woche": ein Knopf je Woche mit Tagen und Stunden', knoepfe.length === 2
+     && knoepfe[0].textContent === 'Mo–Sa44,00 h · Woche 1' && knoepfe[1].textContent === 'Mo–Fr40,00 h · Woche 2',
+     Array.prototype.map.call(knoepfe, function(k){ return k.textContent; }).join(' | '));
+  const hinwW = Array.prototype.filter.call(hostW.querySelectorAll('.hz-karte .hint'), function(h){ return h.textContent.indexOf('Von Montag, ') === 0; })[0];
+  ok('Darueber das Datum dieser Woche', !!hinwW && hinwW.textContent.indexOf(': Wie arbeitest du da?') > 0, hinwW && hinwW.textContent);
+  const jetztW = rhythmusWoche(zw, new Date());
+  ok('Die laufende ist markiert', knoepfe[jetztW].classList.contains('on') && knoepfe[jetztW].getAttribute('aria-pressed') === 'true');
+  knoepfe[1 - jetztW].click();
+  ok('Ein Tipp stellt die Woche um', rhythmusWoche(zw, new Date()) === 1 - jetztW);
+  hostW.remove();
   /* Gegenpruefung vor dem Ausrollen */
   ME = normalize({ id:'pK', vorname:'K', dob:'1990-01-01' });
   DRAFT = JSON.parse(JSON.stringify(ME.sched)); DRAFT.weekCount = 2;
