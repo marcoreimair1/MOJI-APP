@@ -7405,7 +7405,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-26-1200';
+const APP_STAND = '2026-10-26-1300';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8998,6 +8998,23 @@ function wocheTageKurz(sched, i){
   }
   return teile.join(', ');
 }
+/* Wie wocheTageKurz, aber unterscheidbar: sehen zwei Wochen gleich aus
+   (etwa beide „Mo–Fr"), kommen die Tage dazu, die anders sind — „Mo–Fr ·
+   Fr 4 h" gegen „Mo–Fr · Di 4 h". */
+function wocheErkennbar(sched, i){
+  const wc = clamp(sched.weekCount || 1, 1, 4), kurz = wocheTageKurz(sched, i);
+  let gleich = false;
+  for(let j = 0; j < wc; j++) if(j !== i && wocheTageKurz(sched, j) === kurz) gleich = true;
+  if(!gleich) return kurz;
+  const h = (w, d) => { const b = tagBloecke(((sched.weeks[w] || sched.weeks[0]) || {})[d]); return b.vm + b.nm; };
+  /* Genannt werden die kuerzeren Tage dieser Woche („Fr 4 h") — gibt es
+     keine, die laengeren. */
+  const andere = d => { const x = []; for(let j = 0; j < wc; j++) if(j !== i) x.push(h(j, d)); return x; };
+  const tag = d => DOWSHORT[d] + ' ' + fmtH(h(i, d)).replace(/,00$/, '') + ' h';
+  let anders = WORKDAYS.filter(d => h(i, d) > 0 && andere(d).some(x => x > h(i, d) + 0.001));
+  if(!anders.length) anders = WORKDAYS.filter(d => h(i, d) > 0 && andere(d).some(x => x < h(i, d) - 0.001));
+  return anders.length ? kurz + ' · ' + anders.slice(0, 2).map(tag).join(', ') : kurz;
+}
 function renderZeiten(host, sched, onChange){
   const wc = clamp(sched.weekCount || 1, 1, 4);
   sched.tab = clamp(sched.tab || 0, 0, wc - 1);
@@ -9035,7 +9052,7 @@ function renderZeiten(host, sched, onChange){
       + '<div class="hz-rotwahl">'
       + Array.from({length:wc}, (_, i) => '<button data-rot="' + i + '" style="--wf:' + WOCHENFARBE[i] + '"'
           + (i === cur ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>'
-          + '<b>' + esc(wocheTageKurz(sched, i)) + '</b>'
+          + '<b>' + esc(wocheErkennbar(sched, i)) + '</b>'
           + '<small>' + fmtH(weekTotal(sched, i)) + ' h · Woche ' + (i + 1) + '</small></button>').join('')
       + '</div>';
     host.appendChild(rw);
@@ -17830,7 +17847,7 @@ function sabRotMalen(){
   $('#sab-rot-t').textContent = 'In der Woche ab Montag, ' + mo.getDate() + '. ' + MONTHS[mo.getMonth()]
     + ' (KW ' + isoWeek(mo) + '): wie arbeitest du da?';
   $('#sab-rot-w').innerHTML = Array.from({ length:wc }, (_, i) => '<button data-sabrot="' + i + '"'
-    + (i === cur ? ' class="on"' : '') + '>' + esc(wocheTageKurz(DRAFT, i)) + '<small>Woche ' + (i + 1) + '</small></button>').join('');
+    + (i === cur ? ' class="on"' : '') + '>' + esc(wocheErkennbar(DRAFT, i)) + '<small>Woche ' + (i + 1) + '</small></button>').join('');
 }
 $('#sab-ab').addEventListener('input', sabRotMalen);
 $('#sab-ab').addEventListener('change', sabRotMalen);

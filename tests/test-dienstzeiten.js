@@ -250,6 +250,14 @@ ok('Die aktuelle Fassung ist hervorgehoben', !!host.querySelector('.shist-z.jetz
   ok('Mit Luecken einzeln', wocheTageKurz(lu, 0) === 'Mo, Mi, Fr', wocheTageKurz(lu, 0));
   const leer = defaultSched(); [1,2,3,4,5,6].forEach(function(d){ leer.weeks[0][d].vmOn = false; leer.weeks[0][d].nmOn = false; });
   ok('Ganz frei', wocheTageKurz(leer, 0) === 'frei');
+  /* Zwei Wochen mit denselben Tagen: der Unterschied kommt dazu. */
+  const gl = defaultSched(); gl.weekCount = 2;
+  [0,1].forEach(function(w){ gl.weeks[w][6] = { vmOn:false, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' }; });
+  gl.weeks[0][5] = { vmOn:true, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' };
+  gl.weeks[1][2] = { vmOn:true, vmFrom:'08:00', vmTo:'12:00', nmOn:false, nmFrom:'13:00', nmTo:'17:00' };
+  ok('Gleiche Tage: „Mo–Fr · Fr 4 h" gegen „Mo–Fr · Di 4 h"', wocheErkennbar(gl, 0) === 'Mo–Fr · Fr 4 h' && wocheErkennbar(gl, 1) === 'Mo–Fr · Di 4 h',
+     wocheErkennbar(gl, 0) + ' / ' + wocheErkennbar(gl, 1));
+  ok('Verschiedene Tage bleiben kurz', wocheErkennbar(zw, 0) === 'Mo–Sa' && wocheErkennbar(zw, 1) === 'Mo–Fr');
   const hostW = document.createElement('div'); document.body.appendChild(hostW);
   renderZeiten(hostW, zw, null);
   const knoepfe = hostW.querySelectorAll('.hz-rotwahl [data-rot]');

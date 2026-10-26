@@ -927,7 +927,9 @@ Geprüft in `tests/test-serie.js` (6b), `tests/test-tag.js` (13), `tests/test-ze
   weggetippt. Statt einer Frage gibt es eine verständliche Wahl in den Dienstzeiten unter
   **„Diese Woche"**: das Datum dieser Woche („Von Montag, 26. Oktober bis Samstag, 31. Oktober:
   Wie arbeitest du da?") und je Rhythmuswoche ein Knopf mit ihren Tagen und Stunden („Mo–Sa ·
-  44,00 h · Woche 1", `wocheTageKurz()`), mit dem Farbstreifen der Woche. Ebenso im Datumsschritt
+  44,00 h · Woche 1", `wocheTageKurz()`), mit dem Farbstreifen der Woche. Sehen zwei Wochen gleich
+  aus (beide „Mo–Fr"), nennt `wocheErkennbar()` ihre kürzeren Tage: „Mo–Fr · Fr 4 h" gegen
+  „Mo–Fr · Di 4 h". Ebenso im Datumsschritt
   beim Planwechsel. `sched.rotOk` wird nicht mehr gebraucht.
 - *Planwechsel ab einem Datum* mit 2 bis 4 Wochen fragt nach der Woche **am Stichtag** (vorher galt
   die Karte für heute, wo noch der alte Plan läuft), vorgewählt mit dem bisherigen Versatz
