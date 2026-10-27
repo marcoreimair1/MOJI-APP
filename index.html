@@ -7405,7 +7405,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-26-1300';
+const APP_STAND = '2026-10-27-1400';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -8658,7 +8658,102 @@ async function cloudLoad(){
   return r.data ? r.data.data : null;
 }
 
-let _saveT = null, _dirty = false;
+/* ─── Abgleich ─────────────────────────────────────────────
+   Bis 27.10.2026 schickte cloudFlush einfach den ganzen Stand hoch. Eine
+   App, die seit Stunden offen lag, überschrieb so alles, was inzwischen in
+   der Cloud dazugekommen war — vom zweiten Gerät oder eine Korrektur von
+   Hand. Jetzt merkt sich MOJI den Stand, den es zuletzt sicher in der Cloud
+   gesehen hat (die Basis), und sichert nur, wenn die Cloud noch auf ihm
+   steht. Steht sie woanders, werden beide Stände Feld für Feld
+   zusammengeführt: was nur eine Seite geändert hat, kommt von ihr; haben
+   beide dasselbe Feld geändert, gilt die jüngere Änderung. */
+let _basis = null;
+function basisKey(){ return 'simply.basis.' + UID; }
+function basisSetzen(d){
+  _basis = d ? abgKopie(d) : null;
+  try{
+    if(d) localStorage.setItem(basisKey(), JSON.stringify(d));
+    else localStorage.removeItem(basisKey());
+  }catch(e){}
+}
+function abgKopie(x){ return x === undefined ? undefined : JSON.parse(JSON.stringify(x)); }
+function abgIstObj(x){ return !!x && typeof x === 'object' && !Array.isArray(x); }
+/* Inhaltlich gleich — die Reihenfolge der Felder zählt nicht, die der
+   Listeneinträge schon. */
+function abgGleich(a, b){
+  if(a === b) return true;
+  if(!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+  if(Array.isArray(a) !== Array.isArray(b)) return false;
+  if(Array.isArray(a)) return a.length === b.length && a.every((x, i) => abgGleich(x, b[i]));
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length
+      && ka.every(k => Object.prototype.hasOwnProperty.call(b, k) && abgGleich(a[k], b[k]));
+}
+/* Listen, deren Einträge sich erkennen lassen — Kennungen als Text
+   (gelesen) oder Einträge mit id (post) —, werden wie Mengen
+   zusammengeführt. Alle anderen (die Wochen im Dienstplan) gelten als
+   ein Feld. */
+function abgSchluessel(l){
+  const s = [];
+  for(const x of l){
+    const k = (typeof x === 'string' || typeof x === 'number') ? 'w' + x
+            : (abgIstObj(x) && (typeof x.id === 'string' || typeof x.id === 'number')) ? 'i' + x.id : null;
+    if(k === null || s.indexOf(k) >= 0) return null;
+    s.push(k);
+  }
+  return s;
+}
+function abgListe(l, b, c, lokalJuenger){
+  const kl = abgSchluessel(l), kb = abgSchluessel(b), kc = abgSchluessel(c);
+  if(!kl || !kb || !kc) return lokalJuenger ? l : abgKopie(c);
+  const aus = [];
+  /* Was eine Seite neu hat, bleibt; was eine Seite entfernt hat, fällt weg. */
+  kl.forEach((k, i) => {
+    const j = kc.indexOf(k), n = kb.indexOf(k);
+    if(j < 0){ if(n < 0) aus.push(l[i]); return; }
+    aus.push(abgFeld(l[i], n < 0 ? undefined : b[n], c[j], lokalJuenger));
+  });
+  kc.forEach((k, j) => { if(kl.indexOf(k) < 0 && kb.indexOf(k) < 0) aus.push(abgKopie(c[j])); });
+  return aus;
+}
+function abgObjekt(l, b, c, lokalJuenger){
+  new Set([...Object.keys(l), ...Object.keys(b), ...Object.keys(c)]).forEach(k => {
+    const v = abgFeld(l[k], b[k], c[k], lokalJuenger);
+    if(v === undefined) delete l[k]; else l[k] = v;
+  });
+  return l;
+}
+/* Ein Feld aus drei Fassungen: hier (l), zuletzt sicher (b), Cloud (c).
+   Objekte werden dabei in l weitergeschrieben, damit offene Ansichten
+   ihre Verweise behalten. Ein fehlendes Feld ist undefined. */
+function abgFeld(l, b, c, lokalJuenger){
+  if(abgGleich(l, c) || abgGleich(c, b)) return l;
+  if(abgGleich(l, b)) return abgKopie(c);
+  if(abgIstObj(l) && abgIstObj(c)) return abgObjekt(l, abgIstObj(b) ? b : {}, c, lokalJuenger);
+  if(Array.isArray(l) && Array.isArray(c)) return abgListe(l, Array.isArray(b) ? b : [], c, lokalJuenger);
+  return lokalJuenger ? l : abgKopie(c);
+}
+/* Den Cloud-Stand in ME einarbeiten — ME bleibt dasselbe Objekt. Danach
+   rechnen die Konten neu, denn ihre Stände folgen aus dem, was jetzt
+   zusammen drinsteht. */
+function cloudAbgleichen(cloud){
+  const neu = abgFeld(ME, _basis || {}, cloud, (ME.updated || 0) >= (cloud.updated || 0));
+  if(neu !== ME){ Object.keys(ME).forEach(k => delete ME[k]); Object.assign(ME, neu); }
+  basisSetzen(cloud);
+  try{ normalize(ME); urlaubGutschreiben(ME); kontenRechnen(ME); }
+  catch(e){ console.warn('[MOJI] Abgleich', e); }
+  ME.updated = Math.max(Date.now(), (Number(cloud.updated) || 0) + 1);
+  try{ localStorage.setItem(cacheKey(), JSON.stringify(ME)); }catch(e){}
+  nachAbgleichMalen();
+}
+function nachAbgleichMalen(){
+  try{
+    $('#me-name').textContent = ME.vorname + ' ' + ME.nachname;
+    malAvatar(); malRang(); malErinnerung(); renderCal();
+  }catch(e){ console.warn('[MOJI] Neu zeichnen nach Abgleich', e); }
+}
+
+let _saveT = null, _dirty = false, _flushLauf = null;
 function cloudQueue(){
   if(!CLOUD_ON || !UID || !ME) return;
   ME.updated = Date.now();
@@ -8667,14 +8762,45 @@ function cloudQueue(){
   clearTimeout(_saveT);
   _saveT = setTimeout(cloudFlush, 700);
 }
-async function cloudFlush(){
+/* Immer nur ein Sichern zur Zeit — zwei gleichzeitige hielten beide
+   dieselbe Basis für gültig, und das zweite liefe in den Abgleich. */
+function cloudFlush(){
+  if(_flushLauf) return _flushLauf.then(() => _dirty ? cloudFlush() : undefined);
+  _flushLauf = cloudSichern().finally(() => { _flushLauf = null; });
+  return _flushLauf;
+}
+async function cloudSichern(){
   if(!CLOUD_ON || !UID || !ME) return;
   try{
-    const r = await sb.from('records').upsert({
-      user_id: UID, data: ME, updated_at: new Date().toISOString()
-    });
-    if(r.error) throw r.error;
-    _dirty = false; setSync('ok');
+    let gesendet = null;
+    for(let runde = 0; runde < 3 && !gesendet; runde++){
+      const daten = abgKopie(ME), zeit = new Date().toISOString();
+      if(!_basis){
+        /* Noch kein sicherer Stand bekannt (erstes Sichern, oder die
+           Zeile fehlt): ganz sichern wie früher. */
+        const r = await sb.from('records').upsert({ user_id: UID, data: daten, updated_at: zeit });
+        if(r.error) throw r.error;
+        gesendet = daten; break;
+      }
+      /* Nur schreiben, wenn die Cloud noch auf der Basis steht. */
+      let q = sb.from('records').update({ data: daten, updated_at: zeit }).eq('user_id', UID);
+      q = _basis.updated == null ? q.is('data->>updated', null)
+                                 : q.eq('data->>updated', String(_basis.updated));
+      const r = await q.select('user_id');
+      if(r.error) throw r.error;
+      if(r.data && r.data.length){ gesendet = daten; break; }
+      const cloud = await cloudLoad();
+      if(!ME) return;   /* inzwischen abgemeldet */
+      /* Steht die Cloud wirklich woanders, zusammenführen. Fehlt die Zeile
+         oder steht sie doch auf der Basis (dann griff der Filter nicht),
+         im nächsten Durchgang ganz sichern — schlimmstenfalls wie früher. */
+      if(cloud && String(cloud.updated) !== String(_basis.updated)) cloudAbgleichen(cloud);
+      else basisSetzen(null);
+    }
+    if(!gesendet) throw new Error('Abgleich kam nicht zur Ruhe');
+    basisSetzen(gesendet);
+    if(ME && ME.updated === gesendet.updated) _dirty = false;
+    setSync(_dirty ? 'saving' : 'ok');
   }catch(e){
     console.warn('Sichern fehlgeschlagen', e);
     setSync(navigator.onLine ? 'error' : 'offline');
@@ -17609,6 +17735,7 @@ async function loeschenJetzt(){
       return;
     }
     try{ localStorage.removeItem(cacheKey()); }catch(e){}
+    basisSetzen(null);
     try{ localStorage.removeItem(pkHostSchluessel()); }catch(e){}
     try{ await sb.auth.signOut(); }catch(e){}
     UID = null; MAIL = ''; ME = null; PK_LISTE = null;
@@ -18256,12 +18383,26 @@ async function afterLogin(session, frisch){
   try{ rec = await cloudLoad(); }
   catch(e){ console.warn(e); offline = true; }
 
-  let cached = null;
+  let cached = null, basisAlt = null;
   try{ const raw = localStorage.getItem(cacheKey()); if(raw) cached = JSON.parse(raw); }catch(e){}
+  try{ const raw = localStorage.getItem(basisKey()); if(raw) basisAlt = JSON.parse(raw); }catch(e){}
 
-  /* Ungesendete Änderungen von diesem Gerät haben Vorrang */
+  /* Ungesendete Änderungen von diesem Gerät haben Vorrang — seit
+     27.10.2026 nur für das, was sie geändert haben. Ungesendet ist, was
+     seit dem letzten sicheren Stand (der Basis) dazukam; hat sich die Cloud
+     seither auch bewegt, werden beide zusammengeführt. */
   let push = false;
+  if(offline) _basis = basisAlt; else basisSetzen(rec);
   if(offline && cached){ rec = cached; }
+  else if(cached && rec && basisAlt){
+    if(String(cached.updated) !== String(basisAlt.updated)){
+      if(String(rec.updated) !== String(basisAlt.updated))
+        cached = abgFeld(cached, basisAlt, rec, (cached.updated || 0) >= (rec.updated || 0));
+      rec = cached; push = true;
+    }
+  }
+  /* Ohne Basis — zum ersten Mal mit dieser Fassung der App: wie bisher,
+     der jüngere Stand gilt ganz. */
   else if(cached && rec && (cached.updated || 0) > (rec.updated || 0)){ rec = cached; push = true; }
 
   if(!rec){

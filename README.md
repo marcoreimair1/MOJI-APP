@@ -2579,6 +2579,30 @@ zeigt eine Anzeige den Stand: **Gesichert**, **Sichere …**, **Offline · wird 
 **Nicht gesichert**. Änderungen werden nach kurzer Ruhe gesammelt hochgeschrieben und beim
 Zurückkommen auf die Seite nachgeholt.
 
+### Sichern mit Abgleich *(27. Oktober 2026)*
+
+Bis dahin schrieb jedes Sichern den ganzen Stand des Geräts hoch. Eine App, die seit Stunden
+offen lag, überschrieb so beim nächsten Eintrag alles, was inzwischen in der Cloud stand — vom
+zweiten Gerät oder eine Korrektur von Hand in der Datenbank (gesehen am 27.10.2026, als zwei
+falsch beantwortete Wochenfragen direkt korrigiert wurden).
+
+Jetzt merkt sich MOJI den Stand, den es zuletzt sicher in der Cloud gesehen hat — die **Basis**,
+im Speicher und im Browser unter `simply.basis.<user_id>`. Gesichert wird nur, wenn die Cloud
+noch auf ihr steht (`update … where data->>updated = <Basis>`). Trifft das nichts, wird der
+Cloud-Stand geholt und Feld für Feld mit dem des Geräts zusammengeführt (`abgFeld`):
+
+- was nur eine Seite geändert hat, kommt von ihr — auch Löschen;
+- Listen mit Kennung (`post`, `gelesen`) werden wie Mengen zusammengeführt, andere Listen
+  (die Wochen im Dienstplan) gelten als ein Feld;
+- haben beide dasselbe Feld geändert, gilt die jüngere Änderung (`updated`);
+- danach rechnen die Konten neu, und die offene App zeigt den zusammengeführten Stand.
+
+Beim Anmelden gilt dasselbe: Ungesendetes vom Gerät wird mit der Cloud zusammengeführt statt sie
+ganz zu ersetzen. Ohne Basis (erstes Öffnen mit dieser Fassung) und wenn der Filter wider Erwarten
+nicht greift, sichert MOJI wie früher den ganzen Stand — schlimmstenfalls also wie vorher.
+**Für Korrekturen von Hand heißt das:** `data.updated` immer mit hochsetzen, sonst sieht die App
+die Änderung nicht als neuer an. Geprüft in `tests/test-abgleich.js`.
+
 Warum überhaupt eine Datenbank: Safari löscht den Browserspeicher einer Website nach sieben
 Tagen ohne Besuch. Bei monatlichem Eintragen wären die Aufzeichnungen regelmäßig verschwunden.
 
