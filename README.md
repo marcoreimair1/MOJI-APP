@@ -3258,6 +3258,7 @@ Gedächtnis des Projekts, zusammen mit den Kommentaren im Code.
 | Was | Wo | Hängt am Konto? |
 |---|---|---|
 | App, Dokumentation, Bilder, Mailvorlagen, Edge Function | GitHub `marcoreimair1/MOJI-APP` | GitHub-Login |
+| Arbeitsordner auf Marcos Mac | `~/STUDIO-MARU/MARU-Dev/MOJI-APP` (seit 28. Oktober 2026, vorher `~/MOJI-APP`) | — |
 | Live-Seite | GitHub Pages → `moji-app.at` | — |
 | Profile, Anmeldung, Passkeys, Monatsmail-Zeitplan | Supabase-Projekt `kzduwbmiytusvlbotrrr` (Frankfurt) | Supabase-Login |
 | Domain und DNS | GoDaddy | GoDaddy-Login |
@@ -3266,7 +3267,7 @@ Gedächtnis des Projekts, zusammen mit den Kommentaren im Code.
 ### 19.2 In fünf Schritten umziehen
 
 1. Repo auf den Rechner holen:
-   `git clone https://github.com/marcoreimair1/MOJI-APP.git ~/MOJI-APP`
+   `git clone https://github.com/marcoreimair1/MOJI-APP.git ~/STUDIO-MARU/MARU-Dev/MOJI-APP`
 2. Diesen Ordner im neuen Account als Arbeitsordner verbinden
 3. Im Browserprofil einmal bei GitHub und Supabase anmelden
 4. **Empfohlen:** `git` lokal mit SSH-Schlüssel oder Zugriffstoken einrichten. Dann geht
