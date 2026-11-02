@@ -784,6 +784,10 @@ body.nurhandy #splash,body.nurhandy #app,body.nurhandy .bg,body.nurhandy .grain{
 .wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 20px}
 /* Platz für die Tab-Leiste nur dort, wo sie auch steht */
 #v-cal, #v-export, #v-firma{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+/* Die Dienstzeiten, solange sie verschlossen sind. Aufgesperrt tritt die
+   Leiste zurueck und Speichern klebt selbst am unteren Rand. */
+#v-hours{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+body.hrmodus #v-hours{padding-bottom:0}
 
 /* Eine Flaeche, kein Verlauf. Vorher lief der Grund von 74 auf 34
    Prozent hinunter, waehrend der Weichzeichner ueber die ganze Leiste
@@ -1171,6 +1175,14 @@ body.menuauf #avatar{transform:scale(.92)}
 .kbox[data-k=ur] .kico{color:var(--c-urlaub);background:rgba(var(--c-urlaub-rgb-f),.12)}
 .ktxt b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
 .ktxt small{display:block;font-size:10.5px;color:var(--tx-3);margin-top:1px}
+/* Stunden oder Tage — ein kleiner Schieber rechts im Kopf der
+   Urlaubskachel. Der gewaehlte Teil hebt sich ab wie eine Karte. */
+.kein{flex:none;margin-left:auto;display:flex;gap:2px;padding:3px;border-radius:12px;
+  background:rgba(var(--tx-rgb),.06);border:1px solid var(--line-2)}
+.kein button{padding:6px 10px;border-radius:9px;border:1px solid transparent;
+  font-size:11.5px;font-weight:600;color:var(--tx-3);transition:.18s var(--ease)}
+.kein button.on{background:var(--karte);border-color:var(--karte-rand);
+  box-shadow:var(--karte-schatten);color:var(--c-urlaub-tx)}
 .kzahl{display:flex;align-items:baseline;gap:7px;margin:9px 0 0}
 .kzahl b{font-family:var(--font-dis);font-weight:400;font-size:34px;line-height:1.05;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em;transition:color .3s}
@@ -2201,6 +2213,10 @@ body.zrmodus .fb-z{display:inline-flex}
 body.sigmodus .fb-z{display:none}
 body.sigmodus .fb-s{display:inline-flex}
 body.zrmodus #tabbar, body.sigmodus #tabbar,
+/* Ebenso bei aufgesperrten Dienstzeiten: dort stehen Speichern und
+   Verwerfen am Platz der Leiste. Bis 02.11.2026 lag die Leiste darueber
+   (z-index 46 gegen 20) — Speichern war nicht zu treffen. */
+body.hrmodus #tabbar,
 /* Und wann immer etwas die Seite festhaelt: Vorspann, Gruss, Blaetter,
    der Kartenstapel. Der Vorspann traegt absichtlich keinen eigenen
    Grund — er laesst die Farbwolken der App durch —, und damit liess er
@@ -6761,6 +6777,12 @@ body.blattoffen #lg-start{ transform:scale(.93); opacity:.5 }
           <div class="kkopf">
             <span class="kico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6"/></svg></span>
             <span class="ktxt"><b>Urlaub</b><small id="k-ur-jahr">—</small></span>
+            <!-- Nur die Anzeige, nicht die Rechnung — darum auch ohne
+                 Schloss zu treffen. -->
+            <span class="kein" id="k-ur-einheit" role="group" aria-label="Urlaub anzeigen in">
+              <button data-kein="stunden" aria-pressed="true">Stunden</button>
+              <button data-kein="tage" aria-pressed="false">Tage</button>
+            </span>
           </div>
           <div class="kzahl"><b id="k-ur">0</b><u id="k-ur-einh">h offen</u></div>
           <div class="kbar"><i id="k-ur-bar"></i></div>
@@ -7405,7 +7427,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-10-27-1400';
+const APP_STAND = '2026-11-02-1600';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -7928,6 +7950,15 @@ function tagLaengeAlt(p){
 }
 function planHeute(p){ return planWoche(schedFuer(p || ME, new Date())); }
 function kontoModus(p){ return (p && p.konten && p.konten.modus === 'tage') ? 'tage' : 'stunden'; }
+/* Angezeigt wird in der Einheit, die man sich in der Urlaubskachel
+   aussucht (konten.anzeige) — gerechnet wird davon unberuehrt nach
+   konten.modus. Wer nichts gewaehlt hat, sieht die Einheit seines Kontos.
+   Ein Wunsch aus dem Team (02.11.2026): wer nicht weiss, wie viele Stunden
+   ein Tag hat, kann mit „210 h offen" nichts anfangen. */
+function urlaubInTagen(p){
+  const a = p && p.konten && p.konten.anzeige;
+  return a === 'tage' || a === 'stunden' ? a === 'tage' : kontoModus(p) === 'tage';
+}
 /* Was ein Urlaubstag (eine Zeile aus evalDay) vom Konto nimmt, in Wochen,
    und wie viele Urlaubstage das an jenem Tag sind. */
 function urlaubAnteil(p, r){
@@ -7949,7 +7980,7 @@ function wortUT(v){ return Math.abs((Math.round((+v || 0) * 10) / 10) - 1) < 0.0
    Einheit vorn, die andere ungefaehr dahinter. */
 function urlaubText(p, w, kurz){
   const pw = planHeute(p), std = r25(w * pw.std), tage = w * pw.tage;
-  if(kontoModus(p) === 'tage'){
+  if(urlaubInTagen(p)){
     return fmtUT(tage) + ' ' + wortUT(tage) + (kurz ? '' : ' · ' + fmtH(std) + ' h');
   }
   return fmtH(std) + ' h' + (kurz ? '' : ' · ≈ ' + fmtUT(tage) + ' ' + wortUT(tage));
@@ -8240,6 +8271,7 @@ function normalize(p){
   if(typeof k.topf !== 'number' || !isFinite(k.topf)) k.topf = 0;
   if(typeof k.gutJahr !== 'number' || !isFinite(k.gutJahr)) k.gutJahr = k.startJahr - 1;
   if(k.modus !== 'tage') k.modus = 'stunden';
+  if(k.anzeige !== 'tage' && k.anzeige !== 'stunden') delete k.anzeige;
   /* Einmal umstellen auf Urlaubswochen (02.10.2026). Gutgeschrieben waren
      Tage: im Feld topf, oder — wer die Fassung vom 28.09. schon offen
      hatte — als topfStd = Tage × haeufigste Tageslaenge. Die Tage bleiben
@@ -9315,6 +9347,9 @@ function go(id){
      hat seine eigene Fuehrung unten. */
   const OHNE_LEISTE = ['v-login','v-onboard','v-zeitassi','v-pkask','v-erinask'];
   $('#tabbar').style.display = (ME && OHNE_LEISTE.indexOf(id) < 0) ? 'grid' : 'none';
+  /* Wer die Dienstzeiten verlaesst, auf welchem Weg auch immer, bekommt
+     die Leiste zurueck (siehe hrSchloss). */
+  if(id !== 'v-hours') document.body.classList.remove('hrmodus');
   /* Das Profilbild darin wird beim Abmelden versteckt — und muss mit
      dem naechsten Profil zurueckkommen. Diese Zeile stand bis 21.09.2026
      hier und ging beim Umzug in die Leiste verloren: wer sich ab- und
@@ -14321,16 +14356,25 @@ function malKonten(vonNull){
         ? ' · Grundwert ' + (ME.konten.zaStart > 0 ? '+' : '−') + fmtH(Math.abs(ME.konten.zaStart)) + ' h'
         : '');
 
-  /* Vorn die gewaehlte Einheit (Vorgabe Stunden), darunter die andere. */
-  const tageModus = st.modus === 'tage';
+  /* Vorn die gewaehlte Einheit (Vorgabe: die des Kontos), darunter die
+     andere. */
+  const tageModus = urlaubInTagen(ME);
+  $$('#k-ur-einheit [data-kein]').forEach(b => {
+    const an = (b.dataset.kein === 'tage') === tageModus;
+    b.classList.toggle('on', an);
+    b.setAttribute('aria-pressed', String(an));
+  });
   /* Der Anspruch so, wie er eingegeben wurde, die Wochen dahinter. */
   $('#k-ur-jahr').textContent = 'Anspruch · ' + anspruchWort(ME);
   const elUr = $('#k-ur');
   if(vonNull && elUr) elUr.dataset.wert = '0';
   zaehlAuf(elUr, tageModus ? (st.urlaub || 0) : (st.urlaubStd || 0), v => tageModus ? fmtUT(v) : fmtH(v));
-  $('#k-ur-einh').textContent = tageModus ? 'Tage offen' : 'h offen';
+  $('#k-ur-einh').textContent = tageModus ? wortUT(st.urlaub || 0) + ' offen' : 'h offen';
   $('#k-ur-sub').textContent = (tageModus ? fmtH(st.urlaubStd || 0) + ' h' : '≈ ' + fmtUT(st.urlaub || 0) + ' ' + wortUT(st.urlaub || 0))
-    + ' · ' + ((st.jahrStd || 0) > 0 ? fmtH(st.jahrStd) + ' h in ' + st.jahr + ' genommen' : 'in ' + st.jahr + ' noch nichts genommen')
+    + ' · ' + ((st.jahrStd || 0) > 0
+        ? (tageModus ? fmtUT(st.jahrTage || 0) + ' ' + wortUT(st.jahrTage || 0) : fmtH(st.jahrStd) + ' h')
+          + ' in ' + st.jahr + ' genommen'
+        : 'in ' + st.jahr + ' noch nichts genommen')
     + ' · gutgeschrieben bis ' + st.gutJahr;
   const bar = $('#k-ur-bar');
   if(bar){
@@ -14371,11 +14415,11 @@ function kRaeder(auf){
     v => fmtVz(v) + ' h',
     v => { ME.konten.zaStart = r25(v - (st.zaRoh || 0)); malKonten(false); kBaldSichern(); });
   hZa.appendChild(_kRad.za);
-  /* Und hier das Offene, in der Einheit des Kontos: Viertelstunden wie
+  /* Und hier das Offene, in der angezeigten Einheit: Viertelstunden wie
      ueberall, oder halbe Tage. Gebucht wird nur die Differenz zum Start,
      in Wochen — zurueckdrehen stellt den alten Topf exakt wieder her
      (vorher wurde der Start gerundet und der Topf dabei verschoben). */
-  const tageModus = st.modus === 'tage';
+  const tageModus = urlaubInTagen(ME);
   const proWoche = tageModus ? (st.wochenTage || 0) : (st.wochenStd || 0);
   const urIst = tageModus ? (st.urlaub || 0) : (st.urlaubStd || 0), urSchritt = tageModus ? 0.5 : 0.25;
   /* Um den Stand herum, damit das Rad auch einen grossen Stand fasst. */
@@ -14556,6 +14600,18 @@ document.addEventListener('click', e => {
 })();
 
 $('#k-lock').addEventListener('click', () => kontenFrei(!$('#konten').classList.contains('frei')));
+/* Urlaub in Stunden oder Tagen. Die Zahl zaehlt in der neuen Einheit von
+   null herauf, ein offenes Rad wird in ihr neu gebaut. */
+$('#k-ur-einheit').addEventListener('click', e => {
+  const b = e.target.closest('[data-kein]'); if(!b || !ME) return;
+  const tage = b.dataset.kein === 'tage';
+  if(tage === urlaubInTagen(ME)) return;
+  ME.konten.anzeige = tage ? 'tage' : 'stunden';
+  save();
+  $('#k-ur').dataset.wert = '0';
+  malKonten(false);
+  if($('#konten').classList.contains('frei')) kRaeder(true);
+});
 
 /* ─── Urlaubsanspruch ─────────────────────────────────────────────────
    Pro Jahr, wahlweise in Tagen oder Stunden. Was hier steht, wird jeden
@@ -16007,10 +16063,11 @@ function qSummary(){
   } else if(!Q.to){
     el.innerHTML = '<i>Nur dieser eine Tag? Dann gleich eintragen.</i>';
   } else {
-    /* Live mitgerechnet: die Stunden; beim Urlaub im Tage-Modus auch die
-       Urlaubstage (ein Diensttag ist ein Tag, auch ein kurzer Samstag). */
+    /* Live mitgerechnet: die Stunden; beim Urlaub in Tagen angezeigt auch
+       die Urlaubstage (im Tage-Modus ist ein Diensttag ein Tag, auch ein
+       kurzer Samstag). */
     const art = Q.type === 'urlaub' ? 'Urlaub' : Q.type === 'krank' ? 'Krankenstand' : 'Vermerk';
-    const tageModus = kontoModus(ME) === 'tage';
+    const tageModus = urlaubInTagen(ME);
     const menge = t => tageModus ? fmtUT(t.tage) + ' ' + wortUT(t.tage) : fmtH(r25(t.std)) + ' h';
     el.innerHTML = '<b>' + z.tage + (z.tage === 1 ? ' Arbeitstag' : ' Arbeitstage') + '</b>'
       + ' · ' + fmtH(z.stunden) + ' h ' + art
@@ -16152,7 +16209,7 @@ function zrMalen(){
   const ist = $('#zrp-ist');
   if(Q.type === 'urlaub'){
     const st = kontenRechnen(ME) || {};
-    const tageModus = st.modus === 'tage';
+    const tageModus = urlaubInTagen(ME);
     const zahl = w => tageModus ? fmtUT(w * (st.wochenTage || 0)) : fmtH(r25(w * (st.wochenStd || 0)));
     $('#zrp-ist-v').textContent = zahl(st.urlaubW || 0);
     /* Ist ein Zeitraum gewählt, steht daneben, was danach bleibt. */
@@ -17863,7 +17920,13 @@ function hrSchloss(auf){
   b.setAttribute('aria-pressed', String(_hrAuf));
   $('#hr-lock-s').textContent = _hrAuf ? 'Offen — Änderungen sind möglich' : 'Zum Ändern aufsperren';
   $('#hr-sperre').classList.toggle('zu', !_hrAuf);
-  $('#hr-nav').classList.toggle('hide', !_hrAuf);
+  /* Speichern bleibt, solange etwas Ungesichertes da ist — auch wenn man
+     wieder zusperrt. Sonst kam die Leiste unten zurueck, und ein Tipp
+     darauf liess die Aenderung still fallen (Marco, 02.11.2026). */
+  const offen = _hrAuf || !!(DRAFT && ME && !schedGleich(ME.sched, DRAFT));
+  $('#hr-nav').classList.toggle('hide', !offen);
+  /* Dann weicht die Leiste unten, sonst laege sie ueber Speichern. */
+  document.body.classList.toggle('hrmodus', offen);
 }
 $('#hr-lock').addEventListener('click', () => {
   hrSchloss(!_hrAuf);
@@ -17927,23 +17990,41 @@ function sabZu(){
   el.setAttribute('aria-hidden', 'true');
   setTimeout(() => el.classList.remove('on'), 300);
 }
+/* Nur die laufende Woche getauscht, die Zeiten selbst gleich? Dann fragt
+   die Leiste nach dem Rhythmus statt nach „neuen Zeiten" — bei einem
+   Wochendreher hat sich keine Zeit geaendert (Marco, 02.11.2026). */
+function sabNurWoche(){
+  if(!DRAFT || !ME) return false;
+  return schedGleich(ME.sched, Object.assign({}, DRAFT, { offset: ME.sched.offset || 0 }));
+}
 function sabSchritt(n){
-  const eins = n === 1;
-  $('#sab-b').textContent = eins ? 'Gelten die neuen Zeiten schon immer?'
-                                 : 'Ab welchem Tag gelten sie?';
+  const eins = n === 1, woche = sabNurWoche();
+  $('#sab-b').textContent = eins
+    ? (woche ? 'War die Woche schon immer vertauscht?' : 'Gelten die neuen Zeiten schon immer?')
+    : (woche ? 'Ab welchem Tag gilt der neue Rhythmus?' : 'Ab welchem Tag gelten sie?');
   $('#sab-s').textContent = eins
-    ? 'Ein Tippfehler soll überall verschwinden. Ein echter Wechsel darf die alten Monate nicht anfassen.'
-    : 'Alles davor bleibt mit den bisherigen Zeiten gerechnet — auch schon abgegebene Monate.';
+    ? (woche ? 'Dann korrigieren — der Rhythmus stimmt danach auch rückwirkend. Hat er sich erst jetzt verschoben, etwa durch einen Tausch: ab einem Datum.'
+             : 'Ein Tippfehler soll überall verschwinden. Ein echter Wechsel darf die alten Monate nicht anfassen.')
+    : 'Alles davor bleibt ' + (woche ? 'im bisherigen Rhythmus' : 'mit den bisherigen Zeiten')
+      + ' gerechnet — auch schon abgegebene Monate.';
+  $('label[for="sab-ab"]').textContent = woche ? 'Neuer Rhythmus gilt ab' : 'Neue Zeiten gelten ab';
   if(eins && DRAFT && SAB_ALT) Object.assign(DRAFT, SAB_ALT);
   $('#sab-schritt1').hidden = !eins;
   $('#sab-schritt2').hidden = eins;
   if(!eins){
     const feld = $('#sab-ab');
     /* Vorschlag: der nächste Monatserste. Das ist der übliche Termin für
-       eine Vertragsänderung, und er zerschneidet keinen laufenden Monat. */
+       eine Vertragsänderung, und er zerschneidet keinen laufenden Monat.
+       Beim Rhythmus der Montag dieser Woche — die Karte „Diese Woche"
+       hat ja nach ihr gefragt. */
     const h = new Date();
-    const vor = new Date(h.getFullYear(), h.getMonth() + 1, 1);
+    let vor = woche ? new Date(h.getFullYear(), h.getMonth(), h.getDate() - (h.getDay() + 6) % 7)
+                    : new Date(h.getFullYear(), h.getMonth() + 1, 1);
     const grenze = schedLetzteGrenze(ME);
+    if(grenze && isoTag(vor) <= grenze){
+      const t = tagDanach(grenze).split('-');
+      vor = new Date(+t[0], +t[1] - 1, +t[2]);
+    }
     feld.value = isoTag(vor);
     /* Früher als der letzte Wechsel geht nicht — sonst wäre nicht mehr
        klar, welcher Plan dazwischen gegolten hat. */

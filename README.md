@@ -294,6 +294,25 @@ liegt alles darunter auf 46 % Deckkraft und nimmt keine Tipps an (`.hr-sperre.zu
 mit *Speichern* und *Verwerfen* ist gar nicht da. Lesen geht, ändern nicht. Ein Tipp ins
 Gesperrte läuft nicht ins Leere — das Schloss wackelt kurz und zeigt so, wo es weitergeht.
 
+**Aufgesperrt weicht die Leiste unten.** Seit 20. September 2026 steht die Leiste (Kalender,
+Export, Profil) auf jeder Seite — auch hier. Sie liegt auf z-index 46, die Leiste mit *Speichern*
+und *Verwerfen* auf 20: bis 2. November 2026 lag die eine genau über der anderen, und Speichern
+war nicht zu treffen, auch ganz nach unten gescrollt nicht (gemeldet von Marco, der einen
+Wochendreher korrigieren wollte). Jetzt setzt `hrSchloss()` beim Aufsperren `body.hrmodus`, und
+die Leiste blendet aus wie beim Zeitraum und beim Unterschreiben; `go()` nimmt die Klasse beim
+Verlassen wieder ab. Verschlossen steht die Leiste da, und die Seite hält unten Platz für sie
+frei — vorher lag der Verlauf *Frühere Dienstzeiten* halb darunter.
+
+**Geändert und wieder zugesperrt** bleibt es bei *Speichern* und *Verwerfen*: `hrSchloss()` blendet
+die beiden erst aus, wenn der Entwurf dem gespeicherten Plan gleicht (`schedGleich`). Sonst kam
+die Leiste unten zurück, und ein Tipp auf *Kalender* oder *Export* ließ die Änderung still fallen.
+Hinaus geht es dann nur über *Speichern*, *Verwerfen* oder *Zurück* — und *Zurück* fragt nach.
+
+**Nur die Woche getauscht?** Dann fragt die Leiste beim Speichern nicht nach „neuen Zeiten",
+sondern *War die Woche schon immer vertauscht?* (`sabNurWoche()`). *Nur korrigieren* stellt den
+Rhythmus auch rückwirkend richtig, *Ab einem Datum* schlägt den Montag dieser Woche vor statt
+des nächsten Monatsersten — die Karte *Diese Woche* hat ja nach ihr gefragt.
+
 Die zwei **alten** Schlösser (`schlossHtml()`, je eines für Wochenintervall und laufende Woche)
 sind damit nicht zurück: sie saßen an einzelnen Feldern und verwechselten eine Sperre mit einer
 Feinjustierung. Das neue ist eines für die ganze Seite.
@@ -2082,6 +2101,17 @@ niemandem hin, der nur nachsieht (gemessen: 118 ms für beide).
 Darüber sitzt dasselbe **Schloss** wie auf der Dienstzeiten-Seite — dieselbe Zeile, dieselbe
 Beschriftung, derselbe Wink, wenn man ins Gesperrte tippt. Der alte gestrichelte Riegel
 (`.kschloss`) ist entfallen.
+
+**Urlaub in Stunden oder Tagen** (seit 2. November 2026, Wunsch aus dem Team: wer nicht weiß,
+wie viele Stunden ein Tag hat, kann mit *210 h offen* nichts anfangen). Rechts im Kopf der
+Urlaubskachel sitzt ein Schieber **Stunden | Tage**. Er ändert **nur die Anzeige**, nicht die
+Rechnung: das Konto läuft weiter in Urlaubswochen und zieht nach `konten.modus` ab (Vorgabe
+Stunden). Gemerkt wird die Wahl im Profil als `konten.anzeige` (`'stunden'` oder `'tage'`; fehlt
+sie, gilt die Einheit des Kontos — `urlaubInTagen()`). Sie gilt überall, wo der Urlaubsstand
+steht: Kachel, Rad (dann in halben Tagen), Urlaubsanspruch, Tagesblatt und Zeitraum. Weil sie
+nichts verstellt, liegt der Schieber nicht hinter dem Schloss. Die Tage sind die Urlaubswochen
+mal Diensttage pro Woche — bei 2 Wochen Rhythmus mit 6 und 5 Diensttagen also 5,5 je Woche,
+5 Wochen sind dann 27,5 Tage. Der Zeitausgleich bleibt in Stunden.
 
 ### Urlaubsanspruch
 

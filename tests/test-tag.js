@@ -349,6 +349,17 @@ ok('Zweimal am selben Tag schreibt nicht doppelt gut', Math.abs(gutS.konten.topf
 ok('urlaubText im Stundenkonto', urlaubText(probe(), 5) === '220,00 h · ≈ 30 Tage', urlaubText(probe(), 5));
 ok('urlaubText im Tagekonto', urlaubText(probe({ modus:'tage' }), 5) === '30 Tage · 220,00 h', urlaubText(probe({ modus:'tage' }), 5));
 ok('Ein Tag heisst Tag', urlaubText(probe({ modus:'tage' }), 1/6, true) === '1 Tag');
+/* Die Anzeige laesst sich unabhaengig von der Rechnung waehlen (Wunsch,
+   02.11.2026): Stundenkonto, aber in Tagen angezeigt — und umgekehrt. */
+ok('Stundenkonto in Tagen angezeigt', urlaubText(probe({ anzeige:'tage' }), 5) === '30 Tage · 220,00 h',
+   urlaubText(probe({ anzeige:'tage' }), 5));
+ok('Tagekonto in Stunden angezeigt', urlaubText(probe({ modus:'tage', anzeige:'stunden' }), 5) === '220,00 h · ≈ 30 Tage',
+   urlaubText(probe({ modus:'tage', anzeige:'stunden' }), 5));
+ok('Die Anzeige aendert die Rechnung nicht', (function(){
+  var a = kontenRechnen(probe({}, ev1)), b = kontenRechnen(probe({ anzeige:'tage' }, ev1));
+  return Math.abs(a.urlaubW - b.urlaubW) < 1e-12 && b.modus === 'stunden';
+})());
+ok('Unbekannte Anzeige faellt weg', !('anzeige' in probe({ anzeige:'wochen' }).konten));
 /* Die alte Vorgabe „25 Tage" war als 5 Wochen gemeint (02.10.2026: 20 von
    21 Konten hatten sie nie geaendert, 11 davon mit 5½ oder 6 Diensttagen). */
 function altProfil(konten, plan){

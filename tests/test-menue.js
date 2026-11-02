@@ -271,17 +271,38 @@ window.__WEITER = function(){
   ok('Die alte Augenbraue ist weg', !document.querySelector('#v-hours .eyebrow'));
   ok('Und die alte Ueberschrift auch', !document.querySelector('#v-hours h1.dis')
      && !!document.querySelector('#v-hours h1.obh'));
+  /* Erst ohne Aenderung — wie beim Oeffnen. Der geaenderte Entwurf von
+     oben kommt weiter unten dran. */
+  var entwurf = DRAFT;
+  DRAFT = JSON.parse(JSON.stringify(ME.sched));
   hrSchloss(false);
   ok('Verschlossen beginnt es',       sperre.classList.contains('zu'));
   ok('Ohne Leiste zum Speichern',     nav.classList.contains('hide'));
   ok('Das Schloss ist zu',            schloss.getAttribute('aria-pressed') === 'false');
+  ok('Verschlossen bleibt die Leiste unten', !document.body.classList.contains('hrmodus'));
   schloss.click();
   ok('Ein Tipp sperrt auf',           !sperre.classList.contains('zu'));
   ok('Jetzt kommt die Leiste',        !nav.classList.contains('hide'));
+  /* Bis 02.11.2026 lag die Leiste unten ueber Speichern — nicht zu treffen. */
+  ok('Und die Leiste unten weicht',   document.body.classList.contains('hrmodus'));
+  ok('Per Regel, wie beim Zeitraum',  /body\.hrmodus #tabbar,/.test(document.documentElement.outerHTML));
   ok('Und das Schloss steht offen',   schloss.getAttribute('aria-pressed') === 'true');
   schloss.click();
   ok('Nochmal tippen sperrt wieder zu', sperre.classList.contains('zu')
      && nav.classList.contains('hide'));
+  ok('Und die Leiste unten kommt zurueck', !document.body.classList.contains('hrmodus'));
+  /* Geaendert und wieder zugesperrt: Speichern bleibt, die Leiste unten
+     bleibt weg — sonst fuehrte ein Tipp darauf still hinaus und die
+     Aenderung war fort (Marco, 02.11.2026). */
+  DRAFT = entwurf;
+  schloss.click(); schloss.click();
+  ok('Geaendert und zugesperrt: gesperrt', sperre.classList.contains('zu'));
+  ok('Aber Speichern bleibt',          !nav.classList.contains('hide'));
+  ok('Und die Leiste unten bleibt weg', document.body.classList.contains('hrmodus'));
+  /* Wer aufgesperrt hinausgeht, bekommt sie auf der naechsten Seite wieder. */
+  schloss.click(); go('v-cal');
+  ok('Verlassen bringt die Leiste zurueck', !document.body.classList.contains('hrmodus'));
+  go('v-hours'); hrSchloss(false);
   /* Ein Tipp ins Gesperrte weist aufs Schloss, statt nichts zu tun. */
   sperre.click();
   ok('Der Tipp ins Gesperrte stupst das Schloss', schloss.classList.contains('stups'),
@@ -330,6 +351,33 @@ window.__WEITER = function(){
   ok('Und die Kachel zaehlt Tage', document.getElementById('k-ur-einh').textContent === 'Tage offen');
   kontenFrei(false); ME.konten.modus = 'stunden'; malKonten(false);
   ok('Im Stundenkonto zaehlt sie Stunden', document.getElementById('k-ur-einh').textContent === 'h offen');
+  /* Der Schieber Stunden | Tage: nur die Anzeige, auch verschlossen. */
+  var keinT = document.querySelector('#k-ur-einheit [data-kein="tage"]');
+  var keinS = document.querySelector('#k-ur-einheit [data-kein="stunden"]');
+  ok('Der Schieber steht auf Stunden', keinS.classList.contains('on') && !keinT.classList.contains('on'));
+  /* Der Schieber sichert — und jedes Sichern schreibt ein faelliges Jahr
+     gut. Das Testprofil hat eines offen; hier soll nur die Anzeige zaehlen. */
+  var topfVorher = ME.konten.topfW, gutVorher = ME.konten.gutJahrW;
+  ME.konten.gutJahrW = new Date().getFullYear();
+  keinT.click();
+  ok('Ein Tipp auf Tage zeigt Tage', document.getElementById('k-ur-einh').textContent === 'Tage offen'
+     && keinT.classList.contains('on') && keinT.getAttribute('aria-pressed') === 'true',
+     document.getElementById('k-ur-einh').textContent);
+  ok('Und merkt es sich im Profil', ME.konten.anzeige === 'tage');
+  ok('Gerechnet wird weiter in Stunden', ME.konten.modus === 'stunden' && ME.konten.topfW === topfVorher,
+     ME.konten.modus + ' / ' + topfVorher + ' → ' + ME.konten.topfW);
+  kontenFrei(true);
+  ok('Das Rad laeuft dann in halben Tagen',
+     /Tage$/.test(document.querySelector('#k-ur-rad .rad-roll i.on').textContent),
+     document.querySelector('#k-ur-rad .rad-roll i.on').textContent);
+  keinS.click();
+  ok('Zurueck auf Stunden baut das Rad in Stunden',
+     / h$/.test(document.querySelector('#k-ur-rad .rad-roll i.on').textContent),
+     document.querySelector('#k-ur-rad .rad-roll i.on').textContent);
+  kontenFrei(false);
+  ok('Wieder in Stunden', document.getElementById('k-ur-einh').textContent === 'h offen'
+     && ME.konten.anzeige === 'stunden');
+  ME.konten.gutJahrW = gutVorher; ME.konten.topfW = topfVorher;
   ok('Zusperren raeumt die Raeder wieder weg',
      document.querySelectorAll('#konten .rad').length === 0);
   /* Ein Tipp auf die Kachel weist aufs Schloss. */
