@@ -303,6 +303,11 @@ die Leiste blendet aus wie beim Zeitraum und beim Unterschreiben; `go()` nimmt d
 Verlassen wieder ab. Verschlossen steht die Leiste da, und die Seite hält unten Platz für sie
 frei — vorher lag der Verlauf *Frühere Dienstzeiten* halb darunter.
 
+**Geändert und wieder zugesperrt** bleibt es bei *Speichern* und *Verwerfen*: `hrSchloss()` blendet
+die beiden erst aus, wenn der Entwurf dem gespeicherten Plan gleicht (`schedGleich`). Sonst kam
+die Leiste unten zurück, und ein Tipp auf *Kalender* oder *Export* ließ die Änderung still fallen.
+Hinaus geht es dann nur über *Speichern*, *Verwerfen* oder *Zurück* — und *Zurück* fragt nach.
+
 **Nur die Woche getauscht?** Dann fragt die Leiste beim Speichern nicht nach „neuen Zeiten",
 sondern *War die Woche schon immer vertauscht?* (`sabNurWoche()`). *Nur korrigieren* stellt den
 Rhythmus auch rückwirkend richtig, *Ab einem Datum* schlägt den Montag dieser Woche vor statt

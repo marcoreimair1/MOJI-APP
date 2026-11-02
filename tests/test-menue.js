@@ -271,6 +271,10 @@ window.__WEITER = function(){
   ok('Die alte Augenbraue ist weg', !document.querySelector('#v-hours .eyebrow'));
   ok('Und die alte Ueberschrift auch', !document.querySelector('#v-hours h1.dis')
      && !!document.querySelector('#v-hours h1.obh'));
+  /* Erst ohne Aenderung — wie beim Oeffnen. Der geaenderte Entwurf von
+     oben kommt weiter unten dran. */
+  var entwurf = DRAFT;
+  DRAFT = JSON.parse(JSON.stringify(ME.sched));
   hrSchloss(false);
   ok('Verschlossen beginnt es',       sperre.classList.contains('zu'));
   ok('Ohne Leiste zum Speichern',     nav.classList.contains('hide'));
@@ -287,6 +291,14 @@ window.__WEITER = function(){
   ok('Nochmal tippen sperrt wieder zu', sperre.classList.contains('zu')
      && nav.classList.contains('hide'));
   ok('Und die Leiste unten kommt zurueck', !document.body.classList.contains('hrmodus'));
+  /* Geaendert und wieder zugesperrt: Speichern bleibt, die Leiste unten
+     bleibt weg — sonst fuehrte ein Tipp darauf still hinaus und die
+     Aenderung war fort (Marco, 02.11.2026). */
+  DRAFT = entwurf;
+  schloss.click(); schloss.click();
+  ok('Geaendert und zugesperrt: gesperrt', sperre.classList.contains('zu'));
+  ok('Aber Speichern bleibt',          !nav.classList.contains('hide'));
+  ok('Und die Leiste unten bleibt weg', document.body.classList.contains('hrmodus'));
   /* Wer aufgesperrt hinausgeht, bekommt sie auf der naechsten Seite wieder. */
   schloss.click(); go('v-cal');
   ok('Verlassen bringt die Leiste zurueck', !document.body.classList.contains('hrmodus'));

@@ -7427,7 +7427,7 @@ function toast(msg, bleib){
    Am Handy hieß das: Änderungen sind da, aber man sieht sie nicht. Also
    fragt die App beim Start und beim Zurückkehren selbst nach — ohne
    Zwischenspeicher — und meldet sich, wenn etwas Neues bereitliegt. */
-const APP_STAND = '2026-11-02-1500';
+const APP_STAND = '2026-11-02-1600';
 let _updZeit = 0, _updBereit = false;
 async function pruefeStand(){
   if(_updBereit || Date.now() - _updZeit < 12e4) return;
@@ -17920,9 +17920,13 @@ function hrSchloss(auf){
   b.setAttribute('aria-pressed', String(_hrAuf));
   $('#hr-lock-s').textContent = _hrAuf ? 'Offen — Änderungen sind möglich' : 'Zum Ändern aufsperren';
   $('#hr-sperre').classList.toggle('zu', !_hrAuf);
-  $('#hr-nav').classList.toggle('hide', !_hrAuf);
-  /* Offen weicht die Leiste unten, sonst laege sie ueber Speichern. */
-  document.body.classList.toggle('hrmodus', _hrAuf);
+  /* Speichern bleibt, solange etwas Ungesichertes da ist — auch wenn man
+     wieder zusperrt. Sonst kam die Leiste unten zurueck, und ein Tipp
+     darauf liess die Aenderung still fallen (Marco, 02.11.2026). */
+  const offen = _hrAuf || !!(DRAFT && ME && !schedGleich(ME.sched, DRAFT));
+  $('#hr-nav').classList.toggle('hide', !offen);
+  /* Dann weicht die Leiste unten, sonst laege sie ueber Speichern. */
+  document.body.classList.toggle('hrmodus', offen);
 }
 $('#hr-lock').addEventListener('click', () => {
   hrSchloss(!_hrAuf);
